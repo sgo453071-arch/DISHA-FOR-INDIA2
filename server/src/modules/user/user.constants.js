@@ -1,9 +1,4 @@
-const ROLES = {
-  VOLUNTEER: 'volunteer',
-  COORDINATOR: 'coordinator',
-  ADMIN: 'admin',
-  SUPER_ADMIN: 'superadmin',
-};
+const ROLES = require('../../constants/roles.constants');
 
 const STATUS = {
   PENDING: 'pending',
