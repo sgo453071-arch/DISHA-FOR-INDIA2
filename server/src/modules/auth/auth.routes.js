@@ -14,6 +14,10 @@ router.post('/refresh-token', authController.refreshToken);
 router.post('/forgot-password', validateForgotPassword, authController.forgotPassword);
 router.post('/reset-password/:token', validateResetPassword, authController.resetPassword);
 
+// Google OAuth routes
+router.get('/google', authController.googleLogin);
+router.get('/google/callback', authController.googleCallback);
+
 // Protected routes
 router.post('/logout', authenticate, authController.logout);
 router.get('/me', authenticate, authController.getCurrentUser);

@@ -38,6 +38,15 @@ class AuthRepository {
   }
 
   /**
+   * Find a user by their Google ID.
+   * @param {string} googleId - The Google user ID.
+   * @returns {Promise<User|null>} The user document.
+   */
+  async findByGoogleId(googleId) {
+    return User.findOne({ googleId }).select('+refreshToken');
+  }
+
+  /**
    * Find a user by their refresh token.
    * @param {string} token - The refresh token.
    * @returns {Promise<User|null>} The user document.
@@ -65,6 +74,33 @@ class AuthRepository {
    */
   async create(userData) {
     return User.create(userData);
+  }
+
+  /**
+   * Create a new user using Google sign-in details.
+   * @param {object} userData - Google user data.
+   * @returns {Promise<User>} The created user document.
+   */
+  async createGoogleUser(userData) {
+    return User.create(userData);
+  }
+
+  /**
+   * Link a Google account to an existing user.
+   * @param {string} id - The user ID.
+   * @param {string} googleId - Google account ID.
+   * @param {string} picture - Google profile picture URL.
+   * @returns {Promise<User|null>} The updated user document.
+   */
+  async linkGoogleAccount(id, googleId, picture) {
+    return User.findByIdAndUpdate(
+      id,
+      {
+        googleId,
+        profilePhoto: picture,
+      },
+      { new: true, runValidators: true }
+    ).select('+refreshToken');
   }
 
   /**

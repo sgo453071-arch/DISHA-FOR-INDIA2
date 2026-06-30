@@ -4,7 +4,9 @@ const cors = require('cors');
 const express = require('express');
 const { rateLimit } = require('express-rate-limit');
 const helmet = require('helmet');
+const passport = require('passport');
 
+require('./config/passport'); // Load passport configuration
 const errorHandler = require('./middlewares/error.middleware');
 const authRoutes = require('./modules/auth/auth.routes');
 const NotFoundError = require('./utils/errors/NotFoundError');
@@ -34,6 +36,9 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Parse Cookie header and populate req.cookies
 app.use(cookieParser());
+
+// Initialize Passport
+app.use(passport.initialize());
 
 // Rate Limiting for API endpoints
 const apiLimiter = rateLimit({

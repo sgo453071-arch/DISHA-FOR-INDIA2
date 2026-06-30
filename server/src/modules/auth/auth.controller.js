@@ -1,3 +1,5 @@
+const passport = require('passport');
+
 const authService = require('./auth.service');
 const { MESSAGES } = require('./auth.constants');
 const { setRefreshTokenCookie, clearRefreshTokenCookie } = require('../../utils/cookie');
@@ -73,6 +75,63 @@ class AuthController {
     } catch (error) {
       return next(error);
     }
+  };
+
+  /**
+   * Initiate Google OAuth strategy login flow.
+   */
+  googleLogin = (req, res, next) => {
+    passport.authenticate('google', {
+      scope: ['profile', 'email'],
+      session: false,
+    })(req, res, next);
+  };
+
+  /**
+   * Handle the redirect callback from Google OAuth.
+   */
+  googleCallback = (req, res, next) => {
+    passport.authenticate(
+      'google',
+      {
+        session: false,
+        failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=GoogleAuthFailed`,
+      },
+      async (err, user) => {
+        try {
+          if (err || !user) {
+            return res.redirect(
+              `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=GoogleAuthFailed`
+            );
+          }
+
+          const {
+            user: loggedInUser,
+            accessToken,
+            refreshToken,
+          } = await authService.googleLogin(user);
+          setRefreshTokenCookie(res, refreshToken);
+
+          let redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`;
+          if (loggedInUser.role === 'volunteer') {
+            const isProfileComplete = !!(
+              loggedInUser.phone &&
+              loggedInUser.college &&
+              loggedInUser.course &&
+              loggedInUser.city &&
+              loggedInUser.state
+            );
+            if (!isProfileComplete) {
+              redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile/setup`;
+            }
+          }
+
+          return res.redirect(`${redirectUrl}?token=${accessToken}`);
+        } catch (error) {
+          return next(error);
+        }
+      }
+    )(req, res, next);
   };
 }
 

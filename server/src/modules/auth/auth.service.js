@@ -228,6 +228,30 @@ class AuthService {
       message: MESSAGES.PASSWORD_RESET_SUCCESS,
     };
   }
+
+  /**
+   * Complete the Google login by updating timestamps and generating tokens.
+   * @param {object} user - The user authenticated via Google strategy.
+   * @returns {Promise<object>} The user, access token, and refresh token.
+   */
+  async googleLogin(user) {
+    // Generate tokens
+    const accessToken = jwtUtils.generateAccessToken({ id: user._id, role: user.role });
+    const refreshToken = jwtUtils.generateRefreshToken({ id: user._id });
+
+    // Update refresh token, lastLogin and lastActive
+    const updatedUser = await authRepository.update(user._id, {
+      refreshToken,
+      lastLogin: new Date(),
+      lastActive: new Date(),
+    });
+
+    return {
+      user: updatedUser,
+      accessToken,
+      refreshToken,
+    };
+  }
 }
 
 module.exports = new AuthService();
