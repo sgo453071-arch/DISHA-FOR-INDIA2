@@ -33,7 +33,7 @@ router.patch(
   '/:id',
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   validateMarkAttendance,
-  attendanceController.markAttendance
+  attendanceController.editAttendance
 );
 
 // ─── Shared Routes ──────────────────────────────────────────────────

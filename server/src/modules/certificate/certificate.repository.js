@@ -9,13 +9,18 @@ class CertificateRepository {
     return Certificate.findOne({ _id: id, isDeleted: false })
       .populate('user', 'name email volunteerId')
       .populate('program', 'title programId')
+      .populate('application')
+      .populate('attendance')
       .populate('issuedBy', 'name email');
   }
 
   async findByCertificateNumber(certificateNumber) {
     return Certificate.findOne({ certificateNumber, isDeleted: false })
       .populate('user', 'name email volunteerId')
-      .populate('program', 'title programId');
+      .populate('program', 'title programId')
+      .populate('application')
+      .populate('attendance')
+      .populate('issuedBy', 'name email');
   }
 
   async findByUser(userId, options = {}) {
@@ -35,8 +40,30 @@ class CertificateRepository {
     return { certificates, total, page, limit };
   }
 
+  async findCertificateToGenerate(userId, programId) {
+    return Certificate.findOne({ user: userId, program: programId, isDeleted: false }).lean();
+  }
+
+  async findByUserAndProgram(userId, programId) {
+    return Certificate.findOne({ user: userId, program: programId, isDeleted: false });
+  }
+
+  async findCertificatesByProgram(programId) {
+    return Certificate.find({ program: programId, isDeleted: false })
+      .populate('user', 'name email volunteerId')
+      .lean();
+  }
+
   async update(id, updateData) {
     return Certificate.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+  }
+
+  async revoke(id) {
+    return Certificate.findByIdAndUpdate(
+      id,
+      { status: 'revoked' },
+      { new: true, runValidators: true }
+    );
   }
 
   async softDelete(id, deletedById) {

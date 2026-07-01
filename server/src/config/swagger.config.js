@@ -361,6 +361,14 @@ Most endpoints require a **JWT Bearer Token**.
         description: 'Volunteer Certificate Management',
       },
       {
+        name: 'Leaderboard',
+        description: 'Volunteer Leaderboard Foundation',
+      },
+      {
+        name: 'Gamification',
+        description: 'Badges, Achievements & Volunteer Levels',
+      },
+      {
         name: 'Rewards',
         description: 'Volunteer Reward Profiles & Balances',
       },
@@ -370,18 +378,21 @@ Most endpoints require a **JWT Bearer Token**.
       },
     ],
   },
-  // Paths to files containing JSDoc swagger annotations
-  apis: [
-    './src/modules/auth/auth.routes.js',
-    './src/docs/auth.docs.js',
-    './src/docs/health.docs.js',
-    './src/docs/user.docs.js',
-    './src/docs/admin.docs.js',
-    './src/docs/program.docs.js',
-    './src/docs/application.docs.js',
-    './src/docs/attendance.docs.js',
-    './src/docs/rewards.docs.js',
-  ],
+    // Paths to files containing JSDoc swagger annotations
+    apis: [
+      './src/modules/auth/auth.routes.js',
+      './src/docs/auth.docs.js',
+      './src/docs/health.docs.js',
+      './src/docs/user.docs.js',
+      './src/docs/admin.docs.js',
+      './src/docs/program.docs.js',
+      './src/docs/application.docs.js',
+      './src/docs/attendance.docs.js',
+      './src/docs/certificates.docs.js',
+      './src/docs/leaderboard.docs.js',
+      './src/docs/gamification.docs.js',
+      './src/docs/rewards.docs.js',
+    ],
 };
 
 const swaggerSpec = swaggerJsdoc(options);

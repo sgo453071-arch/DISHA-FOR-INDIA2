@@ -329,6 +329,32 @@ class ProgramService {
 
     const updatedProgram = await programRepository.updateStatus(programId, newStatus);
 
+    if (newStatus === PROGRAM_STATUS.COMPLETED) {
+      try {
+        const certificateService = require('../certificate/certificate.service');
+        await certificateService.autoGenerateForProgram(programId);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Auto certificate generation failed:', error);
+      }
+
+      try {
+        const leaderboardService = require('../leaderboard/leaderboard.service');
+        await leaderboardService.refreshLeaderboard(userId);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Auto leaderboard refresh failed:', error);
+      }
+
+      try {
+        const gamificationService = require('../leaderboard/gamification.service');
+        await gamificationService.evaluateAll(userId);
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Auto gamification evaluation failed:', error);
+      }
+    }
+
     return { program: updatedProgram };
   }
 

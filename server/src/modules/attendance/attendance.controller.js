@@ -101,6 +101,19 @@ class AttendanceController {
   };
 
   /**
+   * GET /api/v1/admin/attendance/history
+   * Admin attendance history with filters.
+   */
+  attendanceHistory = async (req, res, next) => {
+    try {
+      const result = await attendanceService.getAdminAttendance(req.query);
+      return successResponse(res, 200, MESSAGES.ATTENDANCE_LIST_FETCHED, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  /**
    * GET /api/v1/admin/attendance/statistics
    * Get attendance aggregate statistics.
    */

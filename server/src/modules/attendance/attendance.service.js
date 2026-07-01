@@ -12,6 +12,7 @@ const {
   ConflictError,
 } = require('../../utils/errors');
 const ROLES = require('../../constants/roles.constants');
+const gamificationService = require('../leaderboard/gamification.service');
 
 class AttendanceService {
   /**
@@ -189,6 +190,13 @@ class AttendanceService {
       checkOutTime,
       totalHours
     );
+
+    try {
+      await gamificationService.evaluateAll(attUserId.toString());
+    } catch (_error) {
+      // Gamification evaluation is non-blocking
+    }
+
     return updatedRecord;
   }
 

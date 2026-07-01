@@ -176,7 +176,7 @@ const userSchema = new mongoose.Schema(
     },
     volunteerLevel: {
       type: String,
-      enum: ['Beginner', 'Contributor', 'Mentor', 'Leader', 'Ambassador'],
+      enum: ['Beginner', 'Contributor', 'Mentor', 'Leader', 'Ambassador', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond', 'Legend'],
       default: 'Beginner',
     },
 

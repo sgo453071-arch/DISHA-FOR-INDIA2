@@ -1,26 +1,30 @@
 const express = require('express');
 const certificateController = require('./certificate.controller');
 const {
-  validateGetCertificates,
-  validateGetCertificate,
+  validateGenerateCertificate,
+  validateAutoGenerate,
+  validateDownloadCertificate,
   validateVerifyCertificate,
+  validateRevokeCertificate,
 } = require('./certificate.validation');
 const { authenticate } = require('../../middlewares/auth.middleware');
+const { authorize } = require('../../middlewares/rbac.middleware');
+const ROLES = require('../../constants/roles.constants');
 
 const router = express.Router();
 
-// ─── Public Route ──────────────────────────────────────────────────
-// Certificate verification is public to allow employers/institutions to verify
-router.get(
-  '/verify/:certificateNumber',
-  validateVerifyCertificate,
-  certificateController.verifyCertificate
-);
+router.get('/verify/:certificateNumber', validateVerifyCertificate, certificateController.verifyCertificate);
 
-// ─── Protected Routes ─────────────────────────────────────────────
 router.use(authenticate);
 
-router.get('/', validateGetCertificates, certificateController.getMyCertificates);
-router.get('/:id', validateGetCertificate, certificateController.getCertificate);
+router.post('/generate', validateGenerateCertificate, certificateController.generateCertificate);
+router.get('/', certificateController.getMyCertificates);
+router.get('/:id', validateDownloadCertificate, certificateController.getCertificate);
+router.get('/:id/download', validateDownloadCertificate, certificateController.downloadCertificate);
+
+router.use(authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN));
+
+router.post('/admin/auto-generate/:programId', validateAutoGenerate, certificateController.autoGenerateForProgram);
+router.post('/admin/:id/revoke', validateRevokeCertificate, certificateController.revokeCertificate);
 
 module.exports = router;
