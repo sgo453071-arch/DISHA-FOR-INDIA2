@@ -341,8 +341,20 @@ Most endpoints require a **JWT Bearer Token**.
         description: 'Admin — User Management & Dashboard Statistics',
       },
       {
+        name: 'Attendance',
+        description: 'Volunteer Attendance Management',
+      },
+      {
         name: 'Health',
         description: 'Server health monitoring',
+      },
+      {
+        name: 'Programs',
+        description: 'Program Management',
+      },
+      {
+        name: 'Applications',
+        description: 'Volunteer Applications Management',
       },
     ],
   },
@@ -353,6 +365,9 @@ Most endpoints require a **JWT Bearer Token**.
     './src/docs/health.docs.js',
     './src/docs/user.docs.js',
     './src/docs/admin.docs.js',
+    './src/docs/program.docs.js',
+    './src/docs/application.docs.js',
+    './src/docs/attendance.docs.js',
   ],
 };
 

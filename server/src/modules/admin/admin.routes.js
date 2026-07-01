@@ -8,6 +8,7 @@ const {
 } = require('./admin.validation');
 const { authenticate } = require('../../middlewares/auth.middleware');
 const { isAdmin } = require('../../middlewares/rbac.middleware');
+const applicationRoutes = require('./application.routes');
 
 const router = express.Router();
 
@@ -26,5 +27,8 @@ router.patch('/users/:id/status', validateUpdateStatus, adminController.changeUs
 router.patch('/users/:id/role', validateUpdateRole, adminController.changeUserRole);
 router.patch('/users/:id/restore', validateUserId, adminController.restoreUser);
 router.delete('/users/:id', validateUserId, adminController.deleteUser);
+
+// ─── Application Management ──────────────────────────────────────
+router.use('/', applicationRoutes);
 
 module.exports = router;

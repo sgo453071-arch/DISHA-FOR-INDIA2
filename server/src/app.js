@@ -17,6 +17,9 @@ const notFoundHandler = require('./middlewares/notFound.middleware');
 const authRoutes = require('./modules/auth/auth.routes');
 const userRoutes = require('./modules/user/user.routes');
 const adminRoutes = require('./modules/admin/admin.routes');
+const programRoutes = require('./modules/program/program.routes');
+const applicationRoutes = require('./modules/application/application.routes');
+const attendanceRoutes = require('./modules/attendance/attendance.routes');
 const { successResponse } = require('./utils/response');
 
 const app = express();
@@ -83,6 +86,9 @@ app.get('/api/v1/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/programs', programRoutes);
+app.use('/api/v1/applications', applicationRoutes);
+app.use('/api/v1/attendance', attendanceRoutes);
 
 // ─────────────────────────────────────────────
 // 11. Swagger API Documentation
