@@ -3,6 +3,7 @@ const { generateProgramId, generateProgramSlug } = require('./program.utils');
 const { PROGRAM_STATUS, PROGRAM_MODE, PAGINATION } = require('./program.constants');
 const NotFoundError = require('../../utils/errors/NotFoundError');
 const ValidationError = require('../../utils/errors/ValidationError');
+const notificationService = require('../notification/notification.service');
 
 const ALLOWED_SORT_FIELDS = ['createdAt', 'startDate', 'registrationDeadline', 'title', 'status'];
 const ALLOWED_SORT_ORDERS = ['asc', 'desc'];
@@ -129,6 +130,16 @@ class ProgramService {
       updatedBy: userId,
     });
 
+    try {
+      await notificationService.sendInAppNotification('buildProgramUpdated', {
+        recipientId: program.createdBy.toString(),
+        programName: updatedProgram.title,
+        programId: updatedProgram._id.toString(),
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
+
     return { program: updatedProgram };
   }
 
@@ -216,6 +227,16 @@ class ProgramService {
 
     const publishedProgram = await programRepository.publish(programId);
 
+    try {
+      await notificationService.sendInAppNotification('buildProgramPublished', {
+        recipientId: program.createdBy.toString(),
+        programName: publishedProgram.title,
+        programId: publishedProgram._id.toString(),
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
+
     return { program: publishedProgram };
   }
 
@@ -231,6 +252,16 @@ class ProgramService {
     }
 
     const archivedProgram = await programRepository.archive(programId);
+
+    try {
+      await notificationService.sendInAppNotification('buildProgramCancelled', {
+        recipientId: program.createdBy.toString(),
+        programName: program.title,
+        programId: program._id.toString(),
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
 
     return { program: archivedProgram };
   }
@@ -328,6 +359,18 @@ class ProgramService {
     }
 
     const updatedProgram = await programRepository.updateStatus(programId, newStatus);
+
+    if (newStatus === PROGRAM_STATUS.CANCELLED) {
+      try {
+        await notificationService.sendInAppNotification('buildProgramCancelled', {
+          recipientId: program.createdBy.toString(),
+          programName: program.title,
+          programId: program._id.toString(),
+        });
+      } catch (_error) {
+        // Notification failure is non-blocking
+      }
+    }
 
     if (newStatus === PROGRAM_STATUS.COMPLETED) {
       try {

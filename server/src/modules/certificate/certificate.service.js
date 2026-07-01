@@ -17,6 +17,7 @@ const {
   ConflictError,
 } = require('../../utils/errors');
 const ROLES = require('../../constants/roles.constants');
+const notificationService = require('../notification/notification.service');
 
 class CertificateService {
   async generateCertificate(userId, programId, options = {}, issuedBy, host) {
@@ -128,6 +129,17 @@ class CertificateService {
       issuedAt: new Date(),
       issuedBy: issuedBy,
     });
+
+    try {
+      await notificationService.sendInAppNotification('buildCertificateGenerated', {
+        recipientId: userId,
+        programName: program.title,
+        certificateId: certificate._id.toString(),
+        certificateNumber,
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
 
     await certificate.populate('user', 'name email volunteerId');
     await certificate.populate('program', 'title programId');
@@ -304,6 +316,16 @@ class CertificateService {
 
     const revoked = await certificateRepository.revoke(id);
     await revoked.populate('user', 'name email volunteerId').populate('program', 'title programId');
+
+    try {
+      await notificationService.sendInAppNotification('buildCertificateRevoked', {
+        recipientId: revoked.user._id.toString(),
+        programName: revoked.program.title,
+        certificateId: revoked._id.toString(),
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
 
     return revoked;
   }

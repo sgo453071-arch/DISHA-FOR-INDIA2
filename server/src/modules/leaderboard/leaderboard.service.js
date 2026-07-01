@@ -7,8 +7,8 @@ const { LEADERBOARD_TYPE, MESSAGES, VALIDATION } = require('./leaderboard.consta
 const {
   NotFoundError,
 } = require('../../utils/errors');
-
 const Reward = require('../reward/reward.model');
+const notificationService = require('../notification/notification.service');
 
 class LeaderboardService {
   async _getUserStats(userId) {
@@ -54,6 +54,9 @@ class LeaderboardService {
       stats.totalCoins
     );
 
+    const previousEntry = await leaderboardRepository.findByUser(userId);
+    const previousRank = previousEntry?.currentRank || null;
+
     let entry = await leaderboardRepository.findByUser(userId);
     if (!entry) {
       entry = await leaderboardRepository.create({
@@ -81,6 +84,21 @@ class LeaderboardService {
         country: stats.country,
         lastCalculatedAt: new Date(),
       });
+    }
+
+    const updatedEntry = await leaderboardRepository.findByUser(userId);
+    const currentRank = updatedEntry?.currentRank || null;
+
+    if (previousRank && currentRank && currentRank < previousRank) {
+      try {
+        await notificationService.sendInAppNotification('buildRankIncreased', {
+          recipientId: userId,
+          newRank: currentRank,
+          leaderboardType: 'national',
+        });
+      } catch (_error) {
+        // Notification failure is non-blocking
+      }
     }
 
     return {

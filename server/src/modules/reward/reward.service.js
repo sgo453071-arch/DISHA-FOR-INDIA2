@@ -3,6 +3,7 @@ const { generateRewardId } = require('./reward.utils');
 const NotFoundError = require('../../utils/errors/NotFoundError');
 const leaderboardService = require('../leaderboard/leaderboard.service');
 const gamificationService = require('../leaderboard/gamification.service');
+const notificationService = require('../notification/notification.service');
 
 class RewardService {
   async getMyReward(userId) {
@@ -27,6 +28,40 @@ class RewardService {
       if (coins) updateData.currentCoins = (reward.currentCoins || 0) + coins;
       if (impactScore) updateData.currentImpactScore = (reward.currentImpactScore || 0) + impactScore;
       reward = await rewardRepository.update(userId, updateData);
+    }
+
+    try {
+      const notificationPromises = [];
+      if (coins) {
+        notificationPromises.push(
+          notificationService.sendInAppNotification('buildCoinsAwarded', {
+            recipientId: userId,
+            coins,
+            reason: rewardData.reason || 'Reward earned',
+          }).catch(() => {})
+        );
+      }
+      if (points) {
+        notificationPromises.push(
+          notificationService.sendInAppNotification('buildPointsAwarded', {
+            recipientId: userId,
+            points,
+            reason: rewardData.reason || 'Reward earned',
+          }).catch(() => {})
+        );
+      }
+      if (impactScore) {
+        notificationPromises.push(
+          notificationService.sendInAppNotification('buildImpactScoreUpdated', {
+            recipientId: userId,
+            impactScore,
+            totalImpact: reward.currentImpactScore,
+          }).catch(() => {})
+        );
+      }
+      await Promise.all(notificationPromises);
+    } catch (_error) {
+      // Notification failure is non-blocking
     }
 
     try {

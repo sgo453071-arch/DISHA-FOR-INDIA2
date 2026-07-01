@@ -12,6 +12,7 @@ const jwtUtils = require('../../utils/jwt');
 const passwordUtils = require('../../utils/password');
 const tokenUtils = require('../../utils/token');
 const { generateVolunteerId } = require('../../utils/volunteerId');
+const notificationService = require('../notification/notification.service');
 
 class AuthService {
   /**
@@ -51,6 +52,15 @@ class AuthService {
       role: ROLES.VOLUNTEER,
       status: STATUS.PENDING,
     });
+
+    try {
+      await notificationService.sendInAppNotification('buildWelcome', {
+        recipientId: user._id.toString(),
+        name: user.name,
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
 
     return user;
   }
@@ -223,6 +233,14 @@ class AuthService {
 
     // Update the password and clear reset fields (also revokes refresh token forcing all-session logout)
     await authRepository.updatePassword(user._id, hashedPassword);
+
+    try {
+      await notificationService.sendInAppNotification('buildPasswordChanged', {
+        recipientId: user._id.toString(),
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
 
     return {
       message: MESSAGES.PASSWORD_RESET_SUCCESS,

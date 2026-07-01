@@ -4,6 +4,7 @@ const { calculateProfileStrength } = require('./profileStrength.util');
 const { calculateVolunteerLevel, getVolunteerLevelBrackets } = require('./volunteerLevel.util');
 const NotFoundError = require('../../utils/errors/NotFoundError');
 const { ConflictError } = require('../../utils/errors');
+const notificationService = require('../notification/notification.service');
 
 class UserService {
   /**
@@ -74,6 +75,7 @@ class UserService {
     Object.assign(user, allowedData);
 
     // Recalculate and persist all progress fields
+    const previousCompletion = user.profileCompletion || 0;
     const completion = calculateProfileCompletion(user);
     const strength = calculateProfileStrength(completion);
     const level = calculateVolunteerLevel(user.points);
@@ -83,6 +85,17 @@ class UserService {
     user.volunteerLevel = level;
 
     await user.save();
+
+    if (completion === 100 && previousCompletion < 100) {
+      try {
+        await notificationService.sendInAppNotification('buildProfileCompleted', {
+          recipientId: user._id.toString(),
+          completionPercentage: completion,
+        });
+      } catch (_error) {
+        // Notification failure is non-blocking
+      }
+    }
 
     return { user };
   }

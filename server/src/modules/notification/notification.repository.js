@@ -11,6 +11,15 @@ class NotificationRepository {
   }
 
   /**
+   * Create multiple notifications in bulk.
+   * @param {array} notificationsData - Array of notification data.
+   * @returns {Promise<Array>} Created notifications.
+   */
+  async bulkCreate(notificationsData) {
+    return Notification.insertMany(notificationsData);
+  }
+
+  /**
    * Find a notification by ID.
    * @param {string} id - Notification ID.
    * @returns {Promise<Notification|null>} The notification document.
@@ -64,6 +73,18 @@ class NotificationRepository {
   }
 
   /**
+   * Find pending notifications that need to be sent.
+   * @param {object} options - Query options.
+   * @returns {Promise<Array>} Array of pending notifications.
+   */
+  async findPendingNotifications(options = {}) {
+    const { limit = 100 } = options;
+    return Notification.find({ status: 'pending', isDeleted: false })
+      .sort({ createdAt: 1 })
+      .limit(limit);
+  }
+
+  /**
    * Update a notification by ID.
    * @param {string} id - Notification ID.
    * @param {object} updateData - Data to update.
@@ -74,6 +95,33 @@ class NotificationRepository {
       new: true,
       runValidators: true,
     });
+  }
+
+  /**
+   * Mark a notification as sent.
+   * @param {string} id - Notification ID.
+   * @returns {Promise<Notification|null>} The updated notification.
+   */
+  async markAsSent(id) {
+    return Notification.findByIdAndUpdate(
+      id,
+      { status: 'sent', sentAt: new Date() },
+      { new: true, runValidators: true }
+    );
+  }
+
+  /**
+   * Mark a notification as failed.
+   * @param {string} id - Notification ID.
+   * @param {string} failureReason - Reason for failure.
+   * @returns {Promise<Notification|null>} The updated notification.
+   */
+  async markAsFailed(id, failureReason) {
+    return Notification.findByIdAndUpdate(
+      id,
+      { status: 'failed', failureReason },
+      { new: true, runValidators: true }
+    );
   }
 
   /**

@@ -6,6 +6,7 @@ const applicationRepository = require('../application/application.repository');
 const {
   NotFoundError,
 } = require('../../utils/errors');
+const notificationService = require('../notification/notification.service');
 
 class GamificationService {
   async _getUserStats(userId) {
@@ -111,6 +112,19 @@ class GamificationService {
       skipped: skippedBadges.length,
       badges: earnedBadges,
     };
+
+    try {
+      const notificationPromises = earnedBadges.map((badge) =>
+        notificationService.sendInAppNotification('buildBadgeEarned', {
+          recipientId: badge.user.toString(),
+          badgeName: badge.name,
+          badgeDescription: badge.description,
+        }).catch(() => {})
+      );
+      await Promise.all(notificationPromises);
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
   }
 
   async evaluateAchievements(userId) {
@@ -192,6 +206,19 @@ class GamificationService {
       skipped: skippedAchievements.length,
       achievements: updatedAchievements,
     };
+
+    try {
+      const notificationPromises = updatedAchievements.map((achievement) =>
+        notificationService.sendInAppNotification('buildAchievementUnlocked', {
+          recipientId: achievement.user.toString(),
+          achievementTitle: achievement.title,
+          achievementDescription: achievement.description,
+        }).catch(() => {})
+      );
+      await Promise.all(notificationPromises);
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
   }
 
   async calculateVolunteerLevel(userId) {
@@ -213,6 +240,20 @@ class GamificationService {
 
     if (currentLevel) {
       nextLevel = await gamificationRepository.findNextLevel(currentLevel.order);
+    }
+
+    const userDoc = await userRepository.findById(userId);
+    const previousLevel = userDoc?.volunteerLevel || null;
+    if (currentLevel && previousLevel && currentLevel.title !== previousLevel) {
+      try {
+        await notificationService.sendInAppNotification('buildVolunteerLevelUp', {
+          recipientId: userId,
+          newLevel: currentLevel.title,
+          previousLevel,
+        });
+      } catch (_error) {
+        // Notification failure is non-blocking
+      }
     }
 
     return {

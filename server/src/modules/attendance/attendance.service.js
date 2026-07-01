@@ -13,6 +13,7 @@ const {
 } = require('../../utils/errors');
 const ROLES = require('../../constants/roles.constants');
 const gamificationService = require('../leaderboard/gamification.service');
+const notificationService = require('../notification/notification.service');
 
 class AttendanceService {
   /**
@@ -160,6 +161,17 @@ class AttendanceService {
       markedBy: userId,
     });
 
+    try {
+      await notificationService.sendInAppNotification('buildCheckInSuccessful', {
+        recipientId: userId,
+        programName: program.title,
+        attendanceId: checkInRecord._id.toString(),
+        checkInTime: checkInRecord.checkInTime,
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
+
     return checkInRecord;
   }
 
@@ -190,6 +202,18 @@ class AttendanceService {
       checkOutTime,
       totalHours
     );
+
+    try {
+      const program = await Program.findById(attendance.program.toString());
+      await notificationService.sendInAppNotification('buildCheckOutSuccessful', {
+        recipientId: attUserId.toString(),
+        programName: program?.title || 'Program',
+        attendanceId: attendance._id.toString(),
+        totalHours,
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
 
     try {
       await gamificationService.evaluateAll(attUserId.toString());
@@ -296,6 +320,20 @@ class AttendanceService {
     }
 
     const updated = await attendanceRepository.updateAttendance(id, updatedFields);
+
+    try {
+      const program = await Program.findById(updated.program.toString());
+      const editor = await User.findById(adminId).select('name');
+      await notificationService.sendInAppNotification('buildAttendanceEdited', {
+        recipientId: attendance.user.toString(),
+        programName: program?.title || 'Program',
+        attendanceId: attendance._id.toString(),
+        updatedBy: editor?.name || 'Administrator',
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
+
     return updated;
   }
 

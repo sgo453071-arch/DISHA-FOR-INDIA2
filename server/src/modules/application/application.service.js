@@ -6,6 +6,7 @@ const { PROGRAM_STATUS } = require('../program/program.constants');
 const NotFoundError = require('../../utils/errors/NotFoundError');
 const ValidationError = require('../../utils/errors/ValidationError');
 const ConflictError = require('../../utils/errors/ConflictError');
+const notificationService = require('../notification/notification.service');
 
 class ApplicationService {
   async applyToProgram(userId, programId, answers) {
@@ -45,6 +46,17 @@ class ApplicationService {
       joinedAt: new Date(),
     });
 
+    try {
+      await notificationService.sendInAppNotification('buildApplicationSubmitted', {
+        recipientId: userId,
+        programName: program.title,
+        programId: programId.toString(),
+        applicationId: application._id.toString(),
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
+
     return { application };
   }
 
@@ -80,6 +92,17 @@ class ApplicationService {
     }
 
     const withdrawnApplication = await applicationRepository.withdraw(applicationId, userId);
+
+    try {
+      const program = application.program || (await programRepository.findById(application.program.toString()));
+      await notificationService.sendInAppNotification('buildApplicationWithdrawn', {
+        recipientId: userId,
+        programName: program?.title || 'Program',
+        applicationId: applicationId.toString(),
+      });
+    } catch (_error) {
+      // Notification failure is non-blocking
+    }
 
     return { application: withdrawnApplication };
   }

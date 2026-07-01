@@ -1,12 +1,13 @@
 const notificationRepository = require('./notification.repository');
 const { generateNotificationId, notificationFormatter } = require('./notification.utils');
 const { NOTIFICATION_TYPES, PRIORITY, CHANNEL, STATUS, MESSAGES, DEFAULTS } = require('./notification.constants');
+const templates = require('./notification.templates');
 const NotFoundError = require('../../utils/errors/NotFoundError');
+const ValidationError = require('../../utils/errors/ValidationError');
 
 class NotificationService {
   /**
    * Create a new notification.
-   * Business logic for Module 9.2.
    * @param {object} notificationData - Notification data.
    * @returns {Promise<object>} Created notification.
    */
@@ -17,11 +18,99 @@ class NotificationService {
       status: STATUS.PENDING,
       priority: notificationData.priority || DEFAULTS.PRIORITY,
       channel: notificationData.channel || DEFAULTS.CHANNEL,
-      isRead: DEFAULTS.IS_READ,
+      isRead: notificationData.isRead !== undefined ? notificationData.isRead : DEFAULTS.IS_READ,
     });
 
     return {
       notification: notificationFormatter(notification),
+      message: MESSAGES.NOTIFICATION_CREATED,
+    };
+  }
+
+  /**
+   * Build a notification payload from a template without persisting it.
+   * @param {string} templateKey - Template key from notification.templates.
+   * @param {object} templateData - Data required by the template.
+   * @returns {object} Notification payload.
+   */
+  buildNotification(templateKey, templateData = {}) {
+    if (!templates[templateKey]) {
+      throw new ValidationError(`Notification template '${templateKey}' not found`);
+    }
+
+    const payload = templates[templateKey](templateData);
+
+    if (!payload.recipient) {
+      throw new ValidationError('Notification recipient is required');
+    }
+
+    return payload;
+  }
+
+  /**
+   * Create and persist an in-app notification using a template.
+   * @param {string} templateKey - Template key from notification.templates.
+   * @param {object} templateData - Data required by the template.
+   * @param {object} overrides - Optional field overrides.
+   * @returns {Promise<object>} Created notification.
+   */
+  async sendInAppNotification(templateKey, templateData = {}, overrides = {}) {
+    const payload = this.buildNotification(templateKey, templateData);
+
+    const notification = await notificationRepository.create({
+      ...payload,
+      ...overrides,
+      notificationId: generateNotificationId(),
+      status: STATUS.SENT,
+      sentAt: new Date(),
+    });
+
+    return {
+      notification: notificationFormatter(notification),
+      message: MESSAGES.NOTIFICATION_CREATED,
+    };
+  }
+
+  /**
+   * Trigger a notification event.
+   * Alias for sendInAppNotification to provide a semantic API for other modules.
+   * @param {string} templateKey - Template key from notification.templates.
+   * @param {object} templateData - Data required by the template.
+   * @param {object} overrides - Optional field overrides.
+   * @returns {Promise<object>} Created notification.
+   */
+  async triggerNotification(templateKey, templateData = {}, overrides = {}) {
+    return this.sendInAppNotification(templateKey, templateData, overrides);
+  }
+
+  /**
+   * Send bulk in-app notifications to multiple recipients using a template.
+   * @param {Array<string>} recipientIds - Array of user IDs.
+   * @param {string} templateKey - Template key from notification.templates.
+   * @param {object} templateData - Data required by the template.
+   * @param {object} overrides - Optional field overrides.
+   * @returns {Promise<object>} Created notifications.
+   */
+  async sendBulkInAppNotification(recipientIds, templateKey, templateData = {}, overrides = {}) {
+    if (!Array.isArray(recipientIds) || recipientIds.length === 0) {
+      throw new ValidationError('At least one recipient is required');
+    }
+
+    const notifications = recipientIds.map((recipientId) => {
+      const payload = templates[templateKey]({ ...templateData, recipientId });
+      return {
+        ...payload,
+        ...overrides,
+        notificationId: generateNotificationId(),
+        status: STATUS.SENT,
+        sentAt: new Date(),
+      };
+    });
+
+    const createdNotifications = await notificationRepository.bulkCreate(notifications);
+
+    return {
+      notifications: createdNotifications.map(notificationFormatter),
       message: MESSAGES.NOTIFICATION_CREATED,
     };
   }
@@ -141,6 +230,29 @@ class NotificationService {
 
     return {
       message: MESSAGES.NOTIFICATION_DELETED,
+    };
+  }
+
+  /**
+   * Find pending notifications for processing.
+   * @param {object} options - Query options.
+   * @returns {Promise<Array>} Array of pending notifications.
+   */
+  async findPendingNotifications(options = {}) {
+    return notificationRepository.findPendingNotifications(options);
+  }
+
+  /**
+   * Mark a notification as sent.
+   * @param {string} notificationId - Notification ID.
+   * @returns {Promise<object>} Updated notification.
+   */
+  async markNotificationAsSent(notificationId) {
+    const notification = await notificationRepository.markAsSent(notificationId);
+
+    return {
+      notification: notificationFormatter(notification),
+      message: MESSAGES.NOTIFICATION_UPDATED,
     };
   }
 }
