@@ -13,10 +13,10 @@ const ProgramModal = ({ isOpen, onClose, onSuccess, editData }) => {
     mode: editData?.mode || 'Offline',
     startDate: editData?.startDate ? new Date(editData.startDate).toISOString().split('T')[0] : '',
     endDate: editData?.endDate ? new Date(editData.endDate).toISOString().split('T')[0] : '',
-    applicationDeadline: editData?.applicationDeadline ? new Date(editData.applicationDeadline).toISOString().split('T')[0] : '',
-    locationCity: editData?.location?.city || '',
-    locationState: editData?.location?.state || '',
-    locationAddress: editData?.location?.address || '',
+    registrationDeadline: editData?.registrationDeadline ? new Date(editData.registrationDeadline).toISOString().split('T')[0] : '',
+    city: editData?.city || editData?.location?.city || '',
+    state: editData?.state || editData?.location?.state || '',
+    address: editData?.address || editData?.location?.address || '',
     maxVolunteers: editData?.maxVolunteers || 50,
     status: editData?.status || 'DRAFT',
   });
@@ -39,15 +39,16 @@ const ProgramModal = ({ isOpen, onClose, onSuccess, editData }) => {
       mode: formData.mode,
       startDate: formData.startDate,
       endDate: formData.endDate,
-      applicationDeadline: formData.applicationDeadline,
-      location: {
-        city: formData.locationCity,
-        state: formData.locationState,
-        address: formData.locationAddress,
-      },
+      registrationDeadline: formData.registrationDeadline,
+      city: formData.city,
+      state: formData.state,
+      address: formData.address,
       maxVolunteers: Number(formData.maxVolunteers),
-      status: formData.status,
     };
+
+    if (isEditing) {
+      payload.status = formData.status;
+    }
 
     try {
       if (isEditing) {
@@ -135,8 +136,8 @@ const ProgramModal = ({ isOpen, onClose, onSuccess, editData }) => {
               <input required type="date" name="endDate" value={formData.endDate} onChange={handleChange} className="form-control" />
             </div>
             <div>
-              <label className="form-label">Application Deadline *</label>
-              <input required type="date" name="applicationDeadline" value={formData.applicationDeadline} onChange={handleChange} className="form-control" />
+              <label className="form-label">Registration Deadline *</label>
+              <input required type="date" name="registrationDeadline" value={formData.registrationDeadline} onChange={handleChange} className="form-control" />
             </div>
             <div>
               <label className="form-label">Max Volunteers *</label>
@@ -148,30 +149,32 @@ const ProgramModal = ({ isOpen, onClose, onSuccess, editData }) => {
               <>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label className="form-label">Location Address</label>
-                  <input type="text" name="locationAddress" value={formData.locationAddress} onChange={handleChange} className="form-control" placeholder="123 Main St" />
+                  <input type="text" name="address" value={formData.address} onChange={handleChange} className="form-control" placeholder="123 Main St" />
                 </div>
                 <div>
                   <label className="form-label">City</label>
-                  <input type="text" name="locationCity" value={formData.locationCity} onChange={handleChange} className="form-control" placeholder="Mumbai" />
+                  <input type="text" name="city" value={formData.city} onChange={handleChange} className="form-control" placeholder="Mumbai" />
                 </div>
                 <div>
                   <label className="form-label">State</label>
-                  <input type="text" name="locationState" value={formData.locationState} onChange={handleChange} className="form-control" placeholder="Maharashtra" />
+                  <input type="text" name="state" value={formData.state} onChange={handleChange} className="form-control" placeholder="Maharashtra" />
                 </div>
               </>
             )}
 
-            {/* Status */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label className="form-label">Publish Status</label>
-              <select name="status" value={formData.status} onChange={handleChange} className="form-control" style={{ maxWidth: '200px' }}>
-                <option value="DRAFT">Draft</option>
-                <option value="PUBLISHED">Published</option>
-                <option value="ONGOING">Ongoing</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="ARCHIVED">Archived</option>
-              </select>
-            </div>
+            {/* Status (Only on Edit) */}
+            {isEditing && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label className="form-label">Publish Status</label>
+                <select name="status" value={formData.status} onChange={handleChange} className="form-control" style={{ maxWidth: '200px' }}>
+                  <option value="DRAFT">Draft</option>
+                  <option value="PUBLISHED">Published</option>
+                  <option value="ONGOING">Ongoing</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="ARCHIVED">Archived</option>
+                </select>
+              </div>
+            )}
 
           </form>
         </div>

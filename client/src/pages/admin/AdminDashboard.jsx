@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Calendar, Clock, Activity, TrendingUp, Target } from 'lucide-react';
 import { getDashboardStatistics } from '../../services/adminService';
+import { getAllPrograms } from '../../services/programsService';
 import SkeletonLoader from '../../components/volunteer/SkeletonLoader';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
+  const [activePrograms, setActivePrograms] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -12,11 +14,20 @@ const AdminDashboard = () => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const res = await getDashboardStatistics();
-        if (res.success) {
-          setStats(res.data);
+        const [statsRes, programsRes] = await Promise.all([
+          getDashboardStatistics(),
+          getAllPrograms()
+        ]);
+        
+        if (statsRes.success) {
+          setStats(statsRes.data);
         } else {
           setError('Failed to load dashboard statistics.');
+        }
+
+        if (programsRes.success && programsRes.data?.programs) {
+          const active = programsRes.data.programs.filter(p => p.status === 'PUBLISHED' || p.status === 'ONGOING').length;
+          setActivePrograms(active);
         }
       } catch (err) {
         console.error('Error fetching admin stats:', err);
@@ -61,7 +72,7 @@ const AdminDashboard = () => {
           </div>
           <div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-heading)' }}>
-              {stats.activePrograms || 0}
+              {activePrograms}
             </div>
             <div style={{ fontSize: '0.85rem', color: 'var(--color-body)' }}>Active Programs</div>
           </div>
@@ -74,7 +85,7 @@ const AdminDashboard = () => {
           </div>
           <div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-heading)' }}>
-              {stats.totalHoursLogged || 0}
+              {stats.totalHoursLogged || '--'}
             </div>
             <div style={{ fontSize: '0.85rem', color: 'var(--color-body)' }}>Hours Volunteered</div>
           </div>
@@ -87,7 +98,7 @@ const AdminDashboard = () => {
           </div>
           <div>
             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-heading)' }}>
-              {stats.newSignupsThisMonth || 0}
+              {stats.newThisMonth || 0}
             </div>
             <div style={{ fontSize: '0.85rem', color: 'var(--color-body)' }}>Signups This Month</div>
           </div>

@@ -67,8 +67,8 @@ export const getAdminApplicationStats = async () => {
  * @param {Array<string>} applicationIds
  * @param {string} status - e.g., 'APPROVED', 'REJECTED'
  */
-export const bulkUpdateApplications = async (applicationIds, status) => {
-  const res = await api.post('/admin/applications/bulk', { applicationIds, status });
+export const bulkUpdateApplications = async (ids, status) => {
+  const res = await api.post('/admin/applications/bulk', { ids, status });
   return res;
 };
 
