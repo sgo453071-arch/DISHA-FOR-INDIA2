@@ -18,6 +18,7 @@ router.get('/verify/:certificateNumber', validateVerifyCertificate, certificateC
 router.use(authenticate);
 
 router.post('/generate', validateGenerateCertificate, certificateController.generateCertificate);
+router.get('/me', certificateController.getMyCertificates);
 router.get('/', certificateController.getMyCertificates);
 router.get('/:id', validateDownloadCertificate, certificateController.getCertificate);
 router.get('/:id/download', validateDownloadCertificate, certificateController.downloadCertificate);

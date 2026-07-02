@@ -33,7 +33,15 @@ export const checkIn = async (programId) => {
  */
 export const checkOut = async (attendanceId) => {
   const res = await api.patch(`/attendance/${attendanceId}/check-out`);
-  return res; // { success, data: { attendance } }
+  return res;
+};
+
+/**
+ * Admin: Get attendance list for admin dashboard.
+ */
+export const adminGetAttendance = async () => {
+  const res = await api.get('/attendance');
+  return res;
 };
 
 export default {
@@ -41,4 +49,5 @@ export default {
   getAttendanceHistory,
   checkIn,
   checkOut,
+  adminGetAttendance,
 };

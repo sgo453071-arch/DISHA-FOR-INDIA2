@@ -8,37 +8,18 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Set the Bearer token in Axios default headers
-  const setAuthHeader = (token) => {
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      localStorage.setItem('accessToken', token);
-    } else {
-      delete api.defaults.headers.common['Authorization'];
-      localStorage.removeItem('accessToken');
-    }
-  };
-
-  // Check user session status on application mount
   const checkAuth = async () => {
     try {
-      // 1. Try using local storage token if present
-      const savedToken = localStorage.getItem('accessToken');
-      if (savedToken) {
-        setAuthHeader(savedToken);
-      }
-
-      // 2. Fetch current profile from backend (/auth/me)
       const res = await api.get('/auth/me');
       if (res.success && res.data?.user) {
         setUser(res.data.user);
       } else {
-        // Fallback check if auth/me fails or returns empty
         setUser(null);
       }
     } catch (err) {
-      // Clean up token if it's invalid/expired
-      setAuthHeader(null);
+      if (err.status !== 401) {
+        console.error('Auth check error:', err);
+      }
       setUser(null);
     } finally {
       setLoading(false);
@@ -49,18 +30,14 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  // Login handler
   const login = async (email, password) => {
     setError(null);
     setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password });
       if (res.success && res.data) {
-        const { user: loggedInUser, accessToken } = res.data;
+        const { user: loggedInUser } = res.data;
         setUser(loggedInUser);
-        if (accessToken) {
-          setAuthHeader(accessToken);
-        }
         return { success: true, user: loggedInUser };
       }
       throw new Error(res.message || 'Login failed');
@@ -73,7 +50,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Register handler
   const register = async (userData) => {
     setError(null);
     setLoading(true);
@@ -81,7 +57,6 @@ export const AuthProvider = ({ children }) => {
       const res = await api.post('/auth/register', userData);
       if (res.success && res.data) {
         const { user: registeredUser } = res.data;
-        // Optionally auto-login if the server returns token, or require redirecting to login page
         return { success: true, user: registeredUser };
       }
       throw new Error(res.message || 'Registration failed');
@@ -94,7 +69,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout handler
   const logout = async () => {
     setLoading(true);
     try {
@@ -103,12 +77,10 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error on backend:', err);
     } finally {
       setUser(null);
-      setAuthHeader(null);
       setLoading(false);
     }
   };
 
-  // Refresh user profile details (useful after joining programs, completing tasks, earning rewards)
   const refreshUser = async () => {
     try {
       const res = await api.get('/auth/me');

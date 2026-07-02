@@ -32,6 +32,11 @@ const { successResponse } = require('./utils/response');
 const app = express();
 
 // ─────────────────────────────────────────────
+// Trust proxy for proper IP detection behind reverse proxy (Render)
+// ─────────────────────────────────────────────
+app.set('trust proxy', 1);
+
+// ─────────────────────────────────────────────
 // 1. Security Headers (Helmet)
 // ─────────────────────────────────────────────
 app.use(helmet(helmetConfig));

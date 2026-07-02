@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Users, FileCheck, Search, Filter, Shield } from 'lucide-react';
-import { getApplicationsStats, getApplications } from '../../../services/applicationsService';
+import { getApplicationStats, getApplications } from '../../../services/applicationsService';
 import StatusBadge from '../../../components/volunteer/StatusBadge';
 import Pagination from '../../../components/volunteer/Pagination';
 import SkeletonLoader from '../../../components/volunteer/SkeletonLoader';

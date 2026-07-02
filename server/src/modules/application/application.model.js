@@ -69,11 +69,11 @@ const applicationSchema = new mongoose.Schema(
   }
 );
 
-applicationSchema.index({ user: 1, isDeleted: false });
-applicationSchema.index({ program: 1, isDeleted: false });
+// ─── Compound Indexes ────────────────────────────────────────────────
+applicationSchema.index({ user: 1 });
+applicationSchema.index({ program: 1 });
 applicationSchema.index({ status: 1 });
 applicationSchema.index({ appliedAt: -1 });
-applicationSchema.index({ applicationId: 1 }, { unique: true, sparse: true });
 
 applicationSchema.set('toJSON', {
   transform: function (doc, ret) {
