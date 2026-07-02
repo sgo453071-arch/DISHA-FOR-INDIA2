@@ -10,7 +10,11 @@ const helmetConfig = {
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:'],
-      connectSrc: ["'self'"],
+      connectSrc: [
+  "'self'",
+  "https://disha-frontend.onrender.com",
+  "https://disha-for-india.onrender.com",
+],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
