@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Home, Calendar, Award, Trophy, LogOut, Menu, X } from 'lucide-react';
+import {
+  Shield, Home, Calendar, Award, Trophy, LogOut, Menu, X,
+  LayoutDashboard, Users, ClipboardList, BarChart2, UserCheck, Settings
+} from 'lucide-react';
+
+const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'COORDINATOR'];
 
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
@@ -9,25 +14,170 @@ const DashboardLayout = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const isAdmin = ADMIN_ROLES.includes(user?.role?.toUpperCase());
+
   const handleLogout = async () => {
+    // Clear stored token on logout
+    localStorage.removeItem('authToken');
     await logout();
     navigate('/');
   };
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: <Home size={18} /> },
-    { name: 'Opportunities', path: '/programs', icon: <Calendar size={18} /> },
-    { name: 'Leaderboard', path: '/leaderboard', icon: <Trophy size={18} /> },
-    { name: 'Certificates', path: '/certificates', icon: <Award size={18} /> },
+  const volunteerNavItems = [
+    { name: 'Dashboard',     path: '/dashboard',   icon: <Home size={18} /> },
+    { name: 'Opportunities', path: '/programs',     icon: <Calendar size={18} /> },
+    { name: 'Leaderboard',   path: '/leaderboard',  icon: <Trophy size={18} /> },
+    { name: 'Certificates',  path: '/certificates', icon: <Award size={18} /> },
   ];
 
-  const profileName = user?.name || 'Volunteer';
-  const profileLevel = user?.volunteerLevel || 'Beginner';
-  const profilePoints = user?.points ?? 120;
+  const adminNavItems = [
+    { name: 'Dashboard',     path: '/admin/dashboard',    icon: <LayoutDashboard size={18} /> },
+    { name: 'Programs',      path: '/admin/programs',     icon: <Calendar size={18} /> },
+    { name: 'Applications',  path: '/admin/applications', icon: <ClipboardList size={18} /> },
+    { name: 'Attendance',    path: '/admin/attendance',   icon: <UserCheck size={18} /> },
+    { name: 'Analytics',     path: '/admin/analytics',    icon: <BarChart2 size={18} /> },
+    { name: 'Volunteers',    path: '/admin/users',        icon: <Users size={18} /> },
+  ];
+
+  const navItems = isAdmin ? adminNavItems : volunteerNavItems;
+
+  const profileName   = user?.name || 'Volunteer';
+  const profileRole   = user?.role || 'VOLUNTEER';
+  const profilePoints = user?.points ?? 0;
+
+  const SidebarContent = () => (
+    <>
+      {/* Header/Logo */}
+      <div style={{
+        height: 'var(--navbar-height)',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 1.5rem',
+        borderBottom: '1px solid var(--color-border)'
+      }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.05rem', color: 'var(--color-primary)' }}>
+          <span style={{
+            display: 'flex',
+            padding: '0.35rem',
+            borderRadius: '6px',
+            background: isAdmin ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'var(--gradient-primary)',
+            color: '#ffffff'
+          }}>
+            <Shield size={16} />
+          </span>
+          {isAdmin ? 'DFI ADMIN' : 'DFI VOLUNTEER'}
+        </Link>
+      </div>
+
+      {/* User Mini Profile */}
+      <div style={{
+        padding: '1.25rem 1.5rem',
+        borderBottom: '1px solid var(--color-border)',
+        backgroundColor: isAdmin ? 'rgba(124, 58, 237, 0.04)' : '#F8FAFC'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.6rem' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: isAdmin ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'var(--gradient-primary)',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 700,
+            fontSize: '1rem'
+          }}>
+            {profileName.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h4 style={{ fontSize: '0.9rem', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+              {profileName}
+            </h4>
+            <span style={{
+              display: 'inline-block',
+              fontSize: '0.65rem',
+              padding: '0.15rem 0.5rem',
+              borderRadius: '999px',
+              background: isAdmin ? 'rgba(124,58,237,0.12)' : 'rgba(37,99,235,0.10)',
+              color: isAdmin ? '#7c3aed' : 'var(--color-primary)',
+              fontWeight: 600,
+              marginTop: '0.2rem'
+            }}>
+              {profileRole}
+            </span>
+          </div>
+        </div>
+        {!isAdmin && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--color-body)' }}>
+            <span>Score:</span>
+            <strong style={{ color: 'var(--color-primary)' }}>{profilePoints} pts</strong>
+          </div>
+        )}
+      </div>
+
+      {/* Nav Links */}
+      <nav style={{ flex: 1, padding: '1.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+          return (
+            <Link
+              key={item.name}
+              to={item.path}
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                color: isActive
+                  ? (isAdmin ? '#7c3aed' : 'var(--color-primary)')
+                  : 'var(--color-body)',
+                backgroundColor: isActive
+                  ? (isAdmin ? 'rgba(124,58,237,0.08)' : 'rgba(37,99,235,0.05)')
+                  : 'transparent',
+                fontWeight: isActive ? 600 : 500,
+                transition: 'var(--transition-fast)',
+                textDecoration: 'none',
+              }}
+            >
+              {item.icon}
+              <span>{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Logout */}
+      <div style={{ padding: '1rem 0.75rem', borderTop: '1px solid var(--color-border)' }}>
+        <button
+          onClick={handleLogout}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            width: '100%',
+            padding: '0.75rem 1rem',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--color-error)',
+            fontWeight: 600,
+            textAlign: 'left',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <LogOut size={18} />
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </>
+  );
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--color-bg)' }}>
-      {/* 1. Sidebar for Desktop */}
+      {/* Desktop Sidebar */}
       <aside style={{
         width: 'var(--sidebar-width)',
         backgroundColor: 'var(--color-card)',
@@ -38,123 +188,20 @@ const DashboardLayout = () => {
         top: 0,
         bottom: 0,
         left: 0,
-        zIndex: 90
+        zIndex: 90,
       }} className="desktop-sidebar">
-        {/* Header/Logo */}
-        <div style={{
-          height: 'var(--navbar-height)',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 1.5rem',
-          borderBottom: '1px solid var(--color-border)'
-        }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
-            <span style={{
-              display: 'flex',
-              padding: '0.35rem',
-              borderRadius: '6px',
-              background: 'var(--gradient-primary)',
-              color: '#ffffff'
-            }}>
-              <Shield size={16} />
-            </span>
-            DFI VOLUNTEER
-          </Link>
-        </div>
-
-        {/* User Mini Profile */}
-        <div style={{
-          padding: '1.25rem 1.5rem',
-          borderBottom: '1px solid var(--color-border)',
-          backgroundColor: '#F8FAFC'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--color-primary)',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700
-            }}>
-              {profileName.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <h4 style={{ fontSize: '0.9rem', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
-                {profileName}
-              </h4>
-              <span className="badge badge-blue" style={{ fontSize: '0.65rem', padding: '0.1rem 0.5rem', marginTop: '0.2rem' }}>
-                {profileLevel}
-              </span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--color-body)' }}>
-            <span>Score:</span>
-            <strong style={{ color: 'var(--color-primary)' }}>{profilePoints} pts</strong>
-          </div>
-        </div>
-
-        {/* Links Navigation */}
-        <nav style={{ flex: 1, padding: '1.5rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.75rem 1rem',
-                  borderRadius: 'var(--radius-md)',
-                  color: isActive ? 'var(--color-primary)' : 'var(--color-body)',
-                  backgroundColor: isActive ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
-                  fontWeight: isActive ? 600 : 500,
-                  transition: 'var(--transition-fast)'
-                }}
-              >
-                {item.icon}
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Logout Bottom Section */}
-        <div style={{ padding: '1rem 0.75rem', borderTop: '1px solid var(--color-border)' }}>
-          <button
-            onClick={handleLogout}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              width: '100%',
-              padding: '0.75rem 1rem',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--color-error)',
-              fontWeight: 600,
-              textAlign: 'left'
-            }}
-          >
-            <LogOut size={18} />
-            <span>Sign Out</span>
-          </button>
-        </div>
+        <SidebarContent />
       </aside>
 
-      {/* 2. Main Content Wrapper */}
+      {/* Main Content Wrapper */}
       <div style={{
         flex: 1,
         marginLeft: 'var(--sidebar-width)',
         display: 'flex',
         flexDirection: 'column',
-        minWidth: 0
+        minWidth: 0,
       }} className="main-content-wrapper">
-        {/* Mobile Header Bar */}
+        {/* Mobile Header */}
         <header className="glass" style={{
           height: 'var(--navbar-height)',
           display: 'flex',
@@ -164,7 +211,7 @@ const DashboardLayout = () => {
           borderBottom: '1px solid var(--color-border)',
           position: 'sticky',
           top: 0,
-          zIndex: 80
+          zIndex: 80,
         }}>
           <div style={{ display: 'none' }} className="mobile-menu-trigger">
             <button onClick={() => setMobileMenuOpen(true)} style={{ color: 'var(--color-heading)' }}>
@@ -172,35 +219,37 @@ const DashboardLayout = () => {
             </button>
           </div>
 
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
-            {navItems.find((item) => item.path === location.pathname)?.name || 'Dashboard'}
+          <h2 style={{ fontSize: '1.15rem', margin: 0 }}>
+            {navItems.find((item) => location.pathname.startsWith(item.path))?.name || (isAdmin ? 'Admin Panel' : 'Dashboard')}
           </h2>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span className="badge badge-green" style={{ fontSize: '0.75rem' }}>
-              ✦ Live Portal
+            <span style={{
+              fontSize: '0.75rem',
+              padding: '0.25rem 0.75rem',
+              borderRadius: '999px',
+              background: isAdmin ? 'rgba(124,58,237,0.12)' : 'rgba(16,185,129,0.12)',
+              color: isAdmin ? '#7c3aed' : '#059669',
+              fontWeight: 600
+            }}>
+              {isAdmin ? '⚙ Admin Mode' : '✦ Live Portal'}
             </span>
           </div>
         </header>
 
         {/* Main Content Area */}
-        <main className="container" style={{ padding: '2rem 1.5rem', flex: 1 }}>
+        <main style={{ padding: '2rem 1.5rem', flex: 1 }}>
           <Outlet />
         </main>
       </div>
 
-      {/* 3. Mobile Navigation Menu Overlay */}
+      {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 110, display: 'flex'
-        }}>
-          {/* Backdrop */}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 110, display: 'flex' }}>
           <div
             onClick={() => setMobileMenuOpen(false)}
-            style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }}
-          ></div>
-
-          {/* Drawer Content */}
+            style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(4px)' }}
+          />
           <div style={{
             position: 'relative',
             width: '280px',
@@ -209,76 +258,22 @@ const DashboardLayout = () => {
             display: 'flex',
             flexDirection: 'column',
             boxShadow: 'var(--shadow-xl)',
-            padding: '1.5rem'
           }} className="animate-slide-up">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, color: 'var(--color-primary)' }}>
-                <Shield size={20} /> DFI
-              </Link>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '1rem 1.5rem' }}>
               <button onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--color-heading)' }}>
                 <X size={24} />
               </button>
             </div>
-
-            {/* Nav List */}
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-              {navItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      padding: '0.75rem 1rem',
-                      borderRadius: 'var(--radius-md)',
-                      color: isActive ? 'var(--color-primary)' : 'var(--color-body)',
-                      backgroundColor: isActive ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
-                      fontWeight: isActive ? 600 : 500
-                    }}
-                  >
-                    {item.icon}
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <button
-              onClick={handleLogout}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--color-error)',
-                fontWeight: 600,
-                marginTop: 'auto'
-              }}
-            >
-              <LogOut size={18} />
-              <span>Sign Out</span>
-            </button>
+            <SidebarContent />
           </div>
         </div>
       )}
 
-      {/* CSS adjustments for sidebar responsive visibility */}
       <style>{`
         @media (max-width: 768px) {
-          .desktop-sidebar {
-            display: none !important;
-          }
-          .main-content-wrapper {
-            margin-left: 0 !important;
-          }
-          .mobile-menu-trigger {
-            display: block !important;
-          }
+          .desktop-sidebar { display: none !important; }
+          .main-content-wrapper { margin-left: 0 !important; }
+          .mobile-menu-trigger { display: block !important; }
         }
       `}</style>
     </div>

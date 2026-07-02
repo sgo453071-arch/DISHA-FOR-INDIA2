@@ -26,8 +26,10 @@ class AuthController {
     setAccessTokenCookie(res, accessToken);
     setRefreshTokenCookie(res, refreshToken);
 
+    // Also return token in body for cross-origin deployments where cookies may not persist
     return successResponse(res, 200, MESSAGES.LOGIN_SUCCESS, {
       user,
+      token: accessToken,
     });
   } catch (error) {
     return next(error);
