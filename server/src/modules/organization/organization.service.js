@@ -7,6 +7,7 @@ const {
   ALLOWED_SORT_FIELDS,
   ALLOWED_SORT_ORDERS,
 } = require('./organization.constants');
+const User = require('../user/user.model');
 const NotFoundError = require('../../utils/errors/NotFoundError');
 const ValidationError = require('../../utils/errors/ValidationError');
 
@@ -223,6 +224,114 @@ class OrganizationService {
         hasPreviousPage: validPage > 1,
       },
     };
+  }
+
+  async approveOrganization(adminId, organizationId, reviewNotes) {
+    const organization = await organizationRepository.findById(organizationId);
+    if (!organization) {
+      throw new NotFoundError(MESSAGES.ORGANIZATION_NOT_FOUND);
+    }
+    const updated = await organizationRepository.changeStatus(
+      organization._id,
+      VERIFICATION_STATUS.VERIFIED,
+      adminId,
+      reviewNotes
+    );
+    return { organization: updated, message: MESSAGES.ORGANIZATION_APPROVED };
+  }
+
+  async rejectOrganization(adminId, organizationId, rejectionReason, reviewNotes) {
+    const organization = await organizationRepository.findById(organizationId);
+    if (!organization) {
+      throw new NotFoundError(MESSAGES.ORGANIZATION_NOT_FOUND);
+    }
+    const updated = await organizationRepository.changeStatus(
+      organization._id,
+      VERIFICATION_STATUS.REJECTED,
+      adminId,
+      reviewNotes,
+      rejectionReason
+    );
+    return { organization: updated, message: MESSAGES.ORGANIZATION_REJECTED };
+  }
+
+  async activateOrganization(userId, organizationId) {
+    const organization = await organizationRepository.findById(organizationId);
+    if (!organization) {
+      throw new NotFoundError(MESSAGES.ORGANIZATION_NOT_FOUND);
+    }
+    const updated = await organizationRepository.update(organization._id, {
+      isActive: true,
+      updatedBy: userId,
+    });
+    return { organization: updated, message: MESSAGES.ORGANIZATION_ACTIVATED };
+  }
+
+  async deactivateOrganization(userId, organizationId) {
+    const organization = await organizationRepository.findById(organizationId);
+    if (!organization) {
+      throw new NotFoundError(MESSAGES.ORGANIZATION_NOT_FOUND);
+    }
+    const updated = await organizationRepository.update(organization._id, {
+      isActive: false,
+      updatedBy: userId,
+    });
+    return { organization: updated, message: MESSAGES.ORGANIZATION_DEACTIVATED };
+  }
+
+  async archiveOrganization(userId, organizationId) {
+    const organization = await organizationRepository.findById(organizationId);
+    if (!organization) {
+      throw new NotFoundError(MESSAGES.ORGANIZATION_NOT_FOUND);
+    }
+    const updated = await organizationRepository.update(organization._id, {
+      isActive: false,
+      updatedBy: userId,
+    });
+    return { organization: updated, message: MESSAGES.ORGANIZATION_ARCHIVED };
+  }
+
+  async restoreOrganization(userId, organizationId) {
+    const organization = await organizationRepository.restore(organizationId);
+    if (!organization) {
+      throw new NotFoundError(MESSAGES.ORGANIZATION_NOT_FOUND);
+    }
+    const updated = await organizationRepository.update(organization._id, {
+      isActive: true,
+      updatedBy: userId,
+    });
+    return { organization: updated, message: MESSAGES.ORGANIZATION_RESTORED };
+  }
+
+  async assignAdmin(adminId, organizationId, userId) {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new NotFoundError(MESSAGES.USER_NOT_FOUND);
+    }
+    const updated = await organizationRepository.assignAdmin(organizationId, userId);
+    return { organization: updated, message: MESSAGES.ADMIN_ASSIGNED };
+  }
+
+  async removeAdmin(adminId, organizationId, userId) {
+    const updated = await organizationRepository.removeAdmin(organizationId, userId);
+    return { organization: updated, message: MESSAGES.ADMIN_REMOVED };
+  }
+
+  async transferOwnership(adminId, organizationId, newOwnerId) {
+    const organization = await organizationRepository.findById(organizationId);
+    if (!organization) {
+      throw new NotFoundError(MESSAGES.ORGANIZATION_NOT_FOUND);
+    }
+    const user = await User.findById(newOwnerId);
+    if (!user) {
+      throw new NotFoundError(MESSAGES.USER_NOT_FOUND);
+    }
+    const updated = await organizationRepository.transferOwnership(
+      organization._id,
+      newOwnerId,
+      organization.owner
+    );
+    return { organization: updated, message: MESSAGES.OWNER_TRANSFERRED };
   }
 }
 

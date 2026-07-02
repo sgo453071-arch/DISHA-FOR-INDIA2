@@ -102,6 +102,50 @@ class OrganizationRepository {
     }
     return Organization.findOne(query);
   }
+
+  async assignAdmin(id, adminId) {
+    return Organization.findByIdAndUpdate(
+      id,
+      { $addToSet: { admins: adminId } },
+      { new: true }
+    ).populate('owner', 'name email').populate('admins', 'name email');
+  }
+
+  async removeAdmin(id, adminId) {
+    return Organization.findByIdAndUpdate(
+      id,
+      { $pull: { admins: adminId } },
+      { new: true }
+    ).populate('owner', 'name email').populate('admins', 'name email');
+  }
+
+  async transferOwnership(id, newOwnerId, oldOwnerId = null) {
+    const updateObj = { owner: newOwnerId };
+    if (oldOwnerId) {
+      updateObj.$addToSet = { admins: oldOwnerId };
+    }
+    return Organization.findByIdAndUpdate(id, updateObj, { new: true })
+      .populate('owner', 'name email').populate('admins', 'name email');
+  }
+
+  async changeStatus(id, status, updatedById, reviewNotes = null, rejectionReason = null) {
+    const updateObj = {
+      verificationStatus: status,
+      updatedBy: updatedById,
+    };
+    if (status === 'verified' || status === 'rejected') {
+      updateObj.reviewedBy = updatedById;
+      updateObj.reviewedAt = new Date();
+    }
+    if (reviewNotes) {
+      updateObj.reviewNotes = reviewNotes;
+    }
+    if (rejectionReason) {
+      updateObj.rejectionReason = rejectionReason;
+    }
+    return Organization.findByIdAndUpdate(id, updateObj, { new: true })
+      .populate('owner', 'name email').populate('admins', 'name email');
+  }
 }
 
 module.exports = new OrganizationRepository();

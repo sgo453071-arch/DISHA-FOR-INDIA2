@@ -297,9 +297,77 @@ const validateListOrganizations = (req, res, next) => {
   return next();
 };
 
+const validateApproveOrganization = (req, res, next) => {
+  const { reviewNotes } = req.body;
+  const errors = [];
+
+  if (reviewNotes !== undefined && (typeof reviewNotes !== 'string' || reviewNotes.trim().length > 1000)) {
+    errors.push({ field: 'reviewNotes', message: 'Review notes must be a string up to 1000 characters' });
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Approve validation failed', errors));
+  }
+
+  return next();
+};
+
+const validateRejectOrganization = (req, res, next) => {
+  const { rejectionReason, reviewNotes } = req.body;
+  const errors = [];
+
+  if (rejectionReason !== undefined && (typeof rejectionReason !== 'string' || rejectionReason.trim().length > 500)) {
+    errors.push({ field: 'rejectionReason', message: 'Rejection reason must be a string up to 500 characters' });
+  }
+
+  if (reviewNotes !== undefined && (typeof reviewNotes !== 'string' || reviewNotes.trim().length > 1000)) {
+    errors.push({ field: 'reviewNotes', message: 'Review notes must be a string up to 1000 characters' });
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Reject validation failed', errors));
+  }
+
+  return next();
+};
+
+const validateAssignAdmin = (req, res, next) => {
+  const { userId } = req.body;
+  const errors = [];
+
+  if (!userId || userId.trim() === '') {
+    errors.push({ field: 'userId', message: 'User ID is required' });
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Assign admin validation failed', errors));
+  }
+
+  return next();
+};
+
+const validateTransferOwnership = (req, res, next) => {
+  const { newOwnerId } = req.body;
+  const errors = [];
+
+  if (!newOwnerId || newOwnerId.trim() === '') {
+    errors.push({ field: 'newOwnerId', message: 'New owner ID is required' });
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Transfer ownership validation failed', errors));
+  }
+
+  return next();
+};
+
 module.exports = {
   validateCreateOrganization,
   validateUpdateOrganization,
   validateOrganizationId,
   validateListOrganizations,
+  validateApproveOrganization,
+  validateRejectOrganization,
+  validateAssignAdmin,
+  validateTransferOwnership,
 };

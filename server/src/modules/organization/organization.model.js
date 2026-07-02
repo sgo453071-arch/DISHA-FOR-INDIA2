@@ -120,6 +120,25 @@ const organizationSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    reviewedAt: {
+      type: Date,
+      default: null,
+    },
+    reviewNotes: {
+      type: String,
+      trim: true,
+      maxlength: [1000, 'Review notes cannot exceed 1000 characters'],
+    },
+    rejectionReason: {
+      type: String,
+      trim: true,
+      maxlength: [500, 'Rejection reason cannot exceed 500 characters'],
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

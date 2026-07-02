@@ -51,6 +51,105 @@ class OrganizationController {
       return next(error);
     }
   };
+
+  approveOrganization = async (req, res, next) => {
+    try {
+      const { reviewNotes } = req.body;
+      const result = await organizationService.approveOrganization(
+        req.user.id,
+        req.params.id,
+        reviewNotes
+      );
+      return successResponse(res, 200, result.message, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  rejectOrganization = async (req, res, next) => {
+    try {
+      const { rejectionReason, reviewNotes } = req.body;
+      const result = await organizationService.rejectOrganization(
+        req.user.id,
+        req.params.id,
+        rejectionReason,
+        reviewNotes
+      );
+      return successResponse(res, 200, result.message, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  activateOrganization = async (req, res, next) => {
+    try {
+      const result = await organizationService.activateOrganization(req.user.id, req.params.id);
+      return successResponse(res, 200, result.message, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  deactivateOrganization = async (req, res, next) => {
+    try {
+      const result = await organizationService.deactivateOrganization(req.user.id, req.params.id);
+      return successResponse(res, 200, result.message, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  archiveOrganization = async (req, res, next) => {
+    try {
+      const result = await organizationService.archiveOrganization(req.user.id, req.params.id);
+      return successResponse(res, 200, result.message, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  restoreOrganization = async (req, res, next) => {
+    try {
+      const result = await organizationService.restoreOrganization(req.user.id, req.params.id);
+      return successResponse(res, 200, result.message, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  assignAdmin = async (req, res, next) => {
+    try {
+      const { userId } = req.body;
+      const result = await organizationService.assignAdmin(req.user.id, req.params.id, userId);
+      return successResponse(res, 200, result.message, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  removeAdmin = async (req, res, next) => {
+    try {
+      const { userId } = req.body;
+      const result = await organizationService.removeAdmin(req.user.id, req.params.id, userId);
+      return successResponse(res, 200, result.message, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  transferOwnership = async (req, res, next) => {
+    try {
+      const { newOwnerId } = req.body;
+      const result = await organizationService.transferOwnership(
+        req.user.id,
+        req.params.id,
+        newOwnerId
+      );
+      return successResponse(res, 200, result.message, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
 }
 
 module.exports = new OrganizationController();
