@@ -34,11 +34,13 @@ const HTTP_STATUS = {
   INTERNAL_SERVER_ERROR: 500,
 };
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days (matches refresh token expiry)
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
 const HEADERS = {

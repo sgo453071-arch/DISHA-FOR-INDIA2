@@ -127,7 +127,8 @@ class AuthController {
             accessToken,
             refreshToken,
           } = await authService.googleLogin(user);
-          setRefreshTokenCookie(res, refreshToken);
+           setAccessTokenCookie(res, accessToken);
+           setRefreshTokenCookie(res, refreshToken);
 
           let redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`;
           if (loggedInUser.role === 'volunteer') {

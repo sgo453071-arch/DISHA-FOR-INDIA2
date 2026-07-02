@@ -44,6 +44,9 @@ const getCorsConfig = () => {
         return callback(null, true);
       }
 
+      console.log('Origin:', origin);
+console.log('Allowed Origins:', allowedOrigins);
+
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
