@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
       }
     // eslint-disable-next-line no-unused-vars
-    } catch (err) {
+    } catch (_err) {
       // Auth check failed - user is not logged in
       setUser(null);
     } finally {
