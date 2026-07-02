@@ -12,15 +12,17 @@ const {
   validateChangeProgramStatus,
 } = require('./program.validation');
 const { authenticate } = require('../../middlewares/auth.middleware');
-const { authorize } = require('../../middlewares/rbac.middleware');
+const { authorize, isVolunteer } = require('../../middlewares/rbac.middleware');
 const ROLES = require('../../constants/roles.constants');
 
 const router = express.Router();
 
-// ─── Public Routes ───────────────────────────────────────────────────────────
-// GET /programs is accessible to all authenticated users (role-based filtering in service)
+// Public routes
+router.get('/', authenticate, validateListPrograms, programController.listPrograms);
+router.get('/me', authenticate, programController.getMyPrograms);
+router.get('/:id', authenticate, validateGetProgram, programController.getProgram);
 
-// ─── Protected Routes (Admin/Coordinator) ─────────────────────────────────
+// Admin/Coordinator routes
 router.post(
   '/',
   authenticate,
@@ -28,11 +30,6 @@ router.post(
   validateCreateProgram,
   programController.createProgram
 );
-
-router.get('/', authenticate, validateListPrograms, programController.listPrograms);
-
-router.get('/:id', authenticate, validateGetProgram, programController.getProgram);
-
 router.put(
   '/:id',
   authenticate,
@@ -40,7 +37,6 @@ router.put(
   validateUpdateProgram,
   programController.updateProgram
 );
-
 router.delete(
   '/:id',
   authenticate,
@@ -48,7 +44,6 @@ router.delete(
   validateDeleteProgram,
   programController.deleteProgram
 );
-
 router.patch(
   '/:id/publish',
   authenticate,
@@ -56,7 +51,6 @@ router.patch(
   validatePublishProgram,
   programController.publishProgram
 );
-
 router.patch(
   '/:id/archive',
   authenticate,
@@ -64,7 +58,6 @@ router.patch(
   validateArchiveProgram,
   programController.archiveProgram
 );
-
 router.patch(
   '/:id/restore',
   authenticate,
@@ -72,7 +65,6 @@ router.patch(
   validateRestoreProgram,
   programController.restoreProgram
 );
-
 router.patch(
   '/:id/status',
   authenticate,
@@ -80,14 +72,11 @@ router.patch(
   validateChangeProgramStatus,
   programController.changeProgramStatus
 );
-
 router.get(
   '/statistics',
   authenticate,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   programController.getStatistics
 );
-
-router.get('/me', authenticate, programController.getMyPrograms);
 
 module.exports = router;
