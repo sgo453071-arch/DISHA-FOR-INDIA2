@@ -12,17 +12,28 @@ const {
   validateChangeProgramStatus,
 } = require('./program.validation');
 const { authenticate } = require('../../middlewares/auth.middleware');
-const { authorize, isVolunteer } = require('../../middlewares/rbac.middleware');
+const { authorize } = require('../../middlewares/rbac.middleware');
 const ROLES = require('../../constants/roles.constants');
 
 const router = express.Router();
 
-// Public routes
-router.get('/', authenticate, validateListPrograms, programController.listPrograms);
-router.get('/me', authenticate, programController.getMyPrograms);
-router.get('/:id', authenticate, validateGetProgram, programController.getProgram);
+// ─── STATIC routes MUST come before /:id ────────────────────────────
 
-// Admin/Coordinator routes
+// All authenticated users: list programs
+router.get('/', authenticate, validateListPrograms, programController.listPrograms);
+
+// All authenticated users: my programs (programs the user has applied to)
+router.get('/me', authenticate, programController.getMyPrograms);
+
+// Admin/Coordinator: aggregate statistics (MUST be above /:id)
+router.get(
+  '/statistics',
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
+  programController.getStatistics
+);
+
+// Admin/Coordinator: create a program
 router.post(
   '/',
   authenticate,
@@ -30,6 +41,13 @@ router.post(
   validateCreateProgram,
   programController.createProgram
 );
+
+// ─── Dynamic /:id routes ─────────────────────────────────────────────
+
+// Any authenticated user: get a single program
+router.get('/:id', authenticate, validateGetProgram, programController.getProgram);
+
+// Admin/Coordinator: update program
 router.put(
   '/:id',
   authenticate,
@@ -37,6 +55,8 @@ router.put(
   validateUpdateProgram,
   programController.updateProgram
 );
+
+// Admin/Coordinator: delete program
 router.delete(
   '/:id',
   authenticate,
@@ -44,6 +64,8 @@ router.delete(
   validateDeleteProgram,
   programController.deleteProgram
 );
+
+// Admin/Coordinator: publish program
 router.patch(
   '/:id/publish',
   authenticate,
@@ -51,6 +73,8 @@ router.patch(
   validatePublishProgram,
   programController.publishProgram
 );
+
+// Admin/Coordinator: archive program
 router.patch(
   '/:id/archive',
   authenticate,
@@ -58,6 +82,8 @@ router.patch(
   validateArchiveProgram,
   programController.archiveProgram
 );
+
+// Admin/Super Admin: restore program
 router.patch(
   '/:id/restore',
   authenticate,
@@ -65,18 +91,14 @@ router.patch(
   validateRestoreProgram,
   programController.restoreProgram
 );
+
+// Admin/Coordinator: change program status
 router.patch(
   '/:id/status',
   authenticate,
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   validateChangeProgramStatus,
   programController.changeProgramStatus
-);
-router.get(
-  '/statistics',
-  authenticate,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
-  programController.getStatistics
 );
 
 module.exports = router;

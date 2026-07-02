@@ -372,6 +372,46 @@ class AttendanceService {
   }
 
   /**
+   * GET /api/v1/attendance/dashboard
+   * Returns a volunteer's personal attendance summary for the dashboard.
+   * All users can call this; admins get global stats instead.
+   */
+  async getDashboard(userId, userRole) {
+    const isAdmin = [ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR].includes(userRole);
+
+    if (isAdmin) {
+      // Admins see global aggregate stats
+      const stats = await attendanceRepository.getAttendanceStatistics();
+      return { type: 'admin', stats };
+    }
+
+    // Volunteers see their own summary
+    const records = await Attendance.find({ user: userId, isDeleted: false })
+      .populate('program', 'title programId startDate endDate')
+      .sort({ attendanceDate: -1 })
+      .lean();
+
+    const totalSessions = records.length;
+    const presentCount = records.filter((r) => r.status === ATTENDANCE_STATUS.PRESENT).length;
+    const absentCount = records.filter((r) => r.status === ATTENDANCE_STATUS.ABSENT).length;
+    const totalHours = records.reduce((sum, r) => sum + (r.totalHours || 0), 0);
+    const attendanceRate = totalSessions > 0 ? Math.round((presentCount / totalSessions) * 100) : 0;
+    const recentAttendance = records.slice(0, 5);
+
+    return {
+      type: 'volunteer',
+      summary: {
+        totalSessions,
+        presentCount,
+        absentCount,
+        totalHours: Math.round(totalHours * 100) / 100,
+        attendanceRate,
+      },
+      recentAttendance,
+    };
+  }
+
+  /**
    * Export attendance data in simplified format (Admin only).
    */
   async exportAttendance(queryParams) {

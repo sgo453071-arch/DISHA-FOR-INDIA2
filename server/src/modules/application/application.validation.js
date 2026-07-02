@@ -70,7 +70,7 @@ const validateMyApplications = (req, res, next) => {
     }
   }
 
-  if (status !== undefined && !Object.values(APPLICATION_STATUS).includes(status)) {
+  if (status !== undefined && status !== '' && !Object.values(APPLICATION_STATUS).includes(status)) {
     errors.push({ field: 'status', message: 'Invalid status value' });
   }
 
@@ -124,7 +124,7 @@ const validateAdminApplications = (req, res, next) => {
     }
   }
 
-  if (status !== undefined && !Object.values(APPLICATION_STATUS).includes(status)) {
+  if (status !== undefined && status !== '' && !Object.values(APPLICATION_STATUS).includes(status)) {
     errors.push({ field: 'status', message: 'Invalid status value' });
   }
 

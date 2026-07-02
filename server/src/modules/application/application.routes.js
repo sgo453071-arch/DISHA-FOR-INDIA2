@@ -15,7 +15,38 @@ const ROLES = require('../../constants/roles.constants');
 
 const router = express.Router();
 
-// ─── Volunteer Routes ──────────────────────────────────────────────
+// ─── Static routes MUST come before /:id ───────────────────────────
+
+// Volunteer: get my applications
+router.get('/me', authenticate, validateMyApplications, applicationController.getMyApplications);
+
+// Admin/Coordinator: get statistics (static path – must be before /:id)
+router.get(
+  '/stats',
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
+  applicationController.getApplicationStatistics
+);
+
+// Admin/Coordinator: get all applications with filters (GET /)
+router.get(
+  '/',
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
+  validateAdminApplications,
+  applicationController.getAdminApplications
+);
+
+// Admin/Coordinator: bulk status update
+router.patch(
+  '/bulk',
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
+  validateBulkUpdate,
+  applicationController.bulkUpdateApplications
+);
+
+// Volunteer: apply to a program
 router.post(
   '/',
   authenticate,
@@ -24,8 +55,7 @@ router.post(
   applicationController.applyToProgram
 );
 
-router.get('/me', authenticate, validateMyApplications, applicationController.getMyApplications);
-
+// Volunteer: withdraw an application
 router.patch(
   '/:id/withdraw',
   authenticate,
@@ -33,7 +63,7 @@ router.patch(
   applicationController.withdrawApplication
 );
 
-// ─── Shared Routes ───────────────────────────────────────────────────
+// ─── Dynamic /:id route MUST be last ────────────────────────────────
 router.get('/:id', authenticate, validateGetApplication, applicationController.getApplication);
 
 module.exports = router;

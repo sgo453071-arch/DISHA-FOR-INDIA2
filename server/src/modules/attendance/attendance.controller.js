@@ -114,13 +114,26 @@ class AttendanceController {
   };
 
   /**
-   * GET /api/v1/admin/attendance/statistics
+   * GET /api/v1/attendance/statistics
    * Get attendance aggregate statistics.
    */
   getStatistics = async (req, res, next) => {
     try {
       const result = await attendanceService.getStatistics();
       return successResponse(res, 200, 'Attendance statistics retrieved successfully', result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  /**
+   * GET /api/v1/attendance/dashboard
+   * Volunteer: personal attendance summary. Admin/Coordinator: global stats.
+   */
+  getDashboard = async (req, res, next) => {
+    try {
+      const result = await attendanceService.getDashboard(req.user.id, req.user.role);
+      return successResponse(res, 200, 'Attendance dashboard retrieved successfully', result);
     } catch (error) {
       return next(error);
     }

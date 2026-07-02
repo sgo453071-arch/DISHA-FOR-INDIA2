@@ -17,18 +17,36 @@ const router = express.Router();
 // All attendance routes require authentication
 router.use(authenticate);
 
-// ─── Volunteer Routes ──────────────────────────────────────────────
+// ─── STATIC routes MUST come before /:id ────────────────────────────
+
+// Volunteer: check in
 router.post('/check-in', isVolunteer, validateCheckIn, attendanceController.checkIn);
+
+// Volunteer: check out
 router.patch('/check-out', isVolunteer, validateCheckOut, attendanceController.checkOut);
+
+// Volunteer & Admin: personal attendance summary (dashboard)
+router.get('/dashboard', attendanceController.getDashboard);
+
+// Volunteer: my attendance list
 router.get('/me', validateMyAttendance, attendanceController.getMyAttendance);
 
-// ─── Admin / Coordinator Routes ────────────────────────────────────
+// Admin / Coordinator: attendance history with filters
 router.get(
   '/history',
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   validateAttendanceHistory,
   attendanceController.attendanceHistory
 );
+
+// Admin / Coordinator: aggregate statistics
+router.get(
+  '/statistics',
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
+  attendanceController.getStatistics
+);
+
+// Admin / Coordinator: edit a specific attendance record (PATCH /:id)
 router.patch(
   '/:id',
   authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
@@ -36,7 +54,7 @@ router.patch(
   attendanceController.editAttendance
 );
 
-// ─── Shared Routes ──────────────────────────────────────────────────
+// ─── Dynamic /:id route MUST be last ────────────────────────────────
 router.get('/:id', validateGetAttendance, attendanceController.getAttendance);
 
 module.exports = router;

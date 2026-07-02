@@ -184,7 +184,21 @@ class ApplicationService {
   }
 
   async getAdminApplications(queryParams) {
-    const { page, limit, sortBy, sortOrder, status, program, user, city, state } = queryParams;
+    let { page, limit, sortBy, sortOrder, status, program, user, city, state, search } = queryParams;
+
+    // Normalize combined sortBy values like 'date_desc', 'date_asc', 'name_asc'
+    const SORT_MAP = {
+      date_desc: { sortBy: 'createdAt', sortOrder: 'desc' },
+      date_asc: { sortBy: 'createdAt', sortOrder: 'asc' },
+      name_asc: { sortBy: 'createdAt', sortOrder: 'asc' },
+      name_desc: { sortBy: 'createdAt', sortOrder: 'desc' },
+      status_asc: { sortBy: 'status', sortOrder: 'asc' },
+      status_desc: { sortBy: 'status', sortOrder: 'desc' },
+    };
+    if (sortBy && SORT_MAP[sortBy]) {
+      sortOrder = SORT_MAP[sortBy].sortOrder;
+      sortBy = SORT_MAP[sortBy].sortBy;
+    }
 
     const pageNum = Math.max(1, parseInt(page, 10) || PAGINATION.DEFAULT_PAGE);
     const limitNum = Math.min(
@@ -194,7 +208,7 @@ class ApplicationService {
 
     const filters = {};
 
-    if (status) filters.status = status;
+    if (status && status !== '') filters.status = status;
     if (program) filters.program = program;
     if (user) filters.user = user;
     if (city) filters['program.city'] = new RegExp(city, 'i');
