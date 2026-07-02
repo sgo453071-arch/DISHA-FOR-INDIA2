@@ -2,7 +2,11 @@ const passport = require('passport');
 
 const authService = require('./auth.service');
 const { MESSAGES } = require('./auth.constants');
-const { setRefreshTokenCookie, clearAllAuthCookies } = require('../../utils/cookie');
+const {
+  setRefreshTokenCookie,
+  setAccessTokenCookie,
+  clearAllAuthCookies,
+} = require('../../utils/cookie');
 const { successResponse } = require('../../utils/response');
 
 class AuthController {
@@ -16,14 +20,19 @@ class AuthController {
   };
 
   login = async (req, res, next) => {
-    try {
-      const { user, accessToken, refreshToken } = await authService.login(req.body);
-      setRefreshTokenCookie(res, refreshToken);
-      return successResponse(res, 200, MESSAGES.LOGIN_SUCCESS, { user, accessToken });
-    } catch (error) {
-      return next(error);
-    }
-  };
+  try {
+    const { user, accessToken, refreshToken } = await authService.login(req.body);
+
+    setAccessTokenCookie(res, accessToken);
+    setRefreshTokenCookie(res, refreshToken);
+
+    return successResponse(res, 200, MESSAGES.LOGIN_SUCCESS, {
+      user,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
   logout = async (req, res, next) => {
     try {
@@ -37,15 +46,23 @@ class AuthController {
   };
 
   refreshToken = async (req, res, next) => {
-    try {
-      const token = req.cookies?.refreshToken;
-      const { accessToken, refreshToken: newRefreshToken } = await authService.refreshToken(token);
-      setRefreshTokenCookie(res, newRefreshToken);
-      return successResponse(res, 200, MESSAGES.TOKEN_REFRESH_SUCCESS, { accessToken });
-    } catch (error) {
-      return next(error);
-    }
-  };
+  try {
+    const token = req.cookies?.refreshToken;
+
+    const {
+      accessToken,
+      refreshToken: newRefreshToken,
+    } = await authService.refreshToken(token);
+
+    setAccessTokenCookie(res, accessToken);
+    setRefreshTokenCookie(res, newRefreshToken);
+
+    return successResponse(res, 200, MESSAGES.TOKEN_REFRESH_SUCCESS);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 
   getCurrentUser = async (req, res, next) => {
     try {
