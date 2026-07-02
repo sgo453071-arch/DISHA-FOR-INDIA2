@@ -3,7 +3,9 @@ import { Users, FileCheck, Search, Filter, Shield } from "lucide-react";
 import {
   getAdminApplicationStats,
   getAdminApplications,
+  bulkUpdateApplications
 } from "../../services/applicationsService";
+import toast from 'react-hot-toast';
 
 import StatusBadge from "../../components/volunteer/StatusBadge";
 import Pagination from "../../components/volunteer/Pagination";
@@ -24,12 +26,29 @@ const AdminApplications = () => {
         if (appsRes.success) setApplications(appsRes.data);
       } catch (err) {
         console.error(err);
+        toast.error('Failed to load applications');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, []);
+
+  const handleStatusUpdate = async (id, status) => {
+    try {
+      const res = await bulkUpdateApplications([id], status);
+      if (res.success) {
+        toast.success(`Application ${status.toLowerCase()} successfully`);
+        setApplications(apps => apps.map(app => (app.id === id || app._id === id) ? { ...app, status } : app));
+        
+        // Refresh stats
+        const statsRes = await getAdminApplicationStats();
+        if (statsRes.success) setStats(statsRes.data);
+      }
+    } catch (err) {
+      toast.error('Failed to update application status');
+    }
+  };
 
   return (
     <div className="page-container" style={{ padding: '2rem' }}>
@@ -89,32 +108,58 @@ const AdminApplications = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {applications.map((app) => (
-                    <tr key={app.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      <td style={{ padding: '1rem 1.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700 }}>
-                            {/* Dummy initials since mock doesn't have applicant name */}
-                            US
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 600, color: 'var(--color-heading)' }}>Urmika Sharma</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--color-body)' }}>urmika@example.com</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem' }}>{app.programTitle}</td>
-                      <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem', color: 'var(--color-body)' }}>
-                        {new Date(app.appliedDate).toLocaleDateString()}
-                      </td>
-                      <td style={{ padding: '1rem 1.5rem' }}>
-                        <StatusBadge status={app.status} />
-                      </td>
-                      <td style={{ padding: '1rem 1.5rem' }}>
-                        <button className="btn btn-secondary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}>Review</button>
-                      </td>
-                    </tr>
-                  ))}
+                  {applications.length === 0 ? (
+                    <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-body)' }}>No applications found.</td></tr>
+                  ) : (
+                    applications.map((app) => {
+                      const applicantName = app.user?.name || app.applicantName || 'Unknown User';
+                      const applicantEmail = app.user?.email || app.applicantEmail || 'No email';
+                      const initials = applicantName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                      
+                      return (
+                        <tr key={app.id || app._id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <td style={{ padding: '1rem 1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700 }}>
+                                {initials}
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 600, color: 'var(--color-heading)' }}>{applicantName}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--color-body)' }}>{applicantEmail}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem' }}>{app.program?.title || app.programTitle || 'Unknown Program'}</td>
+                          <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem', color: 'var(--color-body)' }}>
+                            {new Date(app.createdAt || app.appliedDate).toLocaleDateString()}
+                          </td>
+                          <td style={{ padding: '1rem 1.5rem' }}>
+                            <StatusBadge status={app.status} />
+                          </td>
+                          <td style={{ padding: '1rem 1.5rem' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button 
+                                className="btn btn-secondary" 
+                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
+                                onClick={() => handleStatusUpdate(app.id || app._id, 'APPROVED')}
+                                disabled={app.status === 'APPROVED'}
+                              >
+                                Approve
+                              </button>
+                              <button 
+                                className="btn btn-secondary" 
+                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderColor: 'var(--color-error)', color: 'var(--color-error)' }}
+                                onClick={() => handleStatusUpdate(app.id || app._id, 'REJECTED')}
+                                disabled={app.status === 'REJECTED'}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

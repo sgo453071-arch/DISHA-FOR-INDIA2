@@ -3,11 +3,14 @@ import { Search, Plus, Edit2, Trash2, Calendar, MapPin } from 'lucide-react';
 import { getAllPrograms, deleteProgram } from '../../services/programsService';
 import SkeletonLoader from '../../components/volunteer/SkeletonLoader';
 import StatusBadge from '../../components/volunteer/StatusBadge';
+import ProgramModal from '../../components/admin/ProgramModal';
 import toast from 'react-hot-toast';
 
 const AdminPrograms = () => {
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editProgram, setEditProgram] = useState(null);
 
   const fetchPrograms = async () => {
     try {
@@ -40,6 +43,21 @@ const AdminPrograms = () => {
     }
   };
 
+  const handleCreate = () => {
+    setEditProgram(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (prog) => {
+    setEditProgram(prog);
+    setIsModalOpen(true);
+  };
+
+  const handleModalSuccess = () => {
+    setIsModalOpen(false);
+    fetchPrograms();
+  };
+
   return (
     <div className="page-container" style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem' }}>
@@ -47,7 +65,7 @@ const AdminPrograms = () => {
           <h1 style={{ fontSize: '2rem', margin: '0 0 0.5rem 0', color: 'var(--color-heading)' }}>Program Management</h1>
           <p style={{ color: 'var(--color-body)', margin: 0 }}>Create, update, and manage volunteering opportunities.</p>
         </div>
-        <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <button className="btn btn-primary" onClick={handleCreate} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Plus size={18} /> New Program
         </button>
       </div>
@@ -91,7 +109,7 @@ const AdminPrograms = () => {
                       </td>
                       <td style={{ padding: '1rem 1.5rem' }}>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button className="btn btn-secondary" style={{ padding: '0.4rem' }} aria-label="Edit">
+                          <button className="btn btn-secondary" style={{ padding: '0.4rem' }} onClick={() => handleEdit(prog)} aria-label="Edit">
                             <Edit2 size={16} />
                           </button>
                           <button className="btn btn-secondary" style={{ padding: '0.4rem', color: 'var(--color-error)' }} onClick={() => handleDelete(prog.id || prog._id)} aria-label="Delete">
@@ -107,6 +125,13 @@ const AdminPrograms = () => {
           </div>
         )}
       </div>
+
+      <ProgramModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={handleModalSuccess}
+        editData={editProgram}
+      />
     </div>
   );
 };
