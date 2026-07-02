@@ -93,6 +93,28 @@ app.get('/api/v1/health', (req, res) => {
 });
 
 // ─────────────────────────────────────────────
+// 9.5. Root endpoint for Render health checks
+// ─────────────────────────────────────────────
+app.get('/', (req, res) => {
+  return successResponse(res, 200, 'API Running', {
+    version: '1.0.0',
+    documentation: '/api-docs',
+    health: '/api/v1/health',
+    endpoints: {
+      auth: '/api/v1/auth',
+      users: '/api/v1/users',
+      programs: '/api/v1/programs',
+      applications: '/api/v1/applications',
+      attendance: '/api/v1/attendance',
+      certificates: '/api/v1/certificates',
+      rewards: '/api/v1/rewards',
+      leaderboard: '/api/v1/leaderboard',
+      notifications: '/api/v1/notifications',
+    },
+  });
+});
+
+// ─────────────────────────────────────────────
 // 10. API Routes
 // ─────────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
