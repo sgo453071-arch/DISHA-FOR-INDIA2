@@ -1,38 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ────────────────────────────────────────────────────────
    1. DESIGN TOKENS & CSS VARIABLES
    ──────────────────────────────────────────────────────── */
 :root {
   /* Typography */
-  --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-primary: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Playfair Display', Georgia, serif;
 
-  /* Colors - Light Theme (NGO Peaceful Theme) */
-  --color-primary: #4a90e2; /* Calming teal */
-  --color-primary-hover: #357abd;
-  --color-secondary: #6b8e23; /* Soft sage green */
-  --color-secondary-hover: #55721c;
-  --color-accent: #f5a623;
-  --color-accent-hover: #e09612;
+  /* Colors - Premium NGO Theme */
+  --color-primary: #D35400; /* Burnt Orange */
+  --color-primary-hover: #E67E22;
+  --color-secondary: #27AE60; /* Forest Green */
+  --color-secondary-hover: #2ECC71;
+  --color-accent: #F39C12; /* Warm Gold */
+  --color-accent-hover: #F1C40F;
   
-  --color-bg: #f4f1ea; /* Warm sand */
-  --color-card: #ffffff;
-  --color-heading: #333333; /* Muted charcoal */
-  --color-body: #555555;
-  --color-border: #e6e4de;
+  --color-bg: #FDFBF7; /* Warm White / Ivory */
+  --color-card: #FFFFFF;
+  --color-heading: #2C3E50; /* Deep Charcoal */
+  --color-body: #4A5568;
+  --color-border: #E8E3D9; /* Soft Beige */
   
   /* Status Colors */
-  --color-success: #6b8e23;
-  --color-warning: #f5a623;
-  --color-error: #e74c3c;
-  --color-info: #4a90e2;
-  --color-purple: #8e8cd8; /* Softer pastel purple if needed */
+  --color-success: #27AE60;
+  --color-warning: #F39C12;
+  --color-error: #E74C3C;
+  --color-info: #3498DB;
+  --color-purple: #8E44AD; 
   
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #4a90e2, #6b8e23);
-  --gradient-hover: linear-gradient(135deg, #357abd, #55721c);
-  --gradient-glow: 0 8px 30px rgba(74, 144, 226, 0.2);
+  --gradient-primary: linear-gradient(135deg, #D35400, #E67E22);
+  --gradient-hover: linear-gradient(135deg, #E67E22, #F39C12);
+  --gradient-glow: 0 8px 30px rgba(211, 84, 0, 0.2);
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);

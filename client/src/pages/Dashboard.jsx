@@ -15,18 +15,36 @@ import {
   ShieldCheck,
   FileText,
   Trophy,
-} from "lucide-react";
+  LayoutDashboard,
+  Heart,
+  Bell,
+  Settings,
+  LogOut,
+  Star,
+  ChevronRight,
+  Zap,
+} from 'lucide-react';
 import { useVolunteer } from '../context/VolunteerContext';
 import SkeletonLoader from '../components/volunteer/SkeletonLoader';
-import CheckInButton from '../components/volunteer/CheckInButton';
 import StatusBadge from '../components/volunteer/StatusBadge';
 
+// Sidebar link data
+const sidebarLinks = [
+  { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
+  { label: 'My Programs', path: '/my-programs', icon: <Briefcase size={18} /> },
+  { label: 'Volunteer Hours', path: '/attendance/hours', icon: <Clock size={18} /> },
+  { label: 'Certificates', path: '/certificates', icon: <CertIcon size={18} /> },
+  { label: 'Leaderboard', path: '/leaderboard', icon: <Trophy size={18} /> },
+  { label: 'Applications', path: '/applications', icon: <FileText size={18} /> },
+  { label: 'Attendance', path: '/attendance', icon: <ShieldCheck size={18} /> },
+];
+
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  
-  const { 
-    volunteerHours, 
+
+  const {
+    volunteerHours,
     fetchVolunteerHours,
     applications,
     fetchApplications,
@@ -34,7 +52,6 @@ const Dashboard = () => {
     fetchJoinedPrograms,
     checkInStatus,
     fetchAttendanceDashboard,
-    attendanceDashboard,
     applicationsLoading
   } = useVolunteer();
 
@@ -60,7 +77,7 @@ const Dashboard = () => {
           getMyRewards(),
           getMyCertificates()
         ]);
-        
+
         setGamification({
           points: pointsRes.success ? pointsRes.data?.totalPoints || 0 : 0,
           level: levelRes.success ? levelRes.data?.currentLevel?.name || 'Beginner' : 'Beginner',
@@ -77,236 +94,291 @@ const Dashboard = () => {
   }, [fetchVolunteerHours, fetchApplications, fetchJoinedPrograms, fetchAttendanceDashboard]);
 
   const displayName = user?.name || 'Volunteer';
+  const firstName = displayName.split(' ')[0];
   const points = gamification.points;
   const level = gamification.level;
   const profileCompletion = user?.profileCompletion ?? 65;
-
   const hours = volunteerHours?.lifetime || user?.hoursCompleted || 0;
   const activePrograms = joinedPrograms.filter(p => p.status === 'active');
   const programsCount = joinedPrograms.length || user?.programsJoined || 0;
   const certsCount = gamification.certsCount;
-
   const pendingApps = applications.filter(a => a.status === 'pending' || a.status === 'under_review');
 
+  const statCards = [
+    { label: 'XP Points', value: points, icon: <Sparkles size={20} />, color: '#D35400', bg: '#FFF3ED', note: 'Earned' },
+    { label: 'Hours Served', value: hours, icon: <Clock size={20} />, color: '#059669', bg: '#D1FAE5', note: 'Lifetime', onClick: () => navigate('/attendance/hours') },
+    { label: 'Programs', value: programsCount, icon: <Briefcase size={20} />, color: '#7C3AED', bg: '#EDE9FE', note: `${activePrograms.length} Active`, onClick: () => navigate('/my-programs') },
+    { label: 'Certificates', value: certsCount, icon: <Award size={20} />, color: '#D97706', bg: '#FEF3C7', note: 'Verified', onClick: () => navigate('/certificates') },
+  ];
+
+  const currentPath = '/dashboard';
+
   return (
-    <div className="animate-fade-in page-container" style={{ padding: '2rem' }}>
-      {/* 1. Welcome Banner */}
-      <div style={{
-        background: 'var(--gradient-primary)',
-        color: '#ffffff',
-        borderRadius: 'var(--radius-xl)',
-        padding: '2.25rem',
-        marginBottom: '2rem',
-        boxShadow: 'var(--gradient-glow)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <h2 style={{ color: '#ffffff', fontSize: '2rem', marginBottom: '0.5rem', fontWeight: 800 }}>
-            Hello, {displayName}! 👋
-          </h2>
-          <p style={{ opacity: 0.9, maxWidth: '600px', fontSize: '1.05rem', marginBottom: '1.5rem' }}>
-            Welcome to your dashboard. You are currently at the <strong style={{ color: '#FEFCE8' }}>{level}</strong> level. Keep up the amazing work!
-          </p>
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <Link to="/programs" className="btn btn-primary" style={{ backgroundColor: '#ffffff', color: 'var(--color-primary)', padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
-              Explore Open Programs
-            </Link>
-            
-            {activePrograms.length > 0 && !checkInStatus.checkedIn && (
-              <button 
-                onClick={() => navigate('/attendance/check-in')} 
-                className="btn btn-success" 
-                style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid rgba(255,255,255,0.3)' }}
-              >
-                <PlayCircle size={16} /> Quick Check-In
-              </button>
-            )}
-            {checkInStatus.checkedIn && (
-              <button 
-                onClick={() => navigate('/attendance/checkout')} 
-                className="btn btn-accent" 
-                style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid rgba(255,255,255,0.3)' }}
-              >
-                End Session Now
-              </button>
-            )}
-          </div>
-        </div>
-        <div style={{
-          position: 'absolute', right: '-40px', bottom: '-40px', opacity: 0.1, color: '#ffffff',
-          transform: 'rotate(-15deg)'
-        }}>
-          <Sparkles size={240} />
-        </div>
-      </div>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#F8F7F4', fontFamily: 'var(--font-primary)', paddingTop: '64px' }}>
 
-      {/* 2. Stats Grid */}
-      <div className="grid grid-cols-4" style={{ marginBottom: '2rem' }}>
-        <div className="card glow-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(37, 99, 235, 0.1)', color: 'var(--color-primary)' }}>
-            <Sparkles size={24} />
-          </div>
-          <div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-body)', fontWeight: 600 }}>Total Points</span>
-            <h3 style={{ fontSize: '1.75rem', color: 'var(--color-heading)', margin: '0.1rem 0' }}>{points}</h3>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-secondary)', fontWeight: 600 }}>★ Earned</span>
-          </div>
-        </div>
+      {/* ── SIDEBAR ── */}
+      <aside style={{ width: 240, flexShrink: 0, background: '#111827', display: 'flex', flexDirection: 'column', position: 'fixed', top: 64, bottom: 0, left: 0, overflowY: 'auto', zIndex: 50 }}>
 
-        <div className="card glow-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', cursor: 'pointer' }} onClick={() => navigate('/attendance/hours')}>
-          <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--color-success)' }}>
-            <Clock size={24} />
-          </div>
-          <div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-body)', fontWeight: 600 }}>Hours Served</span>
-            <h3 style={{ fontSize: '1.75rem', color: 'var(--color-heading)', margin: '0.1rem 0' }}>{hours}</h3>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-body)', fontWeight: 600 }}>Lifetime</span>
-          </div>
-        </div>
-
-        <div className="card glow-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', cursor: 'pointer' }} onClick={() => navigate('/my-programs')}>
-          <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(139, 92, 246, 0.1)', color: 'var(--color-purple)' }}>
-            <ShieldCheck size={24} />
-          </div>
-          <div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-body)', fontWeight: 600 }}>My Programs</span>
-            <h3 style={{ fontSize: '1.75rem', color: 'var(--color-heading)', margin: '0.1rem 0' }}>{programsCount}</h3>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-body)', fontWeight: 600 }}>{activePrograms.length} Active</span>
-          </div>
-        </div>
-
-        <div className="card glow-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', cursor: 'pointer' }} onClick={() => navigate('/certificates')}>
-          <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(245, 158, 11, 0.1)', color: 'var(--color-accent)' }}>
-            <CertIcon size={24} />
-          </div>
-          <div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-body)', fontWeight: 600 }}>Certificates</span>
-            <h3 style={{ fontSize: '1.75rem', color: 'var(--color-heading)', margin: '0.1rem 0' }}>{certsCount}</h3>
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-body)', fontWeight: 600 }}>Verified</span>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
-        {/* Left column: Main activities */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
-          {/* Active registrations card */}
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Current Activity</h3>
-              <Link to="/applications" style={{ fontSize: '0.85rem', color: 'var(--color-primary)', fontWeight: 600 }}>
-                View All
-              </Link>
+        {/* User Profile Mini */}
+        <div style={{ padding: '1.5rem 1.25rem', borderBottom: '1px solid #1F2937' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 800, color: 'white', flexShrink: 0 }}>
+              {firstName.charAt(0).toUpperCase()}
             </div>
-            
-            {applicationsLoading ? (
-              <SkeletonLoader type="list" count={2} />
-            ) : pendingApps.length > 0 || activePrograms.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                
-                {/* Active Programs first */}
-                {activePrograms.slice(0, 2).map(prog => (
-                  <div key={prog.id} style={{ padding: '1rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(16, 185, 129, 0.05)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
-                    <div>
-                      <h4 style={{ fontSize: '0.975rem', marginBottom: '0.25rem' }}>{prog.programTitle}</h4>
-                      <StatusBadge status={prog.status} />
-                    </div>
-                    <Link to="/attendance" className="btn btn-primary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}>
-                      Mark Attendance
-                    </Link>
-                  </div>
-                ))}
-
-                {/* Pending Applications */}
-                {pendingApps.slice(0, 2).map(app => (
-                  <div key={app.id} style={{ padding: '1rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <h4 style={{ fontSize: '0.975rem', marginBottom: '0.25rem' }}>{app.programTitle}</h4>
-                      <StatusBadge status={app.status} />
-                    </div>
-                    <Link to={`/applications/${app.id}`} style={{ color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', fontWeight: 600 }}>
-                      Details <ArrowUpRight size={14} />
-                    </Link>
-                  </div>
-                ))}
-
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
+              <div style={{ fontSize: '0.7rem', color: '#F97316', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Star size={10} fill="#F97316" /> {level}
               </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--color-body)' }}>
-                You have no active programs or pending applications. <Link to="/programs" style={{ color: 'var(--color-primary)' }}>Find a program</Link>
-              </div>
-            )}
-          </div>
-
-          {/* Profile completion card */}
-          {profileCompletion < 100 && (
-            <div className="card" style={{ borderLeft: '4px solid var(--color-accent)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <AlertCircle style={{ color: 'var(--color-accent)' }} size={20} />
-                  <h4 style={{ margin: 0 }}>Complete Your Profile</h4>
-                </div>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-accent)' }}>
-                  {profileCompletion}% Done
-                </span>
-              </div>
-              <p style={{ fontSize: '0.9rem', color: 'var(--color-body)', marginBottom: '1.25rem' }}>
-                Fill in your skills, interests, and contact information to unlock program registrations and levels.
-              </p>
-              <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--color-border)', borderRadius: '99px', overflow: 'hidden', marginBottom: '1.25rem' }}>
-                <div style={{ width: `${profileCompletion}%`, height: '100%', backgroundColor: 'var(--color-accent)', borderRadius: '99px' }}></div>
-              </div>
-              <Link to="/profile/setup" className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', alignSelf: 'flex-start' }}>
-                Complete Setup
-              </Link>
             </div>
-          )}
-
+          </div>
+          {/* XP Progress Bar */}
+          <div style={{ marginTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+              <span style={{ fontSize: '0.65rem', color: '#6B7280', fontWeight: 600 }}>XP Progress</span>
+              <span style={{ fontSize: '0.65rem', color: '#F97316', fontWeight: 700 }}>{points} pts</span>
+            </div>
+            <div style={{ height: 4, background: '#1F2937', borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${Math.min((points / 200) * 100, 100)}%`, background: 'var(--color-primary)', borderRadius: 99, transition: 'width 0.5s ease' }} />
+            </div>
+          </div>
         </div>
 
-        {/* Right column: Level perks & leaderboards overview */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
-          {/* Volunteer level card */}
-          <div className="card" style={{ background: '#FEFCE8', borderColor: '#FEF08A' }}>
-            <h4 style={{ color: 'var(--color-heading)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-              <Award size={20} style={{ color: '#F59E0B' }} /> Level Perks
-            </h4>
-            <p style={{ fontSize: '0.875rem', color: '#713F12', marginBottom: '1rem' }}>
-              You are currently a <strong>{level}</strong> volunteer. Earn {200 - points > 0 ? 200 - points : 50} more points to reach next level!
+        {/* Nav Links */}
+        <nav style={{ flex: 1, padding: '1rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          {sidebarLinks.map((link) => {
+            const isActive = link.path === currentPath;
+            return (
+              <Link
+                key={link.path}
+                to={link.path}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.625rem',
+                  padding: '0.625rem 0.875rem', borderRadius: 8,
+                  fontSize: '0.85rem', fontWeight: 600,
+                  color: isActive ? 'white' : '#9CA3AF',
+                  background: isActive ? 'rgba(211,84,0,0.2)' : 'transparent',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                  borderLeft: isActive ? '2px solid var(--color-primary)' : '2px solid transparent',
+                }}
+                onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'white'; } }}
+                onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#9CA3AF'; } }}
+              >
+                {link.icon} {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Bottom actions */}
+        <div style={{ padding: '1rem 0.75rem', borderTop: '1px solid #1F2937', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <Link to="/profile/setup" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '0.625rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, color: '#9CA3AF', textDecoration: 'none', transition: 'all 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.background = 'transparent'; }}
+          >
+            <Settings size={18} /> Settings
+          </Link>
+          <button
+            onClick={async () => { await logout(); navigate('/'); }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '0.625rem 0.875rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, color: '#EF4444', background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <LogOut size={18} /> Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* ── MAIN CONTENT ── */}
+      <main style={{ flex: 1, marginLeft: 240, padding: '2rem 2rem 3rem', maxWidth: '100%', overflowX: 'hidden' }}>
+
+        {/* Welcome Banner */}
+        <div style={{ background: 'linear-gradient(135deg, #D35400, #E67E22)', borderRadius: 20, padding: '2rem 2.5rem', marginBottom: '2rem', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 8px 30px rgba(211,84,0,0.25)' }}>
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.5rem, 3vw, 2rem)', color: 'white', fontWeight: 800, marginBottom: '0.5rem' }}>
+              Hello, {firstName}! 👋
+            </h2>
+            <p style={{ opacity: 0.9, maxWidth: 560, fontSize: '0.95rem', lineHeight: 1.65, marginBottom: '1.5rem' }}>
+              Welcome back to your dashboard. You are at the <strong style={{ color: '#FEF3C7' }}>{level}</strong> level. Keep up the amazing work!
             </p>
-            <div style={{ fontSize: '0.85rem', color: '#713F12', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <span>✦</span> <span>Verified profile badge</span>
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <span>✦</span> <span>Access to offline local drives</span>
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem', opacity: 0.6 }}>
-                <span>✦</span> <span>Earn custom certificate downloads (Requires Contributor)</span>
-              </div>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <Link to="/programs" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.575rem 1.125rem', borderRadius: 8, background: 'white', color: 'var(--color-primary)', fontWeight: 700, fontSize: '0.875rem', textDecoration: 'none', transition: 'all 0.2s' }}>
+                Explore Programs
+              </Link>
+              {activePrograms.length > 0 && !checkInStatus.checkedIn && (
+                <button
+                  onClick={() => navigate('/attendance/check-in')}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.575rem 1.125rem', borderRadius: 8, background: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 700, fontSize: '0.875rem', border: '1px solid rgba(255,255,255,0.35)', cursor: 'pointer', transition: 'all 0.2s', backdropFilter: 'blur(8px)' }}
+                >
+                  <PlayCircle size={16} /> Quick Check-In
+                </button>
+              )}
+              {checkInStatus.checkedIn && (
+                <button
+                  onClick={() => navigate('/attendance/checkout')}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.575rem 1.125rem', borderRadius: 8, background: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 700, fontSize: '0.875rem', border: '1px solid rgba(255,255,255,0.35)', cursor: 'pointer' }}
+                >
+                  End Session
+                </button>
+              )}
             </div>
           </div>
+          {/* Decorative sparkle */}
+          <div style={{ position: 'absolute', right: '-20px', bottom: '-30px', opacity: 0.1, transform: 'rotate(-15deg)' }}>
+            <Sparkles size={200} />
+          </div>
+        </div>
 
-          {/* Quick links card */}
-          <div className="card">
-            <h4 style={{ marginBottom: '1rem' }}>Quick Navigation</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9rem' }}>
-              <Link to="/applications" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--color-border)', display: 'block', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FileText size={16} className="text-primary" /> Track Applications
-              </Link>
-              <Link to="/attendance" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--color-border)', display: 'block', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Clock size={16} className="text-primary" /> Log Attendance
-              </Link>
-              <Link to="/leaderboard" style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--color-border)', display: 'block', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Trophy size={16} className="text-primary" /> Leaderboard Standings
-              </Link>
+        {/* Stat Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+          {statCards.map((card, i) => (
+            <div
+              key={i}
+              onClick={card.onClick}
+              style={{ background: 'white', borderRadius: 16, padding: '1.25rem 1.5rem', border: '1px solid #F0EDE8', display: 'flex', alignItems: 'center', gap: '1rem', cursor: card.onClick ? 'pointer' : 'default', transition: 'all 0.25s', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; e.currentTarget.style.transform = 'none'; }}
+            >
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: card.bg, color: card.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {card.icon}
+              </div>
+              <div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--color-body)', fontWeight: 600, marginBottom: '0.2rem' }}>{card.label}</div>
+                <div style={{ fontSize: '1.6rem', fontFamily: 'var(--font-heading)', fontWeight: 800, color: 'var(--color-heading)', lineHeight: 1, marginBottom: '0.15rem' }}>{card.value}</div>
+                <div style={{ fontSize: '0.7rem', color: card.color, fontWeight: 700 }}>{card.note}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Two-column layout: Activity + Level Perks */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem' }}>
+
+          {/* Left: Current Activity */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+            <div style={{ background: 'white', borderRadius: 16, padding: '1.5rem', border: '1px solid #F0EDE8', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', color: 'var(--color-heading)', fontWeight: 700, margin: 0 }}>Current Activity</h3>
+                <Link to="/applications" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  View All <ChevronRight size={14} />
+                </Link>
+              </div>
+
+              {applicationsLoading ? (
+                <SkeletonLoader type="list" count={2} />
+              ) : pendingApps.length > 0 || activePrograms.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                  {activePrograms.slice(0, 2).map(prog => (
+                    <div key={prog.id} style={{ padding: '1rem 1.125rem', border: '1px solid #D1FAE5', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F0FDF4' }}>
+                      <div>
+                        <h4 style={{ fontSize: '0.9rem', color: 'var(--color-heading)', fontWeight: 700, marginBottom: '0.3rem', margin: 0 }}>{prog.programTitle}</h4>
+                        <StatusBadge status={prog.status} />
+                      </div>
+                      <Link to="/attendance" style={{ padding: '0.45rem 0.875rem', borderRadius: 8, background: 'var(--color-primary)', color: 'white', fontSize: '0.78rem', fontWeight: 700, textDecoration: 'none', transition: 'background 0.2s' }}>
+                        Mark Attendance
+                      </Link>
+                    </div>
+                  ))}
+                  {pendingApps.slice(0, 2).map(app => (
+                    <div key={app.id} style={{ padding: '1rem 1.125rem', border: '1px solid #F0EDE8', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
+                      <div>
+                        <h4 style={{ fontSize: '0.9rem', color: 'var(--color-heading)', fontWeight: 700, margin: 0, marginBottom: '0.3rem' }}>{app.programTitle}</h4>
+                        <StatusBadge status={app.status} />
+                      </div>
+                      <Link to={`/applications/${app.id}`} style={{ color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none' }}>
+                        Details <ArrowUpRight size={14} />
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-body)', background: '#FDFBF7', borderRadius: 12 }}>
+                  <Briefcase size={32} style={{ margin: '0 auto 0.75rem', color: '#D1D5DB' }} />
+                  <p style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>No active programs or pending applications.</p>
+                  <Link to="/programs" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.5rem 1rem', borderRadius: 8, background: 'var(--color-primary)', color: 'white', fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}>
+                    Find a Program
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Profile Completion Card */}
+            {profileCompletion < 100 && (
+              <div style={{ background: 'white', borderRadius: 16, padding: '1.5rem', border: '2px solid #FEF3C7', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.875rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <AlertCircle style={{ color: '#D97706' }} size={20} />
+                    <h4 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1rem', color: 'var(--color-heading)' }}>Complete Your Profile</h4>
+                  </div>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#D97706' }}>{profileCompletion}%</span>
+                </div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--color-body)', marginBottom: '1rem', lineHeight: 1.6 }}>
+                  Fill in your skills and interests to unlock program registrations and level up.
+                </p>
+                <div style={{ height: 6, background: '#FEF3C7', borderRadius: 99, overflow: 'hidden', marginBottom: '1.125rem' }}>
+                  <div style={{ width: `${profileCompletion}%`, height: '100%', background: '#D97706', borderRadius: 99, transition: 'width 0.5s ease' }} />
+                </div>
+                <Link to="/profile/setup" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.5rem 1rem', borderRadius: 8, border: '1.5px solid #D97706', color: '#D97706', fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none', transition: 'all 0.2s' }}>
+                  Complete Setup <ChevronRight size={14} />
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Right: Level Perks + Quick Links */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+            {/* Level Perks */}
+            <div style={{ background: 'linear-gradient(135deg, #FFFBEB, #FEF3C7)', borderRadius: 16, padding: '1.5rem', border: '1px solid #FDE68A' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.875rem' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Zap size={18} color="white" />
+                </div>
+                <h4 style={{ margin: 0, fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1rem', color: '#78350F' }}>Level Perks</h4>
+              </div>
+              <p style={{ fontSize: '0.83rem', color: '#92400E', marginBottom: '1rem', lineHeight: 1.65 }}>
+                You are a <strong>{level}</strong> volunteer. Earn{' '}
+                <strong style={{ color: '#D97706' }}>{Math.max(200 - points, 50)} pts</strong> more to reach the next level!
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {['Verified profile badge', 'Access to offline local drives', 'Custom certificate downloads (Contributor+)'].map((perk, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', fontSize: '0.8rem', color: i === 2 ? '#B45309' : '#78350F', opacity: i === 2 ? 0.6 : 1 }}>
+                    <span style={{ color: '#F59E0B', flexShrink: 0 }}>✦</span> {perk}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Navigation */}
+            <div style={{ background: 'white', borderRadius: 16, padding: '1.5rem', border: '1px solid #F0EDE8' }}>
+              <h4 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1rem', color: 'var(--color-heading)', margin: '0 0 1rem 0' }}>Quick Navigation</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                {[
+                  { icon: <FileText size={15} />, label: 'Track Applications', path: '/applications' },
+                  { icon: <Clock size={15} />, label: 'Log Attendance', path: '/attendance' },
+                  { icon: <Trophy size={15} />, label: 'Leaderboard Standings', path: '/leaderboard' },
+                  { icon: <Award size={15} />, label: 'My Certificates', path: '/certificates' },
+                ].map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.65rem 0.75rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-body)', textDecoration: 'none', transition: 'all 0.2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#FDFBF7'; e.currentTarget.style.color = 'var(--color-primary)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-body)'; }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {item.icon} {item.label}
+                    </div>
+                    <ChevronRight size={14} />
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
