@@ -27,6 +27,7 @@ import {
 import { useVolunteer } from '../context/VolunteerContext';
 import SkeletonLoader from '../components/volunteer/SkeletonLoader';
 import StatusBadge from '../components/volunteer/StatusBadge';
+import { safeSlice } from '../utils/safeSlice';
 
 // Sidebar link data
 const sidebarLinks = [
@@ -270,7 +271,7 @@ const Dashboard = () => {
                 <SkeletonLoader type="list" count={2} />
               ) : pendingApps.length > 0 || activePrograms.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                  {activePrograms.slice(0, 2).map(prog => (
+                  {safeSlice(activePrograms, 0, 2).map(prog => (
                     <div key={prog.id} style={{ padding: '1rem 1.125rem', border: '1px solid #D1FAE5', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F0FDF4' }}>
                       <div>
                         <h4 style={{ fontSize: '0.9rem', color: 'var(--color-heading)', fontWeight: 700, marginBottom: '0.3rem', margin: 0 }}>{prog.programTitle}</h4>
@@ -281,7 +282,7 @@ const Dashboard = () => {
                       </Link>
                     </div>
                   ))}
-                  {pendingApps.slice(0, 2).map(app => (
+                  {safeSlice(pendingApps, 0, 2).map(app => (
                     <div key={app.id} style={{ padding: '1rem 1.125rem', border: '1px solid #F0EDE8', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
                       <div>
                         <h4 style={{ fontSize: '0.9rem', color: 'var(--color-heading)', fontWeight: 700, margin: 0, marginBottom: '0.3rem' }}>{app.programTitle}</h4>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, MapPin, Clock, Users, CheckCircle } from 'lucide-react';
 import { getAllPrograms } from '../../services/programsService';
+import { safeSlice } from '../../utils/safeSlice';
 
 const categoryColors = {
   'Education': { bg: '#DBEAFE', color: '#1D4ED8', label: 'Education' },

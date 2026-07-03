@@ -7,6 +7,7 @@ import StatCard from '../../components/volunteer/StatCard';
 import SkeletonLoader from '../../components/volunteer/SkeletonLoader';
 import AttendanceCalendar from '../../components/volunteer/AttendanceCalendar';
 import CheckInButton from '../../components/volunteer/CheckInButton';
+import { safeSlice } from '../../utils/safeSlice';
 
 const AttendanceDashboard = () => {
   const navigate = useNavigate();
@@ -133,7 +134,7 @@ const AttendanceDashboard = () => {
             
             {attendanceDashboard.recentAttendance?.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {attendanceDashboard.recentAttendance.slice(0, 3).map(session => (
+                {safeSlice(attendanceDashboard.recentAttendance, 0, 3).map(session => (
                   <div key={session._id} style={{ display: 'flex', gap: '1rem', padding: '1rem', backgroundColor: 'var(--color-bg)', borderRadius: 'var(--radius-md)' }}>
                     <div style={{ 
                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
