@@ -9,7 +9,14 @@ const api = axios.create({
   withCredentials: true,
 });
 
-  // No token injection needed – authentication relies on HTTP‑only cookies.
+// Request interceptor: attach Bearer token from localStorage if present
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => Promise.reject(error));
 
 // Interceptor to handle responses globally (e.g. logouts on 401s)
 api.interceptors.response.use(
