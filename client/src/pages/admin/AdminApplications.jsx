@@ -120,7 +120,7 @@ const AdminApplications = () => {
                     applications.map((app) => {
                       const applicantName = app.user?.name || app.applicantName || 'Unknown User';
                       const applicantEmail = app.user?.email || app.applicantEmail || 'No email';
-                      const initials = applicantName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                      const initials = (applicantName || '').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
                       
                       return (
                         <tr key={app.id || app._id} style={{ borderBottom: '1px solid var(--color-border)' }}>
