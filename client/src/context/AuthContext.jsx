@@ -18,6 +18,13 @@ export const AuthProvider = ({ children }) => {
 
   // ─── Check existing session on mount ────────────────────────────────────────
   const checkAuth = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await api.get('/auth/me');
       if (res.success && res.data?.user) {
