@@ -3,10 +3,6 @@ const analyticsController = require('./analytics.controller');
 const { authenticate } = require('../../middlewares/auth.middleware');
 const { authorize } = require('../../middlewares/rbac.middleware');
 const ROLES = require('../../constants/roles.constants');
-const {
-  validateDateRange,
-  validateLimit,
-} = require('./analytics.validation');
 
 const router = express.Router();
 
@@ -57,13 +53,12 @@ router.get(
 /**
  * @route GET /api/v1/analytics/volunteers
  * @desc Get volunteer analytics report
- * @access Private - Admins, Super Admins
+ * @access Private - Admins, Super Admins, Coordinators
  */
 router.get(
   '/volunteers',
   authenticate,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  validateDateRange,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   analyticsController.getVolunteerAnalytics
 );
 
@@ -74,13 +69,12 @@ router.get(
 /**
  * @route GET /api/v1/analytics/programs
  * @desc Get program analytics report
- * @access Private - Admins, Super Admins
+ * @access Private - Admins, Super Admins, Coordinators
  */
 router.get(
   '/programs',
   authenticate,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  validateDateRange,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   analyticsController.getProgramAnalytics
 );
 
@@ -91,13 +85,12 @@ router.get(
 /**
  * @route GET /api/v1/analytics/applications
  * @desc Get application analytics report
- * @access Private - Admins, Super Admins
+ * @access Private - Admins, Super Admins, Coordinators
  */
 router.get(
   '/applications',
   authenticate,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  validateDateRange,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   analyticsController.getApplicationAnalytics
 );
 
@@ -108,13 +101,12 @@ router.get(
 /**
  * @route GET /api/v1/analytics/attendance
  * @desc Get attendance analytics report
- * @access Private - Admins, Super Admins
+ * @access Private - Admins, Super Admins, Coordinators
  */
 router.get(
   '/attendance',
   authenticate,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  validateDateRange,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   analyticsController.getAttendanceAnalytics
 );
 
@@ -125,13 +117,12 @@ router.get(
 /**
  * @route GET /api/v1/analytics/certificates
  * @desc Get certificate analytics report
- * @access Private - Admins, Super Admins
+ * @access Private - Admins, Super Admins, Coordinators
  */
 router.get(
   '/certificates',
   authenticate,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  validateDateRange,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   analyticsController.getCertificateAnalytics
 );
 
@@ -142,13 +133,12 @@ router.get(
 /**
  * @route GET /api/v1/analytics/rewards
  * @desc Get reward analytics report
- * @access Private - Admins, Super Admins
+ * @access Private - Admins, Super Admins, Coordinators
  */
 router.get(
   '/rewards',
   authenticate,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  validateDateRange,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   analyticsController.getRewardAnalytics
 );
 
@@ -159,13 +149,12 @@ router.get(
 /**
  * @route GET /api/v1/analytics/leaderboard
  * @desc Get leaderboard analytics report
- * @access Private - Admins, Super Admins
+ * @access Private - Admins, Super Admins, Coordinators
  */
 router.get(
   '/leaderboard',
   authenticate,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  validateLimit,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   analyticsController.getLeaderboardAnalytics
 );
 
@@ -176,13 +165,12 @@ router.get(
 /**
  * @route GET /api/v1/analytics/organizations
  * @desc Get organization analytics report
- * @access Private - Admins, Super Admins
+ * @access Private - Admins, Super Admins, Coordinators
  */
 router.get(
   '/organizations',
   authenticate,
-  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
-  validateDateRange,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
   analyticsController.getOrganizationAnalytics
 );
 

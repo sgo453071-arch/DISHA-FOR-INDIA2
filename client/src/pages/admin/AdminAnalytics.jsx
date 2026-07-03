@@ -37,11 +37,13 @@ const AdminAnalytics = () => {
     try {
       setLoading(true);
       const res = await getAdminDashboard();
-      if (res.success) {
+      if (res?.success) {
         setDashboardStats(res.data?.admin);
+      } else {
+        setError(res?.message || 'Failed to load dashboard statistics');
       }
-    } catch (_err) {
-      setError('Failed to load dashboard statistics');
+    } catch (err) {
+      setError(err?.message || 'Failed to load dashboard statistics');
     } finally {
       setLoading(false);
     }
@@ -79,11 +81,13 @@ const AdminAnalytics = () => {
         default:
           return;
       }
-      if (res.success) {
+      if (res?.success) {
         setAnalytics(res.data);
+      } else {
+        setError(res?.message || 'Failed to load analytics data');
       }
-    } catch (_err) {
-      setError('Failed to load analytics data');
+    } catch (err) {
+      setError(err?.message || 'Failed to load analytics data');
     } finally {
       setAnalyticsLoading(false);
     }
