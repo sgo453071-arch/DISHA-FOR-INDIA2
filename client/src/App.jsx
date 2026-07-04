@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { VolunteerProvider } from './context/VolunteerContext';
 
@@ -111,11 +111,29 @@ const RedirectIfAuthenticated = ({ children }) => {
   return children;
 };
 
+const AuthExpiredHandler = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const handler = () => {
+      if (!user) {
+        navigate('/login?expired=true', { replace: true });
+      }
+    };
+    window.addEventListener('auth-expired', handler);
+    return () => window.removeEventListener('auth-expired', handler);
+  }, [navigate, user]);
+
+  return null;
+};
+
 function App() {
   return (
     <AuthProvider>
       <VolunteerProvider>
         <BrowserRouter>
+          <AuthExpiredHandler />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<PublicLayout />}>

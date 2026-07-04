@@ -32,19 +32,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    // If the backend returns a 401 Unauthorized, we know the session has expired
     if (error.response && error.response.status === 401) {
-      // Clear token from storage and axios headers
       localStorage.removeItem('authToken');
       delete api.defaults.headers.common['Authorization'];
-      // Log the auth failure for debugging
       logMalformedResponse({ endpoint: error.config?.url, status: error.response.status, data: error.response.data });
-      // Redirect to login with an expired flag, unless already on login page
       if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-        window.location.href = '/login?expired=true';
+        window.dispatchEvent(new CustomEvent('auth-expired'));
       }
     }
-    // Normalize errors to return the message from the backend if available
     const message = error.response?.data?.message || 'Something went wrong. Please try again.';
     return Promise.reject({
       message,
