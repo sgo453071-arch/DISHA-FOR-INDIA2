@@ -37,7 +37,7 @@ const floatingBadges = [
 
 const Hero = () => {
   return (
-    <section style={{ background: '#FDFBF7', paddingTop: '72px', minHeight: '100vh', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+    <section style={{ background: '#FDFBF7', paddingTop: '0', minHeight: '100vh', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '3rem 1.5rem', width: '100%' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '3rem', flexWrap: 'wrap' }}>
