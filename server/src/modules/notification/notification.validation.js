@@ -1,11 +1,5 @@
 const ValidationError = require('../../utils/errors/ValidationError');
-const {
-  NOTIFICATION_TYPES,
-  PRIORITY,
-  CHANNEL,
-  STATUS,
-  VALIDATION,
-} = require('./notification.constants');
+const { NOTIFICATION_TYPES, PRIORITY, CHANNEL, VALIDATION } = require('./notification.constants');
 
 const validateCreateNotification = (req, res, next) => {
   const errors = [];
@@ -294,6 +288,37 @@ const validateRestoreNotification = (req, res, next) => {
   return next();
 };
 
+const validateBroadcastNotification = (req, res, next) => {
+  const errors = [];
+  const { title, message, type, priority } = req.body;
+
+  if (!title || typeof title !== 'string' || title.trim() === '') {
+    errors.push({ field: 'title', message: 'Title is required' });
+  } else if (title.trim().length > VALIDATION.TITLE_MAX_LENGTH) {
+    errors.push({ field: 'title', message: `Title cannot exceed ${VALIDATION.TITLE_MAX_LENGTH} characters` });
+  }
+
+  if (!message || typeof message !== 'string' || message.trim() === '') {
+    errors.push({ field: 'message', message: 'Message is required' });
+  } else if (message.trim().length > VALIDATION.MESSAGE_MAX_LENGTH) {
+    errors.push({ field: 'message', message: `Message cannot exceed ${VALIDATION.MESSAGE_MAX_LENGTH} characters` });
+  }
+
+  if (type && !Object.values(NOTIFICATION_TYPES).includes(type)) {
+    errors.push({ field: 'type', message: 'Invalid notification type' });
+  }
+
+  if (priority && !Object.values(PRIORITY).includes(priority)) {
+    errors.push({ field: 'priority', message: 'Invalid priority level' });
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Broadcast notification validation failed', errors));
+  }
+
+  return next();
+};
+
 const validateGetPreferences = (req, res, next) => {
   return next();
 };
@@ -372,6 +397,7 @@ module.exports = {
   validateMarkAllAsRead,
   validateDeleteNotification,
   validateRestoreNotification,
+  validateBroadcastNotification,
   validateGetPreferences,
   validateUpdatePreferences,
 };

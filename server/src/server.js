@@ -8,6 +8,7 @@ validateEnv();
 
 const app = require('./app');
 const connectDB = require('./config/db');
+const { initializeSocket } = require('./socket/socketServer');
 
 // ─────────────────────────────────────────────
 // Handle Uncaught Exceptions (synchronous errors not caught anywhere)
@@ -67,6 +68,9 @@ const server = app.listen(PORT, () => {
     `[SERVER] 🚀 Running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`
   );
 });
+
+// Initialize Socket.IO
+initializeSocket(server);
 
 // ─────────────────────────────────────────────
 // Handle Unhandled Promise Rejections (async errors not caught anywhere)

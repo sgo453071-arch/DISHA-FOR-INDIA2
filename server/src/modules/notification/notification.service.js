@@ -1,7 +1,7 @@
 const notificationRepository = require('./notification.repository');
 const notificationPreferenceRepository = require('./notificationPreference.repository');
 const { generateNotificationId, notificationFormatter } = require('./notification.utils');
-const { NOTIFICATION_TYPES, PRIORITY, CHANNEL, STATUS, MESSAGES, DEFAULTS } = require('./notification.constants');
+const { MESSAGES, DEFAULTS, STATUS } = require('./notification.constants');
 const templates = require('./notification.templates');
 const NotFoundError = require('../../utils/errors/NotFoundError');
 const ValidationError = require('../../utils/errors/ValidationError');

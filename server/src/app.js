@@ -28,6 +28,10 @@ const organizationRoutes = require('./modules/organization/organization.routes')
 const permissionRoutes = require('./modules/permission/permission.routes');
 const roleRoutes = require('./modules/role/role.routes');
 const analyticsRoutes = require('./modules/analytics/analytics.routes');
+const reportsRoutes = require('./modules/reports/report.routes');
+const conversationRoutes = require('./modules/conversation/conversation.routes');
+const messageRoutes = require('./modules/message/message.routes');
+const supportTicketRoutes = require('./modules/support-ticket/support-ticket.routes');
 const { successResponse } = require('./utils/response');
 
 const app = express();
@@ -112,6 +116,7 @@ app.get('/', (req, res) => {
       leaderboard: '/api/v1/leaderboard',
       notifications: '/api/v1/notifications',
       analytics: '/api/v1/analytics',
+      reports: '/api/v1/reports',
     },
   });
 });
@@ -133,6 +138,10 @@ app.use('/api/v1/organizations', organizationRoutes);
 app.use('/api/v1/permissions', permissionRoutes);
 app.use('/api/v1/roles', roleRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/reports', reportsRoutes);
+app.use('/api/v1/conversations', conversationRoutes);
+app.use('/api/v1/conversations', messageRoutes);
+app.use('/api/v1/support-tickets', supportTicketRoutes);
 
 // ─────────────────────────────────────────────
 // 11. Swagger API Documentation

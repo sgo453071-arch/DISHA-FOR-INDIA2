@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Users, Calendar, Clock, Activity, TrendingUp, Target } from 'lucide-react';
-import { getAdminDashboard, getLeaderboard, getNotifications } from '../../services/analyticsService';
+import { getAdminDashboard, getLeaderboard } from '../../services/analyticsService';
+import { getNotifications } from '../../services/notificationsService';
 import { getAllPrograms } from '../../services/programsService';
 import DashboardSkeleton from '../../components/DashboardSkeleton';
 import LeaderboardWidget from '../../components/LeaderboardWidget';

@@ -9,10 +9,11 @@ const {
   validateMarkAllAsRead,
   validateDeleteNotification,
   validateRestoreNotification,
+  validateBroadcastNotification,
   validateGetPreferences,
   validateUpdatePreferences,
 } = require('./notification.validation');
-const { authenticate } = require('../../middlewares/auth.middleware');
+const { authenticate, authorize } = require('../../middlewares/auth.middleware');
 
 const router = express.Router();
 
@@ -34,6 +35,8 @@ router.patch('/read-all', authenticate, validateMarkAllAsRead, notificationContr
 router.patch('/:id/restore', authenticate, validateRestoreNotification, notificationController.restoreNotification);
 
 router.delete('/:id', authenticate, validateDeleteNotification, notificationController.deleteNotification);
+
+router.post('/broadcast', authenticate, validateBroadcastNotification, authorize(['admin', 'superadmin']), notificationController.broadcastNotification);
 
 // ─── Notification Preference Routes ───────────────────────────────
 router.get('/preferences', authenticate, validateGetPreferences, notificationPreferenceController.getPreferences);

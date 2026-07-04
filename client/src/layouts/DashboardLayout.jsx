@@ -3,7 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   Shield, Home, Calendar, Award, Trophy, LogOut, Menu, X,
-  LayoutDashboard, Users, ClipboardList, BarChart2, UserCheck, Settings, FileText
+  LayoutDashboard, Users, ClipboardList, BarChart2, UserCheck, Settings, FileText, MessageSquare, HelpCircle
 } from 'lucide-react';
 
 const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'COORDINATOR'];
@@ -28,10 +28,14 @@ const DashboardLayout = () => {
     { name: 'Opportunities', path: '/programs',     icon: <Calendar size={18} /> },
     { name: 'Leaderboard',   path: '/leaderboard',  icon: <Trophy size={18} /> },
     { name: 'Certificates',  path: '/certificates', icon: <Award size={18} /> },
+    { name: 'Messages',      path: '/messages',      icon: <MessageSquare size={18} /> },
+    { name: 'Support',       path: '/support',       icon: <HelpCircle size={18} /> },
   ];
 
   const adminNavItems = [
     { name: 'Dashboard',     path: '/admin/dashboard',    icon: <LayoutDashboard size={18} /> },
+    { name: 'Messages',      path: '/admin/messages',     icon: <MessageSquare size={18} /> },
+    { name: 'Support',       path: '/admin/support',      icon: <HelpCircle size={18} /> },
     { name: 'Programs',      path: '/admin/programs',     icon: <Calendar size={18} /> },
     { name: 'Applications',  path: '/admin/applications', icon: <ClipboardList size={18} /> },
     { name: 'Attendance',    path: '/admin/attendance',   icon: <UserCheck size={18} /> },

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { NOTIFICATION_TYPES } = require('./notification.constants');
 
 const notificationPreferenceSchema = new mongoose.Schema(
   {
