@@ -19,17 +19,19 @@ class AnalyticsRepository {
    * @param {object} query - Existing query object to merge with
    * @returns {object} Updated query with date filter
    */
-  _buildDateFilter(dateRange, dateField, query = {}) {
+_buildDateFilter(dateRange, dateField, query = {}) {
     const now = new Date();
     const filter = { ...query, isDeleted: false };
 
     switch (dateRange) {
-      case DATE_RANGES.TODAY:
-        filter[dateField] = {
-          $gte: new Date(now.setHours(0, 0, 0, 0)),
-          $lt: new Date(now.setHours(23, 59, 59, 999)),
-        };
+      case DATE_RANGES.TODAY: {
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(now);
+        todayEnd.setHours(23, 59, 59, 999);
+        filter[dateField] = { $gte: todayStart, $lt: todayEnd };
         break;
+      }
 
       case DATE_RANGES.THIS_WEEK: {
         const startOfWeek = new Date(now);
@@ -119,14 +121,6 @@ class AnalyticsRepository {
           _id: 0,
           year: '$_id.year',
           month: '$_id.month',
-          monthName: {
-            $let: {
-              vars: {
-                months: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-              },
-              in: '$$months[$_id.month]',
-            },
-          },
           count: 1,
         },
       },
@@ -347,14 +341,6 @@ class AnalyticsRepository {
           _id: 0,
           year: '$_id.year',
           month: '$_id.month',
-          monthName: {
-            $let: {
-              vars: {
-                months: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-              },
-              in: '$$months[$_id.month]',
-            },
-          },
           count: 1,
         },
       },
@@ -522,14 +508,6 @@ class AnalyticsRepository {
           _id: 0,
           year: '$_id.year',
           month: '$_id.month',
-          monthName: {
-            $let: {
-              vars: {
-                months: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-              },
-              in: '$$months[$_id.month]',
-            },
-          },
           count: 1,
         },
       },
@@ -726,14 +704,6 @@ class AnalyticsRepository {
           _id: 0,
           year: '$_id.year',
           month: '$_id.month',
-          monthName: {
-            $let: {
-              vars: {
-                months: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-              },
-              in: '$$months[$_id.month]',
-            },
-          },
           count: 1,
           totalHours: 1,
         },
@@ -893,14 +863,6 @@ class AnalyticsRepository {
           _id: 0,
           year: '$_id.year',
           month: '$_id.month',
-          monthName: {
-            $let: {
-              vars: {
-                months: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-              },
-              in: '$$months[$_id.month]',
-            },
-          },
           count: 1,
         },
       },
@@ -975,14 +937,6 @@ class AnalyticsRepository {
           _id: 0,
           year: '$_id.year',
           month: '$_id.month',
-          monthName: {
-            $let: {
-              vars: {
-                months: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-              },
-              in: '$$months[$_id.month]',
-            },
-          },
           coins: 1,
         },
       },

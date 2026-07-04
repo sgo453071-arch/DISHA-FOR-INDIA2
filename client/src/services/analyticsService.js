@@ -1,6 +1,16 @@
 import api from './api';
 
 /**
+ * Get month name from month number (1-12)
+ * @param {number} month - Month number (1-12)
+ * @returns {string} Month name abbreviation
+ */
+export const getMonthName = (month) => {
+  const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return months[month] || '';
+};
+
+/**
  * Analytics Service
  * Provides functions to fetch analytics data from the backend
  */
