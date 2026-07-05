@@ -4,8 +4,8 @@ import React from 'react';
 import HeroGallery from '../components/home/HeroGallery';
 import TrustBar from '../components/home/TrustBar';
 import ImpactStats from '../components/home/ImpactStats';
-import Mission from '../components/home/Mission';
-import Programs from '../components/home/Programs';
+import WhatWeDo from '../components/home/WhatWeDo';
+import HowYouCanHelp from '../components/home/HowYouCanHelp/HowYouCanHelp';
 import WhyDFI from '../components/home/WhyDFI';
 import VolunteerJourney from '../components/home/VolunteerJourney';
 import SuccessStories from '../components/home/SuccessStories';
@@ -23,8 +23,8 @@ const Home = () => {
       <HeroGallery />
       <TrustBar />
       <ImpactStats />
-      <Mission />
-      <Programs />
+      <WhatWeDo />
+      <HowYouCanHelp />
       <WhyDFI />
       <VolunteerJourney />
       <SuccessStories />

@@ -1,75 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { heroGalleryData } from '../../data/heroGalleryData';
 
-const SLIDE_INTERVAL = 5000;
-const TRANSITION_DURATION = 0.7;
-const KEN_BURNS_DURATION = SLIDE_INTERVAL / 1000 + 2;
-const NAVBAR_HEIGHT = 76;
+const SLIDE_INTERVAL = 4500;
+const TRANSITION_DURATION = 0.8;
 
-const slideVariants = (reduceMotion) => ({
-  enter: (direction) => ({
-    x: reduceMotion ? 0 : (direction > 0 ? 60 : -60),
+const slideVariants = {
+  enter: {
     opacity: 0,
-    scale: 1,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-    scale: 1,
-    transition: {
-      x: { type: 'tween', duration: TRANSITION_DURATION, ease: [0.16, 1, 0.3, 1] },
-      opacity: { duration: TRANSITION_DURATION, ease: [0.16, 1, 0.3, 1] },
-    },
   },
-  exit: (direction) => ({
-    x: reduceMotion ? 0 : (direction > 0 ? -60 : 60),
+  center: {
+    opacity: 1,
+    transition: { duration: 1, ease: "easeInOut" },
+  },
+  exit: {
     opacity: 0,
-    scale: 1,
-    transition: {
-      x: { type: 'tween', duration: TRANSITION_DURATION, ease: [0.16, 1, 0.3, 1] },
-      opacity: { duration: TRANSITION_DURATION, ease: [0.16, 1, 0.3, 1] },
-    },
-  }),
-});
-
-const arrowBaseStyle = {
-  width: 40,
-  height: 40,
-  borderRadius: '50%',
-  background: 'rgba(255,255,255,0.18)',
-  backdropFilter: 'blur(18px)',
-  WebkitBackdropFilter: 'blur(18px)',
-  border: '1px solid rgba(255,255,255,0.35)',
-  color: 'white',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  cursor: 'pointer',
-  transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-  outline: 'none',
+    transition: { duration: 1, ease: "easeInOut" },
+  },
 };
 
 const HeroGallery = () => {
   const [[page, direction], setPage] = useState([0, 0]);
-  const [isPaused, setIsPaused] = useState(false);
-  const [touchStart, setTouchStart] = useState(null);
-  const [reduceMotion, setReduceMotion] = useState(false);
-  const [arrowHover, setArrowHover] = useState({ left: false, right: false });
+  const [isHovered, setIsHovered] = useState(false);
   const slideCount = heroGalleryData.length;
 
   const current = ((page % slideCount) + slideCount) % slideCount;
   const nextSlide = (((page + 1) % slideCount) + slideCount) % slideCount;
 
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduceMotion(mq.matches);
-    const handler = (e) => setReduceMotion(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
+  // Preload next image
   useEffect(() => {
     const img = new Image();
     img.src = heroGalleryData[nextSlide].image;
@@ -85,10 +45,10 @@ const HeroGallery = () => {
   }, [current]);
 
   useEffect(() => {
-    if (isPaused) return;
+    if (isHovered) return;
     const timer = setInterval(() => paginate(1), SLIDE_INTERVAL);
     return () => clearInterval(timer);
-  }, [paginate, isPaused]);
+  }, [paginate, isHovered]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -99,127 +59,140 @@ const HeroGallery = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [paginate]);
 
-  const handleTouchStart = (e) => setTouchStart(e.targetTouches[0].clientX);
-  const handleTouchEnd = (e) => {
-    if (touchStart === null) return;
-    const touchEnd = e.changedTouches[0].clientX;
-    const distance = touchStart - touchEnd;
-    if (distance > 50) paginate(1);
-    if (distance < -50) paginate(-1);
-    setTouchStart(null);
-  };
-
   const currentSlide = heroGalleryData[current];
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-black"
-      style={{
-        height: '100vh',
-        paddingTop: NAVBAR_HEIGHT,
-      }}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
+      className="hero-gallery-container relative bg-black overflow-hidden"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       aria-label="Hero photo gallery"
       aria-roledescription="carousel"
       aria-live="polite"
     >
+      <style>{`
+        .hero-gallery-container {
+          width: 100%;
+          max-width: none;
+          margin-top: 76px;
+          height: 400px;
+        }
+        .hero-slide-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+          display: block;
+        }
+        @media (min-width: 768px) {
+          .hero-gallery-container {
+            height: 550px;
+          }
+        }
+        @media (min-width: 1024px) {
+          .hero-gallery-container {
+            height: calc(100vh - 76px);
+            min-height: 650px;
+            max-height: 750px;
+          }
+        }
+      `}</style>
+
       <AnimatePresence initial={false} custom={direction}>
         <motion.div
           key={page}
           custom={direction}
-          variants={slideVariants(reduceMotion)}
+          variants={slideVariants}
           initial="enter"
           animate="center"
           exit="exit"
-          className="absolute inset-0"
+          className="absolute inset-0 w-full h-full"
         >
-          <motion.div
-            initial={{ scale: 1.0 }}
-            animate={{ scale: reduceMotion ? 1 : 1.08 }}
-            transition={{ duration: KEN_BURNS_DURATION, ease: 'linear' }}
-            className="absolute inset-0"
-          >
-            <img
-              src={currentSlide.image}
-              srcSet={`
-                ${currentSlide.imageSmall} 800w,
-                ${currentSlide.image} 1920w
-              `}
-              sizes="100vw"
-              alt={currentSlide.alt}
-              loading={page === 0 ? 'eager' : 'lazy'}
-              decoding="async"
-              fetchPriority={page === 0 ? 'high' : 'auto'}
-              className="w-full h-full object-cover object-center"
-            />
-          </motion.div>
+          {/* Image */}
+          <img
+            src={currentSlide.image}
+            alt={currentSlide.alt}
+            loading={page === 0 ? 'eager' : 'lazy'}
+            decoding="async"
+            fetchPriority={page === 0 ? 'high' : 'auto'}
+            className="hero-slide-image"
+          />
+          {/* Dark Overlay */}
+          <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.30)' }} />
+
+          {/* Text Content */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center z-10">
+            <motion.h1 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut", delay: 0.3 } }}
+              className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-white mb-4 max-w-4xl tracking-tight leading-tight drop-shadow-lg"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              Empowering India Through Volunteerism
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut", delay: 0.4 } }}
+              className="text-sm md:text-lg lg:text-xl text-gray-100 mb-8 max-w-2xl drop-shadow-md"
+            >
+              Connect with verified NGOs and create lasting impact.
+            </motion.p>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { duration: 0.6, ease: "easeOut", delay: 0.5 } }}
+              className="flex flex-col sm:flex-row items-center gap-4"
+            >
+              <Link 
+                to="/register"
+                className="bg-[#D35400] hover:bg-[#E67E22] text-white px-8 py-3 rounded-full font-bold transition-all transform hover:-translate-y-1 shadow-lg w-full sm:w-auto text-center"
+              >
+                Become Volunteer
+              </Link>
+              <Link 
+                to="/programs"
+                className="bg-transparent border-2 border-white hover:bg-white/10 text-white px-8 py-3 rounded-full font-bold transition-all transform hover:-translate-y-1 shadow-lg w-full sm:w-auto text-center"
+              >
+                Explore Programs
+              </Link>
+            </motion.div>
+          </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Premium Navigation Arrows */}
-      <div className="absolute inset-0 flex items-center justify-between z-20 pointer-events-none" style={{ paddingTop: NAVBAR_HEIGHT }}>
-        <button
-          onClick={() => paginate(-1)}
-          aria-label="Previous slide"
-          className="pointer-events-auto flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-          style={{
-            ...arrowBaseStyle,
-            width: 40,
-            height: 40,
-            marginLeft: 48,
-            transform: arrowHover.left ? 'scale(0.92)' : 'scale(1)',
-            background: arrowHover.left ? '#D35400' : 'rgba(255,255,255,0.18)',
-            borderColor: arrowHover.left ? '#D35400' : 'rgba(255,255,255,0.35)',
-          }}
-          onMouseEnter={() => setArrowHover((prev) => ({ ...prev, left: true }))}
-          onMouseLeave={() => setArrowHover((prev) => ({ ...prev, left: false }))}
-        >
-          <ChevronLeft size={20} strokeWidth={2.5} color="white" />
-        </button>
-        <button
-          onClick={() => paginate(1)}
-          aria-label="Next slide"
-          className="pointer-events-auto flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-          style={{
-            ...arrowBaseStyle,
-            width: 40,
-            height: 40,
-            marginRight: 48,
-            transform: arrowHover.right ? 'scale(0.92)' : 'scale(1)',
-            background: arrowHover.right ? '#D35400' : 'rgba(255,255,255,0.18)',
-            borderColor: arrowHover.right ? '#D35400' : 'rgba(255,255,255,0.35)',
-          }}
-          onMouseEnter={() => setArrowHover((prev) => ({ ...prev, right: true }))}
-          onMouseLeave={() => setArrowHover((prev) => ({ ...prev, right: false }))}
-        >
-          <ChevronRight size={20} strokeWidth={2.5} color="white" />
-        </button>
-      </div>
+      {/* Navigation Arrows */}
+      <button
+        onClick={() => paginate(-1)}
+        aria-label="Previous slide"
+        className="absolute z-20 flex items-center justify-center w-12 h-12 rounded-full bg-white/20 hover:bg-[#D35400] backdrop-blur-md border border-white/30 text-white transition-all shadow-lg hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        style={{ left: '30px', top: '50%', transform: 'translateY(-50%)' }}
+      >
+        <ChevronLeft size={24} strokeWidth={2.5} />
+      </button>
+      <button
+        onClick={() => paginate(1)}
+        aria-label="Next slide"
+        className="absolute z-20 flex items-center justify-center w-12 h-12 rounded-full bg-white/20 hover:bg-[#D35400] backdrop-blur-md border border-white/30 text-white transition-all shadow-lg hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        style={{ right: '30px', top: '50%', transform: 'translateY(-50%)' }}
+      >
+        <ChevronRight size={24} strokeWidth={2.5} />
+      </button>
 
-      {/* Elegant Pagination Dots */}
-      <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 z-20">
-        {heroGalleryData.map((_, idx) => {
-          const isActive = idx === current;
-          return (
-            <button
-              key={idx}
-              onClick={() => goToSlide(idx)}
-              aria-label={`Go to slide ${idx + 1}`}
-              aria-current={isActive ? 'true' : 'false'}
-              className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-              style={{
-                width: isActive ? 24 : 8,
-                height: 8,
-                background: isActive ? '#D35400' : 'rgba(255,255,255,0.5)',
-                transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-                transform: isActive ? 'scale(1)' : 'scale(1)',
-              }}
-            />
-          );
-        })}
+      {/* Pagination Dots */}
+      <div 
+        className="absolute left-0 right-0 flex justify-center gap-3 z-20"
+        style={{ bottom: '30px' }}
+      >
+        {heroGalleryData.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => goToSlide(idx)}
+            aria-label={`Go to slide ${idx + 1}`}
+            aria-current={idx === current ? 'true' : 'false'}
+            className={`rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+              idx === current ? 'w-8 h-2.5 bg-[#D35400]' : 'w-2.5 h-2.5 bg-white/50 hover:bg-white/80'
+            }`}
+          />
+        ))}
       </div>
     </section>
   );
