@@ -2,15 +2,19 @@ const TICKET_PRIORITIES = {
   LOW: 'low',
   MEDIUM: 'medium',
   HIGH: 'high',
-  CRITICAL: 'critical',
+  URGENT: 'urgent',
 };
 
 const TICKET_CATEGORIES = {
   TECHNICAL: 'technical',
-  BILLING: 'billing',
+  PROGRAMS: 'programs',
+  CERTIFICATES: 'certificates',
+  REWARDS: 'rewards',
+  ATTENDANCE: 'attendance',
+  APPLICATIONS: 'applications',
+  NGO: 'ngo',
+  VOLUNTEER: 'volunteer',
   GENERAL: 'general',
-  COMPLAINT: 'complaint',
-  SUGGESTION: 'suggestion',
 };
 
 const TICKET_STATUS = {

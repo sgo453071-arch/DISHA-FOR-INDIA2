@@ -76,6 +76,40 @@ class SupportTicketRepository {
   async findByIdAndUser(id, userId) {
     return SupportTicket.findOne({ _id: id, userId, isDeleted: false });
   }
+
+  async search(query = {}) {
+    const { search, page = 1, limit = 20, status, priority, category, assignedTo, sortBy = 'createdAt', order = 'desc' } = query;
+    const skip = (page - 1) * limit;
+    const sortOrder = order === 'desc' ? -1 : 1;
+
+    const filter = { isDeleted: false };
+
+    if (status) filter.status = status;
+    if (priority) filter.priority = priority;
+    if (category) filter.category = category;
+    if (assignedTo) filter.assignedTo = assignedTo;
+
+    if (search) {
+      filter.$or = [
+        { subject: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { ticketId: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [tickets, total] = await Promise.all([
+      SupportTicket.find(filter)
+        .sort({ [sortBy]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .populate('userId', 'name email avatar role')
+        .populate('assignedTo', 'name email avatar role')
+        .populate('conversationId'),
+      SupportTicket.countDocuments(filter),
+    ]);
+
+    return { tickets, total };
+  }
 }
 
 module.exports = new SupportTicketRepository();

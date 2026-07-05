@@ -75,6 +75,47 @@ const validateGetSupportTickets = (req, res, next) => {
   return next();
 };
 
+const validateSearchTickets = (req, res, next) => {
+  const errors = [];
+  const { search, status, priority, category, page, limit } = req.query;
+
+  if (search !== undefined && (typeof search !== 'string' || search.trim().length === 0)) {
+    errors.push({ field: 'search', message: 'Search query must be a non-empty string' });
+  }
+
+  if (status !== undefined && !Object.values(TICKET_STATUS).includes(status)) {
+    errors.push({ field: 'status', message: 'Invalid ticket status filter' });
+  }
+
+  if (priority !== undefined && !Object.values(TICKET_PRIORITIES).includes(priority)) {
+    errors.push({ field: 'priority', message: 'Invalid ticket priority filter' });
+  }
+
+  if (category !== undefined && !Object.values(TICKET_CATEGORIES).includes(category)) {
+    errors.push({ field: 'category', message: 'Invalid ticket category filter' });
+  }
+
+  if (page !== undefined) {
+    const pageNum = Number(page);
+    if (!Number.isInteger(pageNum) || pageNum < 1) {
+      errors.push({ field: 'page', message: 'Page must be a positive integer' });
+    }
+  }
+
+  if (limit !== undefined) {
+    const limitNum = Number(limit);
+    if (!Number.isInteger(limitNum) || limitNum < 1 || limitNum > 100) {
+      errors.push({ field: 'limit', message: 'Limit must be an integer between 1 and 100' });
+    }
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Search tickets validation failed', errors));
+  }
+
+  return next();
+};
+
 const validateGetSupportTicket = (req, res, next) => {
   const { id } = req.params;
 
@@ -121,6 +162,23 @@ const validateUpdateSupportTicket = (req, res, next) => {
   return next();
 };
 
+const validateStatusUpdate = (req, res, next) => {
+  const errors = [];
+  const { status } = req.body;
+
+  if (!status || typeof status !== 'string' || status.trim().length === 0) {
+    errors.push({ field: 'status', message: 'Status is required' });
+  } else if (!Object.values(TICKET_STATUS).includes(status)) {
+    errors.push({ field: 'status', message: 'Invalid ticket status' });
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Status update validation failed', errors));
+  }
+
+  return next();
+};
+
 const validateAssignTicket = (req, res, next) => {
   const errors = [];
   const { id } = req.params;
@@ -147,4 +205,6 @@ module.exports = {
   validateGetSupportTicket,
   validateUpdateSupportTicket,
   validateAssignTicket,
+  validateSearchTickets,
+  validateStatusUpdate,
 };

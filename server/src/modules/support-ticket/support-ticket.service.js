@@ -109,10 +109,10 @@ class SupportTicketService {
         throw new ValidationError('Invalid ticket status');
       }
       safeUpdate.status = updateData.status;
-      if (updateData.status === 'resolved') {
+      if (updateData.status === TICKET_STATUS.RESOLVED) {
         safeUpdate.resolvedAt = new Date();
       }
-      if (updateData.status === 'closed') {
+      if (updateData.status === TICKET_STATUS.CLOSED) {
         safeUpdate.closedAt = new Date();
       }
     }
@@ -122,6 +122,62 @@ class SupportTicketService {
     return {
       ticket: updated,
       successMessage: 'Support ticket updated successfully',
+    };
+  }
+
+  async updateTicketStatus(userId, ticketId, status) {
+    const ticket = await supportTicketRepository.findById(ticketId);
+
+    if (!ticket) {
+      throw new NotFoundError('Support ticket not found');
+    }
+
+    const validStatuses = Object.values(TICKET_STATUS);
+    if (!validStatuses.includes(status)) {
+      throw new ValidationError('Invalid ticket status');
+    }
+
+    const updateData = { status };
+
+    if (status === TICKET_STATUS.RESOLVED) {
+      updateData.resolvedAt = new Date();
+    }
+
+    if (status === TICKET_STATUS.CLOSED) {
+      updateData.closedAt = new Date();
+    }
+
+    const updated = await supportTicketRepository.update(ticketId, updateData);
+
+    return {
+      ticket: updated,
+      successMessage: 'Support ticket status updated successfully',
+    };
+  }
+
+  async searchTickets(query = {}) {
+    const { search, page = 1, limit = 20, status, priority, category, assignedTo, sortBy = 'createdAt', order = 'desc' } = query;
+    const result = await supportTicketRepository.search({
+      search,
+      page: Number(page),
+      limit: Number(limit),
+      status,
+      priority,
+      category,
+      assignedTo,
+      sortBy,
+      order,
+    });
+
+    return {
+      tickets: result.tickets,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: result.total,
+        totalPages: Math.ceil(result.total / Number(limit)) || 1,
+      },
+      successMessage: 'Support tickets searched successfully',
     };
   }
 

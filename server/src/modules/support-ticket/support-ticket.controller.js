@@ -32,6 +32,15 @@ class SupportTicketController {
     }
   };
 
+  searchTickets = async (req, res, next) => {
+    try {
+      const result = await supportTicketService.searchTickets(req.query);
+      return successResponse(res, 200, result.successMessage, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
   getTicket = async (req, res, next) => {
     try {
       const result = await supportTicketService.getTicket(req.user.id, req.params.id);
@@ -44,6 +53,16 @@ class SupportTicketController {
   updateTicket = async (req, res, next) => {
     try {
       const result = await supportTicketService.updateTicket(req.user.id, req.params.id, req.body);
+      return successResponse(res, 200, result.successMessage, { ticket: result.ticket });
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  updateTicketStatus = async (req, res, next) => {
+    try {
+      const { status } = req.body;
+      const result = await supportTicketService.updateTicketStatus(req.user.id, req.params.id, status);
       return successResponse(res, 200, result.successMessage, { ticket: result.ticket });
     } catch (error) {
       return next(error);
