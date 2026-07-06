@@ -2,9 +2,9 @@ import React from 'react';
 import AboutHero from '../components/about/AboutHero';
 import OurJourneyTimeline from '../components/about/OurJourneyTimeline';
 import MissionVisionValues from '../components/about/MissionVisionValues';
-import FounderSpotlight from '../components/about/FounderSpotlight';
 import ImpactNumbers from '../components/about/ImpactNumbers';
 import AreasWeWork from '../components/about/AreasWeWork';
+import HowWeCreateImpact from '../components/about/HowWeCreateImpact';
 
 const About = () => {
   return (
@@ -12,9 +12,9 @@ const About = () => {
       <AboutHero />
       <OurJourneyTimeline />
       <MissionVisionValues />
-      <FounderSpotlight />
       <ImpactNumbers />
       <AreasWeWork />
+      <HowWeCreateImpact />
     </main>
   );
 };

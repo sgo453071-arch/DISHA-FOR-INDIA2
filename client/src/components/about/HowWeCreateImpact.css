@@ -1,0 +1,363 @@
+/* ============================================
+   How We Create Impact — Section Styles
+   ============================================ */
+
+.process-section {
+  background-color: #FCFAF7;
+  padding: 120px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background decorations */
+.process-deco-blob {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+.process-deco-blob-1 {
+  top: -10%;
+  right: -10%;
+  background: radial-gradient(circle, rgba(232, 106, 31, 0.04) 0%, transparent 70%);
+}
+
+.process-deco-blob-2 {
+  bottom: -10%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(23, 59, 63, 0.03) 0%, transparent 70%);
+}
+
+.process-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 60px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+.process-header {
+  text-align: center;
+  margin-bottom: 80px;
+}
+
+.process-accent {
+  font-family: var(--font-heading, 'Georgia', serif);
+  font-style: italic;
+  font-size: 1.15rem;
+  color: #E86A1F;
+  display: inline-block;
+  position: relative;
+  margin-bottom: 0.75rem;
+}
+
+.process-accent::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: url("data:image/svg+xml,%3Csvg width='100' height='8' viewBox='0 0 100 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 6.5C20 2.5 60 1 99 4' stroke='%23E86A1F' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center;
+  background-size: cover;
+  opacity: 0.7;
+}
+
+.process-title {
+  font-family: var(--font-heading, 'Georgia', serif);
+  font-size: clamp(2.25rem, 3.8vw, 3.25rem);
+  font-weight: 800;
+  color: #12233D;
+  margin: 0 0 1rem 0;
+  line-height: 1.1;
+}
+
+.process-desc {
+  font-size: 1.05rem;
+  color: #556987;
+  line-height: 1.65;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* Horizontal Journey Container */
+.process-journey {
+  position: relative;
+  margin: 60px 0 80px 0;
+  padding: 20px 0;
+}
+
+/* Connecting Line SVG */
+.process-svg-container {
+  position: absolute;
+  top: 90px; /* Aligned with icon center vertical */
+  left: 8%;
+  width: 84%;
+  height: 80px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.process-svg-line {
+  stroke: rgba(232, 106, 31, 0.25);
+  stroke-width: 3;
+  stroke-dasharray: 8 6;
+  fill: none;
+}
+
+.process-svg-line-active {
+  stroke: #E86A1F;
+  stroke-width: 3;
+  fill: none;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  transition: stroke-dashoffset 2s ease-in-out;
+}
+
+.process-journey.in-view .process-svg-line-active {
+  stroke-dashoffset: 0;
+}
+
+/* Animated moving dot */
+.process-moving-dot {
+  fill: #E86A1F;
+  filter: drop-shadow(0 0 4px rgba(232, 106, 31, 0.8));
+}
+
+/* Steps Grid */
+.process-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Step Card */
+.process-card-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.process-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 24px;
+  padding: 36px 24px 28px 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 300ms ease;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+}
+
+.process-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(18, 35, 61, 0.08);
+  border-color: rgba(232, 106, 31, 0.15);
+}
+
+/* Step Badge Number */
+.process-number-badge {
+  position: absolute;
+  top: -18px;
+  z-index: 3;
+  background: linear-gradient(135deg, #F58646, #E86A1F);
+  color: #ffffff;
+  font-family: var(--font-heading, 'Georgia', serif);
+  font-weight: 800;
+  font-size: 0.95rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(232, 106, 31, 0.35);
+  transition: transform 300ms ease, box-shadow 300ms ease;
+}
+
+.process-card:hover + .process-number-badge,
+.process-card-wrap:hover .process-number-badge {
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 6px 15px rgba(232, 106, 31, 0.5);
+}
+
+/* Icon Wrap */
+.process-icon-wrap {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFF0E6, #FFE5D4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #E86A1F;
+  margin-bottom: 24px;
+  transition: all 300ms ease;
+  box-shadow: inset 0 2px 4px rgba(232, 106, 31, 0.05);
+}
+
+.process-card:hover .process-icon-wrap {
+  background: linear-gradient(135deg, #E86A1F, #D35400);
+  color: #ffffff;
+  transform: scale(1.08);
+  box-shadow: 0 10px 20px rgba(232, 106, 31, 0.25);
+}
+
+/* Card Content */
+.process-card-title {
+  font-family: var(--font-heading, 'Georgia', serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #12233D;
+  margin: 0 0 12px 0;
+  transition: color 300ms ease;
+}
+
+.process-card:hover .process-card-title {
+  color: #E86A1F;
+}
+
+.process-card-desc {
+  font-size: 0.9rem;
+  color: #556987;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Bottom CTA block */
+.process-cta {
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 32px;
+  padding: 48px 40px;
+  max-width: 800px;
+  margin: 60px auto 0 auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.015);
+}
+
+.process-cta-title {
+  font-family: var(--font-heading, 'Georgia', serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #12233D;
+  margin: 0 0 8px 0;
+}
+
+.process-cta-desc {
+  font-size: 1rem;
+  color: #556987;
+  margin: 0 0 28px 0;
+}
+
+.process-cta-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.btn-primary-orange {
+  background-color: #E86A1F;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: 12px;
+  transition: all 250ms ease;
+  box-shadow: 0 4px 14px rgba(232, 106, 31, 0.25);
+  border: 1px solid transparent;
+}
+
+.btn-primary-orange:hover {
+  background-color: #d35c16;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(232, 106, 31, 0.35);
+}
+
+.btn-secondary-outline {
+  background-color: transparent;
+  color: #12233D;
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: 12px;
+  border: 1px solid rgba(18, 35, 61, 0.15);
+  transition: all 250ms ease;
+}
+
+.btn-secondary-outline:hover {
+  background-color: rgba(18, 35, 61, 0.03);
+  border-color: rgba(18, 35, 61, 0.3);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   RESPONSIVENESS & LAYOUT TWEAKS
+   ============================================ */
+
+/* Tablet (zig-zag layout: 2-2-1) */
+@media (max-width: 1024px) {
+  .process-svg-container {
+    display: none; /* Hide horizontal connectors on tablets and mobiles */
+  }
+
+  .process-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px 30px;
+  }
+
+  /* Make the 5th card span full width on tablet to look balanced */
+  .process-card-wrap:nth-child(5) {
+    grid-column: span 2;
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+/* Mobile (Vertical timeline style) */
+@media (max-width: 640px) {
+  .process-container {
+    padding: 0 24px;
+  }
+
+  .process-section {
+    padding: 80px 0;
+  }
+
+  .process-grid {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+
+  .process-card-wrap:nth-child(5) {
+    grid-column: span 1;
+    max-width: none;
+  }
+
+  .process-card {
+    min-height: auto;
+    padding: 32px 20px 24px 20px;
+  }
+
+  .process-cta-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .btn-primary-orange, .btn-secondary-outline {
+    width: 100%;
+    text-align: center;
+  }
+}

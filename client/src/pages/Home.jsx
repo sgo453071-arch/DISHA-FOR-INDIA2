@@ -11,7 +11,6 @@ import VolunteerJourney from '../components/home/VolunteerJourney';
 import VoiceOfImpact from '../components/home/VoiceOfImpact/VoiceOfImpact';
 import TestimonialSpotlight from '../components/home/TestimonialSpotlight/TestimonialSpotlight';
 import ImpactTransparency from '../components/home/ImpactTransparency/ImpactTransparency';
-import FounderSpotlight from '../components/home/FounderSpotlight/FounderSpotlight';
 import Gallery from '../components/home/Gallery';
 import LeaderboardPreview from '../components/home/LeaderboardPreview';
 import Blogs from '../components/home/Blogs';
@@ -28,7 +27,6 @@ const Home = () => {
       <VoiceOfImpact />
       <TestimonialSpotlight />
       <ImpactTransparency />
-      <FounderSpotlight />
       <WhyDFI />
       <VolunteerJourney />
       <Gallery />
