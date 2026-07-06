@@ -20,6 +20,7 @@ import ProfileSetup from './pages/ProfileSetup';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
 import VerifyCertificate from './pages/VerifyCertificate';
+import About from './pages/About';
 
 // Volunteer Pages
 import ApplicationForm from './pages/applications/ApplicationForm';
@@ -141,6 +142,7 @@ function App() {
               <Route index element={<Home />} />
               <Route path="programs" element={<Programs />} />
               <Route path="leaderboard" element={<Leaderboard />} />
+              <Route path="about" element={<About />} />
               <Route path="login" element={
                 <RedirectIfAuthenticated>
                   <Login />

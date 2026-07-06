@@ -1,83 +1,151 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { ShieldCheck, Trophy, Gift, Network, Zap } from 'lucide-react';
+import { Play, ArrowRight, User, Users, Heart, BookOpen, Star } from 'lucide-react';
+import './WhyDFI.css';
 
-const features = [
+const videoStories = [
   {
-    icon: <ShieldCheck size={26} />,
-    iconColor: '#059669', iconBg: '#D1FAE5',
-    title: 'Verified Impact',
-    desc: 'All NGOs and programs are verified and transparent. Your time goes to causes that truly matter.',
+    id: 1,
+    title: 'From Our Founder',
+    description: 'Indu Aggarwal shares the vision and mission behind Disha for India.',
+    duration: '01:45',
+    thumbnail: '/images/indu_aggarwal.png',
+    categoryIcon: User,
+    iconColor: '#D35400',
+    iconBg: '#FEF0E8',
   },
   {
-    icon: <ShieldCheck size={26} />,
-    iconColor: '#7C3AED', iconBg: '#EDE9FE',
-    title: 'Verified Certificates',
-    desc: 'Blockchain-backed certificates with QR verification that employers and universities trust instantly.',
+    id: 2,
+    title: 'Volunteer Story',
+    description: 'A volunteer shares how DFI helped him grow while making a difference.',
+    duration: '01:32',
+    thumbnail: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&q=80&w=800',
+    categoryIcon: Users,
+    iconColor: '#059669',
+    iconBg: '#D1FAE5',
   },
   {
-    icon: <Trophy size={26} />,
-    iconColor: '#D97706', iconBg: '#FEF3C7',
-    title: 'Leaderboard',
-    desc: 'Compete, grow, and earn your place on the national leaderboard. Rise through the ranks.',
+    id: 3,
+    title: 'Community Impact',
+    description: 'See how our programs are transforming communities across India.',
+    duration: '01:28',
+    thumbnail: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=800',
+    categoryIcon: Heart,
+    iconColor: '#7C3AED',
+    iconBg: '#EDE9FE',
   },
   {
-    icon: <Gift size={26} />,
-    iconColor: '#DB2777', iconBg: '#FCE7F3',
-    title: 'Exclusive Rewards',
-    desc: 'Earn badges, unlock rewards & special opportunities as you level up your volunteer journey.',
+    id: 4,
+    title: 'Program Highlights',
+    description: 'A glimpse into our key initiatives and the change we\'re creating together.',
+    duration: '02:10',
+    thumbnail: 'https://images.unsplash.com/photo-1511949860472-b86a0b1f2371?auto=format&fit=crop&q=80&w=1200',
+    categoryIcon: BookOpen,
+    iconColor: '#D97706',
+    iconBg: '#FEF3C7',
   },
   {
-    icon: <Network size={26} />,
-    iconColor: '#0284C7', iconBg: '#E0F2FE',
-    title: 'Professional Network',
-    desc: 'Connect with NGO leaders, corporate CSR heads, and like-minded changemakers across India.',
-  },
-  {
-    icon: <Zap size={26} />,
-    iconColor: '#D35400', iconBg: '#FFF3ED',
-    title: 'Skill Development',
-    desc: 'Build real-world skills and boost your career through hands-on field experience.',
-  },
+    id: 5,
+    title: 'Volunteer Experience',
+    description: 'Hear how volunteering with DFI has been a life-changing journey.',
+    duration: '01:50',
+    thumbnail: 'https://images.unsplash.com/photo-1552581234-26160f608093?auto=format&fit=crop&q=80&w=1200',
+    categoryIcon: Star,
+    iconColor: '#0284C7',
+    iconBg: '#E0F2FE',
+  }
 ];
 
+const fallbackThumbnail = 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800';
+
 const WhyDFI = () => {
+  const handleImageError = (e) => {
+    if (e.target.src !== fallbackThumbnail) {
+      e.target.src = fallbackThumbnail;
+    }
+  };
+
   return (
-    <section style={{ background: 'white', padding: '5rem 0' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 800, color: 'var(--color-heading)', marginBottom: '0.75rem' }}>
+    <section className="why-section" aria-labelledby="why-heading">
+      
+      {/* Decorative background elements */}
+      <div className="why-deco-blob" aria-hidden="true" />
+      <div className="why-deco-dots" aria-hidden="true">
+         {/* Simple SVG dot pattern */}
+         <svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+           <defs>
+             <pattern id="whyDotPattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+               <circle cx="2" cy="2" r="2" fill="#000000" />
+             </pattern>
+           </defs>
+           <rect width="120" height="120" fill="url(#whyDotPattern)" />
+         </svg>
+      </div>
+
+      <div className="why-container">
+        
+        {/* Header */}
+        <div className="why-header">
+          <span className="why-accent">Real People, Real Impact</span>
+          <h2 id="why-heading" className="why-title">
             Why Choose DFI?
           </h2>
-          <p style={{ color: 'var(--color-body)', fontSize: '1rem', maxWidth: 480, margin: '0 auto' }}>
-            We make volunteering meaningful, transparent, and rewarding.
+          <p className="why-desc">
+            Hear from our founder, volunteers, NGO partners, and beneficiaries about how Disha for India is creating meaningful impact across communities.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
-          {features.map((f, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-              style={{ background: '#FDFBF7', borderRadius: 16, padding: '1.5rem', border: '1px solid #F0EDE8', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.75rem', cursor: 'default', transition: 'all 0.25s' }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
-            >
-              <div style={{ width: 56, height: 56, borderRadius: 14, background: f.iconBg, color: f.iconColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {f.icon}
+        {/* Video Grid Layout */}
+        <div className="why-grid">
+          {videoStories.map((video) => {
+            const Icon = video.categoryIcon;
+            return (
+              <div 
+                key={video.id} 
+                className="why-card"
+                tabIndex={0}
+                aria-label={`Play video: ${video.title}`}
+                role="button"
+              >
+                {/* Thumbnail Area */}
+                <div className="why-thumb-wrap">
+                  <img 
+                    src={video.thumbnail} 
+                    alt={video.title} 
+                    className="why-thumb" 
+                    loading="lazy" 
+                    decoding="async"
+                    onError={handleImageError}
+                  />
+                  <div className="why-overlay" />
+                  <div className="why-play-btn">
+                    <Play fill="currentColor" size={24} style={{ marginLeft: '4px' }} />
+                  </div>
+                  <span className="why-duration">{video.duration}</span>
+                </div>
+                
+                {/* Content Area */}
+                <div className="why-content">
+                  <div className="why-icon-wrap" style={{ backgroundColor: video.iconBg, color: video.iconColor }}>
+                    <Icon size={20} strokeWidth={2} />
+                  </div>
+                  <div className="why-text-wrap">
+                    <h3 className="why-card-title">{video.title}</h3>
+                    <p className="why-card-desc">{video.description}</p>
+                  </div>
+                </div>
               </div>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1rem', color: 'var(--color-heading)', margin: 0 }}>
-                {f.title}
-              </h3>
-              <p style={{ fontSize: '0.83rem', color: 'var(--color-body)', lineHeight: 1.6, margin: 0 }}>
-                {f.desc}
-              </p>
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
+
+        {/* CTA Button */}
+        <div className="why-cta-wrap">
+          <a href="#" className="why-cta-btn" aria-label="Explore more stories from our community">
+            More Stories from Our Community
+            <ArrowRight size={18} className="why-cta-arrow" />
+          </a>
+        </div>
+
       </div>
     </section>
   );

@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
-import { Plus, Minus } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { faqs } from '../../constants/homeData';
+import './FAQ.css';
 
 const FAQItem = ({ faq, isOpen, onClick }) => {
   return (
-    <div className="border-b border-gray-200 last:border-b-0">
+    <div className={`faq-card ${isOpen ? 'is-open' : ''}`}>
       <button 
-        className="w-full py-8 flex justify-between items-center text-left focus:outline-none group"
+        className="faq-trigger"
         onClick={onClick}
+        aria-expanded={isOpen}
       >
-        <span className={`font-heading text-xl md:text-2xl font-bold pr-8 transition-colors duration-300 ${isOpen ? 'text-primary' : 'text-heading group-hover:text-primary'}`}>
+        <span className="faq-question">
           {faq.question}
         </span>
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${isOpen ? 'bg-primary text-white' : 'bg-gray-100 text-gray-400 group-hover:bg-primary/10 group-hover:text-primary'}`}>
-          {isOpen ? <Minus size={20} /> : <Plus size={20} />}
+        <div className="faq-icon-wrap">
+          <ChevronDown size={24} />
         </div>
       </button>
       
@@ -24,11 +26,13 @@ const FAQItem = ({ faq, isOpen, onClick }) => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+            transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
             className="overflow-hidden"
           >
-            <div className="pb-8 pr-12 text-lg text-body leading-relaxed font-light">
-              {faq.answer}
+            <div className="faq-answer-wrap">
+              <p className="faq-answer">
+                {faq.answer}
+              </p>
             </div>
           </motion.div>
         )}
@@ -41,19 +45,33 @@ const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(0);
 
   return (
-    <section className="py-24 px-6 bg-white">
-      <div className="container mx-auto max-w-4xl">
-        <div className="text-center mb-20">
-          <h2 className="font-heading text-4xl md:text-5xl font-bold text-heading mb-4">
+    <section className="faq-section" aria-labelledby="faq-heading">
+      
+      {/* Decorative background elements */}
+      <div className="faq-deco-blob" aria-hidden="true" />
+      <div className="faq-deco-dots" aria-hidden="true">
+         <svg width="150" height="150" xmlns="http://www.w3.org/2000/svg">
+           <defs>
+             <pattern id="faqDotPattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+               <circle cx="2" cy="2" r="2" fill="#000000" />
+             </pattern>
+           </defs>
+           <rect width="150" height="150" fill="url(#faqDotPattern)" />
+         </svg>
+      </div>
+
+      <div className="faq-container">
+        <div className="faq-header">
+          <span className="faq-accent">Need Help?</span>
+          <h2 id="faq-heading" className="faq-title">
             Common Questions
           </h2>
-          <div className="w-24 h-1 bg-primary mx-auto mb-6 rounded-full"></div>
-          <p className="text-lg text-body">
-            Everything you need to know about joining the Disha for India movement.
+          <p className="faq-desc">
+            Everything you need to know before joining Disha for India.
           </p>
         </div>
 
-        <div className="bg-white">
+        <div className="faq-frame">
           {faqs.map((faq, index) => (
             <FAQItem 
               key={index} 

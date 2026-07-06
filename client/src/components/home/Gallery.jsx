@@ -1,91 +1,126 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { galleryImages } from '../../constants/homeData';
-import { X, ZoomIn } from 'lucide-react';
+import { BookOpen, HeartPulse, Leaf, Users, Lightbulb, ShieldAlert, Camera } from 'lucide-react';
+import './Gallery.css';
+
+const galleryData = [
+  {
+    id: 1,
+    title: 'Learning Beyond Books',
+    description: 'Education that empowers young minds.',
+    icon: BookOpen,
+    image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800',
+    alt: 'Volunteer teaching children in a rural classroom',
+  },
+  {
+    id: 2,
+    title: 'Community Healthcare Camp',
+    description: 'Care that reaches every village.',
+    icon: HeartPulse,
+    image: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=800',
+    alt: 'Doctor examining a patient at a community health camp',
+  },
+  {
+    id: 3,
+    title: 'Planting a Better Tomorrow',
+    description: 'Small actions create lasting impact.',
+    icon: Leaf,
+    image: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=800',
+    alt: 'Volunteers planting saplings in a field',
+  },
+  {
+    id: 4,
+    title: 'Women Empowerment',
+    description: 'Supporting financial independence.',
+    icon: Users,
+    image: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?auto=format&fit=crop&q=80&w=800',
+    alt: 'Women participating in a skills training workshop',
+  },
+  {
+    id: 5,
+    title: 'Skill Development',
+    description: 'Teaching digital skills to youth.',
+    icon: Lightbulb,
+    image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800',
+    alt: 'Students learning computer skills in a lab',
+  },
+  {
+    id: 6,
+    title: 'Disaster Relief',
+    description: 'Providing crucial aid when it matters most.',
+    icon: ShieldAlert,
+    image: 'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?auto=format&fit=crop&q=80&w=800',
+    alt: 'Volunteers distributing relief supplies',
+  },
+];
+
+const fallbackImage = 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800';
 
 const Gallery = () => {
-  const [lightbox, setLightbox] = useState(null);
+  const handleImageError = (e) => {
+    if (e.target.src !== fallbackImage) {
+      e.target.src = fallbackImage;
+      e.target.alt = 'Gallery placeholder image';
+    }
+  };
 
   return (
-    <section style={{ background: '#FDFBF7', padding: '5rem 0' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 800, color: 'var(--color-heading)', marginBottom: '0.5rem' }}>
+    <section className="gallery-section" aria-labelledby="gallery-heading">
+      {/* Decorative background elements */}
+      <div className="gallery-deco-blob" aria-hidden="true" />
+      <div className="gallery-deco-pattern" aria-hidden="true">
+        <Camera size={200} color="#ffffff" opacity={0.03} />
+      </div>
+
+      <div className="gallery-container">
+        {/* Section Header */}
+        <div className="gallery-header">
+          <span className="gallery-accent">Photo Gallery</span>
+          <h2 id="gallery-heading" className="gallery-title">
             A Glimpse of Change
           </h2>
-          <p style={{ color: 'var(--color-body)', fontSize: '0.95rem' }}>
-            Moments captured across India where volunteers came together to create impact.
+          <div className="gallery-divider" />
+          <p className="gallery-desc">
+            Moments captured across India where volunteers, communities, and NGOs came together to create meaningful impact.
           </p>
         </div>
 
-        {/* Masonry-style grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem', gridAutoRows: '200px' }}>
-          {galleryImages.map((img, i) => (
-            <motion.div
-              key={img.id}
-              initial={{ opacity: 0, scale: 0.96 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-              onClick={() => setLightbox(img)}
-              style={{
-                borderRadius: 14,
-                overflow: 'hidden',
-                position: 'relative',
-                cursor: 'pointer',
-                gridRow: i === 2 || i === 5 ? 'span 2' : 'span 1',
-              }}
-            >
-              <img
-                src={img.src}
-                alt={img.alt}
-                loading="lazy"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.5s' }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.06)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              />
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0)', transition: 'background 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.35)'; e.currentTarget.querySelector('.zoom-icon').style.opacity = '1'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0)'; e.currentTarget.querySelector('.zoom-icon').style.opacity = '0'; }}
+        {/* Gallery Grid */}
+        <div className="gallery-grid">
+          {galleryData.map((item) => {
+            const Icon = item.icon;
+            return (
+              <article 
+                key={item.id} 
+                className="gallery-card"
+                tabIndex={0}
+                aria-label={`View photo of ${item.title}`}
               >
-                <div className="zoom-icon" style={{ opacity: 0, transition: 'opacity 0.3s', color: 'white' }}>
-                  <ZoomIn size={32} />
+                {/* Image with fallback */}
+                <img
+                  src={item.image}
+                  alt={item.alt}
+                  className="gallery-img"
+                  loading="lazy"
+                  decoding="async"
+                  onError={handleImageError}
+                />
+                
+                {/* Dark gradient overlay */}
+                <div className="gallery-overlay" />
+
+                {/* Card Content */}
+                <div className="gallery-content">
+                  <div className="gallery-icon-wrap">
+                    <Icon size={18} strokeWidth={2.5} />
+                  </div>
+                  <h3 className="gallery-card-title">{item.title}</h3>
+                  <p className="gallery-card-desc">{item.description}</p>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </div>
-
-      {/* Lightbox */}
-      <AnimatePresence>
-        {lightbox && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setLightbox(null)}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}
-          >
-            <button
-              onClick={() => setLightbox(null)}
-              style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <X size={22} />
-            </button>
-            <motion.img
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              src={lightbox.src}
-              alt={lightbox.alt}
-              onClick={e => e.stopPropagation()}
-              style={{ maxWidth: '90vw', maxHeight: '85vh', borderRadius: 16, objectFit: 'contain', boxShadow: '0 40px 80px rgba(0,0,0,0.5)' }}
-            />
-            <p style={{ position: 'absolute', bottom: '2rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>{lightbox.alt}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 };

@@ -18,7 +18,7 @@ const FounderMessage = () => {
             <div className="w-full md:w-2/5 relative">
               <div className="h-full min-h-[400px]">
                 <img 
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800" 
+                  src="/images/indu_aggarwal.png" 
                   alt="Founder of Disha for India" 
                   className="absolute inset-0 w-full h-full object-cover"
                 />
