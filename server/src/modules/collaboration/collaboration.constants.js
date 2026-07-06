@@ -35,6 +35,23 @@ const MESSAGES = {
   TASK_UPDATED: 'Task updated successfully',
   MEMBERS_FETCHED: 'Members fetched successfully',
   ACTIVITY_LOG_FETCHED: 'Activity log fetched successfully',
+  INVITATION_SENT: 'Invitation sent successfully',
+  INVITATION_ACCEPTED: 'Invitation accepted successfully',
+  INVITATION_DECLINED: 'Invitation declined',
+  JOIN_REQUEST_SUBMITTED: 'Join request submitted successfully',
+  JOIN_REQUEST_APPROVED: 'Join request approved',
+  JOIN_REQUEST_DECLINED: 'Join request declined',
+  ROLE_UPDATED: 'Member role updated successfully',
+  ALREADY_INVITED: 'User has already been invited to this workspace',
+  ALREADY_REQUESTED: 'You have already requested to join this workspace',
+  INVITATION_NOT_FOUND: 'Invitation not found',
+  JOIN_REQUEST_NOT_FOUND: 'Join request not found',
+  INVALID_ROLE: 'Invalid role',
+  CANNOT_UPDATE_OWN_ROLE: 'You cannot change your own role',
+  CANNOT_REMOVE_CREATOR: 'Cannot remove workspace creator',
+  PENDING_INVITATIONS: 'Pending invitations fetched successfully',
+  PENDING_JOIN_REQUESTS: 'Pending join requests fetched successfully',
+  TIMELINE_FETCHED: 'Activity timeline fetched successfully',
 };
 
 const DEFAULTS = {

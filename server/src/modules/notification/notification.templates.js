@@ -355,6 +355,132 @@ const buildWelcome = ({ recipientId, name }) => ({
   metadata: { userName: name },
 });
 
+const buildWorkspaceCreated = ({ recipientId, workspaceName, workspaceId }) => ({
+  recipient: recipientId,
+  title: 'Workspace Created',
+  message: `Your workspace "${workspaceName}" has been created successfully. Start collaborating with your team!`,
+  type: NOTIFICATION_TYPES.WORKSPACE_CREATED,
+  category: 'collaboration',
+  priority: PRIORITY.MEDIUM,
+  channel: CHANNEL.IN_APP,
+  status: STATUS.SENT,
+  relatedEntityType: 'workspace',
+  relatedEntityId: workspaceId,
+  metadata: { workspaceName, workspaceId },
+});
+
+const buildWorkspaceInvitationSent = ({ recipientId, workspaceName, workspaceId, inviterName }) => ({
+  recipient: recipientId,
+  title: 'Workspace Invitation',
+  message: `${inviterName || 'Someone'} has invited you to join the workspace "${workspaceName}".`,
+  type: NOTIFICATION_TYPES.WORKSPACE_INVITATION_SENT,
+  category: 'collaboration',
+  priority: PRIORITY.HIGH,
+  channel: CHANNEL.IN_APP,
+  status: STATUS.SENT,
+  relatedEntityType: 'workspace',
+  relatedEntityId: workspaceId,
+  metadata: { workspaceName, workspaceId, inviterName },
+});
+
+const buildWorkspaceInvitationAccepted = ({ recipientId, workspaceName, workspaceId, userName }) => ({
+  recipient: recipientId,
+  title: 'Invitation Accepted',
+  message: `${userName || 'A user'} has accepted your invitation to join "${workspaceName}".`,
+  type: NOTIFICATION_TYPES.WORKSPACE_INVITATION_ACCEPTED,
+  category: 'collaboration',
+  priority: PRIORITY.MEDIUM,
+  channel: CHANNEL.IN_APP,
+  status: STATUS.SENT,
+  relatedEntityType: 'workspace',
+  relatedEntityId: workspaceId,
+  metadata: { workspaceName, workspaceId, userName },
+});
+
+const buildWorkspaceInvitationDeclined = ({ recipientId, workspaceName, workspaceId, userName }) => ({
+  recipient: recipientId,
+  title: 'Invitation Declined',
+  message: `${userName || 'A user'} has declined your invitation to join "${workspaceName}".`,
+  type: NOTIFICATION_TYPES.WORKSPACE_INVITATION_DECLINED,
+  category: 'collaboration',
+  priority: PRIORITY.LOW,
+  channel: CHANNEL.IN_APP,
+  status: STATUS.SENT,
+  relatedEntityType: 'workspace',
+  relatedEntityId: workspaceId,
+  metadata: { workspaceName, workspaceId, userName },
+});
+
+const buildWorkspaceJoinRequestSubmitted = ({ recipientId, workspaceName, workspaceId, userName }) => ({
+  recipient: recipientId,
+  title: 'Join Request Received',
+  message: `${userName || 'A user'} has requested to join your workspace "${workspaceName}".`,
+  type: NOTIFICATION_TYPES.WORKSPACE_JOIN_REQUEST_SUBMITTED,
+  category: 'collaboration',
+  priority: PRIORITY.HIGH,
+  channel: CHANNEL.IN_APP,
+  status: STATUS.SENT,
+  relatedEntityType: 'workspace',
+  relatedEntityId: workspaceId,
+  metadata: { workspaceName, workspaceId, userName },
+});
+
+const buildWorkspaceJoinRequestApproved = ({ recipientId, workspaceName, workspaceId }) => ({
+  recipient: recipientId,
+  title: 'Join Request Approved',
+  message: `Your request to join "${workspaceName}" has been approved. Welcome!`,
+  type: NOTIFICATION_TYPES.WORKSPACE_JOIN_REQUEST_APPROVED,
+  category: 'collaboration',
+  priority: PRIORITY.HIGH,
+  channel: CHANNEL.IN_APP,
+  status: STATUS.SENT,
+  relatedEntityType: 'workspace',
+  relatedEntityId: workspaceId,
+  metadata: { workspaceName, workspaceId },
+});
+
+const buildWorkspaceJoinRequestDeclined = ({ recipientId, workspaceName, workspaceId }) => ({
+  recipient: recipientId,
+  title: 'Join Request Declined',
+  message: `Your request to join "${workspaceName}" has been declined. Please try other workspaces or create your own.`,
+  type: NOTIFICATION_TYPES.WORKSPACE_JOIN_REQUEST_DECLINED,
+  category: 'collaboration',
+  priority: PRIORITY.MEDIUM,
+  channel: CHANNEL.IN_APP,
+  status: STATUS.SENT,
+  relatedEntityType: 'workspace',
+  relatedEntityId: workspaceId,
+  metadata: { workspaceName, workspaceId },
+});
+
+const buildWorkspaceMemberRoleUpdated = ({ recipientId, workspaceName, workspaceId, newRole, updatedByName }) => ({
+  recipient: recipientId,
+  title: 'Role Updated',
+  message: `Your role in "${workspaceName}" has been updated to ${newRole} by ${updatedByName || 'an admin'}.`,
+  type: NOTIFICATION_TYPES.WORKSPACE_MEMBER_ROLE_UPDATED,
+  category: 'collaboration',
+  priority: PRIORITY.MEDIUM,
+  channel: CHANNEL.IN_APP,
+  status: STATUS.SENT,
+  relatedEntityType: 'workspace',
+  relatedEntityId: workspaceId,
+  metadata: { workspaceName, workspaceId, newRole, updatedByName },
+});
+
+const buildWorkspaceMemberLeft = ({ recipientId, workspaceName, workspaceId, userName }) => ({
+  recipient: recipientId,
+  title: 'Member Left',
+  message: `${userName || 'A member'} has left the workspace "${workspaceName}".`,
+  type: NOTIFICATION_TYPES.WORKSPACE_MEMBER_LEFT,
+  category: 'collaboration',
+  priority: PRIORITY.LOW,
+  channel: CHANNEL.IN_APP,
+  status: STATUS.SENT,
+  relatedEntityType: 'workspace',
+  relatedEntityId: workspaceId,
+  metadata: { workspaceName, workspaceId, userName },
+});
+
 module.exports = {
   buildRegistration,
   buildProgramCreated,
@@ -384,4 +510,13 @@ module.exports = {
   buildTicketResolved,
   buildTicketClosed,
   buildAdminTicketAssigned,
+  buildWorkspaceCreated,
+  buildWorkspaceInvitationSent,
+  buildWorkspaceInvitationAccepted,
+  buildWorkspaceInvitationDeclined,
+  buildWorkspaceJoinRequestSubmitted,
+  buildWorkspaceJoinRequestApproved,
+  buildWorkspaceJoinRequestDeclined,
+  buildWorkspaceMemberRoleUpdated,
+  buildWorkspaceMemberLeft,
 };

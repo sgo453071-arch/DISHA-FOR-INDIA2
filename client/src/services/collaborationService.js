@@ -52,6 +52,46 @@ export const getWorkspaceActivityLog = async (id) => {
   return api.get(`/collaboration/workspaces/${id}/activity-log`);
 };
 
+export const inviteToWorkspace = async (id, data) => {
+  return api.post(`/collaboration/workspaces/${id}/invitations`, data);
+};
+
+export const acceptInvitation = async (id, token) => {
+  return api.post(`/collaboration/workspaces/${id}/invitations/${token}/accept`);
+};
+
+export const declineInvitation = async (id, token) => {
+  return api.post(`/collaboration/workspaces/${id}/invitations/${token}/decline`);
+};
+
+export const requestToJoin = async (id, message = '') => {
+  return api.post(`/collaboration/workspaces/${id}/join-requests`, { message });
+};
+
+export const getPendingJoinRequests = async (id) => {
+  return api.get(`/collaboration/workspaces/${id}/join-requests`);
+};
+
+export const reviewJoinRequest = async (id, requestIndex, action) => {
+  return api.patch(`/collaboration/workspaces/${id}/join-requests/${requestIndex}`, { action });
+};
+
+export const getPendingInvitations = async (id) => {
+  return api.get(`/collaboration/workspaces/${id}/invitations`);
+};
+
+export const updateMemberRole = async (id, userId, role) => {
+  return api.patch(`/collaboration/workspaces/${id}/members/${userId}/role`, { role });
+};
+
+export const getActivityTimeline = async (id, params = {}) => {
+  return api.get(`/collaboration/workspaces/${id}/timeline`, { params });
+};
+
+export const getUserRecentActivity = async () => {
+  return api.get('/collaboration/workspaces/recent-activity');
+};
+
 export default {
   getWorkspaces,
   getWorkspaceById,
@@ -66,4 +106,14 @@ export default {
   assignTask,
   updateTaskStatus,
   getWorkspaceActivityLog,
+  inviteToWorkspace,
+  acceptInvitation,
+  declineInvitation,
+  requestToJoin,
+  getPendingJoinRequests,
+  reviewJoinRequest,
+  getPendingInvitations,
+  updateMemberRole,
+  getActivityTimeline,
+  getUserRecentActivity,
 };

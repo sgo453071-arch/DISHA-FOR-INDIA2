@@ -2,8 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Activity, FileText, Users, CheckCircle, Upload } from 'lucide-react';
 
-const ActivityFeed = ({ activities }) => {
-  if (!activities || activities.length === 0) {
+const ActivityTimeline = ({ timeline }) => {
+  if (!timeline || timeline.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -19,7 +19,7 @@ const ActivityFeed = ({ activities }) => {
       >
         <Activity size={40} style={{ margin: '0 auto 1rem', opacity: 0.4 }} aria-hidden="true" />
         <p style={{ fontSize: '0.95rem', fontWeight: 500 }}>No activity yet</p>
-        <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', opacity: 0.7 }}>Activities will appear here as you collaborate</p>
+        <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', opacity: 0.7 }}>Timeline will appear here</p>
       </motion.div>
     );
   }
@@ -63,22 +63,34 @@ const ActivityFeed = ({ activities }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-      {activities.map((activity, idx) => {
+    <div style={{ position: 'relative', paddingLeft: '1rem' }}>
+      {timeline.map((activity, idx) => {
         const iconColor = getActivityColor(activity.metadata?.type);
+        const isLast = idx === timeline.length - 1;
         return (
           <motion.div
             key={activity._id || idx}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.05, duration: 0.3 }}
+            transition={{ delay: idx * 0.08, duration: 0.4 }}
             style={{
               display: 'flex',
               gap: '1rem',
               padding: '1rem 0',
-              borderBottom: idx < activities.length - 1 ? '1px solid var(--color-border)' : 'none',
+              position: 'relative',
             }}
           >
+            {!isLast && (
+              <div style={{
+                position: 'absolute',
+                left: '17px',
+                top: '52px',
+                bottom: '-8px',
+                width: '2px',
+                background: 'linear-gradient(to bottom, var(--color-border), transparent)',
+                zIndex: 0,
+              }} />
+            )}
             <div style={{
               width: '36px',
               height: '36px',
@@ -90,10 +102,12 @@ const ActivityFeed = ({ activities }) => {
               justifyContent: 'center',
               flexShrink: 0,
               border: `2px solid ${iconColor}25`,
+              zIndex: 1,
+              position: 'relative',
             }}>
               {getActivityIcon(activity.metadata?.type)}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ flex: 1, paddingTop: '0.25rem' }}>
               <p style={{
                 color: 'var(--color-heading)',
                 fontSize: '0.9rem',
@@ -129,4 +143,4 @@ const ActivityFeed = ({ activities }) => {
   );
 };
 
-export default ActivityFeed;
+export default ActivityTimeline;

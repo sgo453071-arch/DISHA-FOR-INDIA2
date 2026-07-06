@@ -21,6 +21,15 @@ const NOTIFICATION_TYPES = {
   PROFILE_UPDATED: 'profile_updated',
   VOLUNTEER_LEVEL_UP: 'volunteer_level_up',
   LEADERBOARD_POSITION_CHANGED: 'leaderboard_position_changed',
+  WORKSPACE_CREATED: 'workspace_created',
+  WORKSPACE_INVITATION_SENT: 'workspace_invitation_sent',
+  WORKSPACE_INVITATION_ACCEPTED: 'workspace_invitation_accepted',
+  WORKSPACE_INVITATION_DECLINED: 'workspace_invitation_declined',
+  WORKSPACE_JOIN_REQUEST_SUBMITTED: 'workspace_join_request_submitted',
+  WORKSPACE_JOIN_REQUEST_APPROVED: 'workspace_join_request_approved',
+  WORKSPACE_JOIN_REQUEST_DECLINED: 'workspace_join_request_declined',
+  WORKSPACE_MEMBER_ROLE_UPDATED: 'workspace_member_role_updated',
+  WORKSPACE_MEMBER_LEFT: 'workspace_member_left',
 };
 
 const CATEGORY = {

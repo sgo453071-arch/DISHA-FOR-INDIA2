@@ -1,6 +1,6 @@
 import React from 'react';
-import { Users, FileText, MessageSquare } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Users, FileText, CheckCircle } from 'lucide-react';
 
 const WorkspaceCard = ({ workspace, onJoin, onLeave, isMember, isCreator }) => {
   const memberCount = workspace.members?.length || 0;
@@ -8,47 +8,153 @@ const WorkspaceCard = ({ workspace, onJoin, onLeave, isMember, isCreator }) => {
   const taskCount = workspace.taskAssignments?.length || 0;
 
   return (
-    <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' }}>
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="card"
+      style={{
+        padding: '1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',
+        height: '100%',
+        cursor: 'pointer',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '4px',
+        background: isCreator
+          ? 'linear-gradient(90deg, var(--color-primary), var(--color-primary-hover))'
+          : 'linear-gradient(90deg, var(--color-secondary), var(--color-secondary-hover))',
+        borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',
+      }} />
+
       <div>
-        <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'var(--color-heading)' }}>
+        <h3 style={{
+          fontSize: '1.15rem',
+          marginBottom: '0.5rem',
+          color: 'var(--color-heading)',
+          fontWeight: 700,
+          lineHeight: 1.3,
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}>
           {workspace.name}
         </h3>
-        <p style={{ color: 'var(--color-body)', fontSize: '0.9rem', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <p style={{
+          color: 'var(--color-body)',
+          fontSize: '0.875rem',
+          lineHeight: 1.5,
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          margin: 0,
+        }}>
           {workspace.description || 'No description provided'}
         </p>
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.85rem', color: 'var(--color-body)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <Users size={16} aria-hidden="true" />
-          <span>{memberCount} member{memberCount !== 1 ? 's' : ''}</span>
+      <div style={{
+        display: 'flex',
+        gap: '1.25rem',
+        flexWrap: 'wrap',
+        fontSize: '0.8rem',
+        color: 'var(--color-body)',
+        padding: '0.75rem',
+        background: 'var(--color-bg)',
+        borderRadius: 'var(--radius-md)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <Users size={15} aria-hidden="true" />
+          <span style={{ fontWeight: 600 }}>{memberCount}</span>
+          <span>member{memberCount !== 1 ? 's' : ''}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <FileText size={16} aria-hidden="true" />
-          <span>{noteCount} note{noteCount !== 1 ? 's' : ''}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <FileText size={15} aria-hidden="true" />
+          <span style={{ fontWeight: 600 }}>{noteCount}</span>
+          <span>note{noteCount !== 1 ? 's' : ''}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <MessageSquare size={16} aria-hidden="true" />
-          <span>{taskCount} task{taskCount !== 1 ? 's' : ''}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <CheckCircle size={15} aria-hidden="true" />
+          <span style={{ fontWeight: 600 }}>{taskCount}</span>
+          <span>task{taskCount !== 1 ? 's' : ''}</span>
         </div>
       </div>
 
-      <div style={{ marginTop: 'auto', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <Link to={`/collaboration/workspaces/${workspace._id}`} className="btn btn-primary" style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}>
-          Open
-        </Link>
+      <div style={{
+        marginTop: 'auto',
+        display: 'flex',
+        gap: '0.75rem',
+        flexWrap: 'wrap',
+        paddingTop: '0.75rem',
+        borderTop: '1px solid var(--color-border)',
+      }}>
+        <motion.div whileTap={{ scale: 0.97 }} style={{ flex: 1, minWidth: '80px' }}>
+          <a
+            href={`/collaboration/workspaces/${workspace._id}`}
+            className="btn btn-primary"
+            style={{
+              width: '100%',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.35rem',
+            }}
+            aria-label={`Open workspace ${workspace.name}`}
+          >
+            Open
+          </a>
+        </motion.div>
         {isMember && !isCreator && (
-          <button onClick={() => onLeave(workspace._id)} className="btn btn-secondary" style={{ flex: 1 }}>
-            Leave
-          </button>
+          <motion.div whileTap={{ scale: 0.97 }} style={{ flex: 1, minWidth: '80px' }}>
+            <button
+              onClick={() => onLeave(workspace._id)}
+              className="btn btn-secondary"
+              style={{
+                width: '100%',
+                color: 'var(--color-error)',
+                borderColor: 'var(--color-error)',
+              }}
+              aria-label={`Leave workspace ${workspace.name}`}
+            >
+              Leave
+            </button>
+          </motion.div>
         )}
         {!isMember && (
-          <button onClick={() => onJoin(workspace._id)} className="btn btn-success" style={{ flex: 1 }}>
-            Join
-          </button>
+          <motion.div whileTap={{ scale: 0.97 }} style={{ flex: 1, minWidth: '80px' }}>
+            <button
+              onClick={() => onJoin(workspace._id)}
+              className="btn btn-success"
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.35rem',
+              }}
+              aria-label={`Join workspace ${workspace.name}`}
+            >
+              Join
+            </button>
+          </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -11,6 +11,7 @@ import DashboardSkeleton from '../components/DashboardSkeleton';
 import LeaderboardWidget from '../components/LeaderboardWidget';
 import NotificationWidget from '../components/NotificationWidget';
 import RecentAnnouncementsWidget from '../components/announcements/RecentAnnouncementsWidget';
+import RecentActivityWidget from '../components/collaboration/RecentActivityWidget';
 import { safeSlice } from '../utils/safeSlice';
 
 const Dashboard = () => {
@@ -85,6 +86,17 @@ const Dashboard = () => {
     queryFn: async () => {
       const res = await getMyPrograms();
       if (res.success) return res.data?.programs || [];
+      return [];
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: recentActivityData, isLoading: recentActivityLoading } = useQuery({
+    queryKey: ['collaboration-recent-activity'],
+    queryFn: async () => {
+      const res = await getUserRecentActivity();
+      if (res.success) return res.data?.activities || [];
       return [];
     },
     staleTime: 5 * 60 * 1000,
@@ -267,6 +279,11 @@ const Dashboard = () => {
               notifications={notificationsData}
               loading={notificationsLoading}
               emptyMessage="No notifications at the moment."
+            />
+
+            <RecentActivityWidget
+              activities={recentActivityData}
+              loading={recentActivityLoading}
             />
 
             <RecentAnnouncementsWidget limit={4} />

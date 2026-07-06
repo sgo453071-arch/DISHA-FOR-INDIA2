@@ -9,6 +9,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   // Initialize Dark Mode state based on body class or localStorage
   useEffect(() => {
@@ -19,6 +20,12 @@ const Navbar = () => {
       document.body.classList.add('dark-mode');
       setIsDarkMode(true);
     }
+
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const toggleDarkMode = () => {
@@ -43,25 +50,30 @@ const Navbar = () => {
     { name: 'Home', path: '/' },
     { name: 'Programs', path: '/programs' },
     { name: 'Leaderboard', path: '/leaderboard' },
+    { name: 'About', path: '/about' },
   ];
 
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="glass" style={{
+    <header style={{
       position: 'sticky',
       top: 0,
       zIndex: 100,
       height: 'var(--navbar-height)',
-      borderBottom: '1px solid var(--color-border)',
       display: 'flex',
       alignItems: 'center',
-      transition: 'var(--transition-normal)'
+      transition: 'all 300ms ease',
+      background: scrolled ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.88)',
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+      boxShadow: scrolled ? '0 12px 40px rgba(0, 0, 0, 0.1)' : '0 8px 30px rgba(0, 0, 0, 0.08)',
+      borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
     }}>
       <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
         
         {/* Logo */}
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.25rem', color: 'var(--color-primary)' }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.25rem' }}>
           <span style={{
             display: 'flex',
             padding: '0.45rem',
@@ -72,7 +84,8 @@ const Navbar = () => {
           }}>
             <Shield size={20} />
           </span>
-          DISHA FOR INDIA
+          <span style={{ color: '#12233D', opacity: 1, mixBlendMode: 'normal' }}>DISHA</span>
+          <span style={{ color: '#F26B2D', opacity: 1, mixBlendMode: 'normal' }}>FOR INDIA</span>
         </Link>
 
         {/* Desktop Links & Controls */}
@@ -82,14 +95,14 @@ const Navbar = () => {
               <Link
                 key={link.name}
                 to={link.path}
+                className="nav-link-hover"
                 style={{
                   fontWeight: 600,
                   fontSize: '0.925rem',
-                  color: isActive(link.path) ? 'var(--color-primary)' : 'var(--color-heading)',
-                  opacity: isActive(link.path) ? 1 : 0.85,
+                  color: isActive(link.path) ? '#F26B2D' : '#12233D',
                   padding: '0.25rem 0',
-                  borderBottom: isActive(link.path) ? '2px solid var(--color-primary)' : '2px solid transparent',
-                  transition: 'var(--transition-fast)'
+                  borderBottom: isActive(link.path) ? '2px solid #F26B2D' : '2px solid transparent',
+                  transition: 'color 300ms ease, border-color 300ms ease'
                 }}
               >
                 {link.name}
@@ -98,14 +111,14 @@ const Navbar = () => {
             {user && (
               <Link
                 to="/dashboard"
+                className="nav-link-hover"
                 style={{
                   fontWeight: 600,
                   fontSize: '0.925rem',
-                  color: isActive('/dashboard') ? 'var(--color-primary)' : 'var(--color-heading)',
-                  opacity: isActive('/dashboard') ? 1 : 0.85,
+                  color: isActive('/dashboard') ? '#F26B2D' : '#12233D',
                   padding: '0.25rem 0',
-                  borderBottom: isActive('/dashboard') ? '2px solid var(--color-primary)' : '2px solid transparent',
-                  transition: 'var(--transition-fast)'
+                  borderBottom: isActive('/dashboard') ? '2px solid #F26B2D' : '2px solid transparent',
+                  transition: 'color 300ms ease, border-color 300ms ease'
                 }}
               >
                 Dashboard
@@ -114,7 +127,7 @@ const Navbar = () => {
           </nav>
 
           {/* Vertical Divider */}
-          <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--color-border)' }}></div>
+          <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(0,0,0,0.1)' }}></div>
 
           {/* Theme Toggle & Auth Buttons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -123,9 +136,9 @@ const Navbar = () => {
               style={{
                 padding: '0.5rem',
                 borderRadius: '50%',
-                color: 'var(--color-heading)',
-                backgroundColor: 'var(--color-bg)',
-                border: '1px solid var(--color-border)',
+                color: '#12233D',
+                backgroundColor: 'rgba(255,255,255,0.5)',
+                border: '1px solid rgba(0,0,0,0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -146,10 +159,10 @@ const Navbar = () => {
               </button>
             ) : (
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                <Link to="/login" className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                <Link to="/login" className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', borderColor: 'rgba(0,0,0,0.1)', color: '#12233D' }}>
                   Sign In
                 </Link>
-                <Link to="/register" className="btn btn-primary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.85rem' }}>
+                <Link to="/register" className="btn btn-primary" style={{ padding: '0.5rem 1.2rem', fontSize: '0.85rem', background: '#F26B2D', borderColor: '#F26B2D', color: '#ffffff' }}>
                   Register
                 </Link>
               </div>
@@ -165,16 +178,16 @@ const Navbar = () => {
               style={{
                 padding: '0.4rem',
                 borderRadius: '50%',
-                color: 'var(--color-heading)',
-                backgroundColor: 'var(--color-bg)',
-                border: '1px solid var(--color-border)'
+                color: '#12233D',
+                backgroundColor: 'rgba(255,255,255,0.5)',
+                border: '1px solid rgba(0,0,0,0.1)'
               }}
             >
               {isDarkMode ? <Sun size={16} style={{ color: '#F59E0B' }} /> : <Moon size={16} />}
             </button>
             <button
               onClick={() => setMobileOpen(true)}
-              style={{ color: 'var(--color-heading)', padding: '0.25rem' }}
+              style={{ color: '#12233D', padding: '0.25rem' }}
             >
               <Menu size={24} />
             </button>
@@ -221,7 +234,7 @@ const Navbar = () => {
                   style={{
                     fontWeight: 600,
                     fontSize: '1.05rem',
-                    color: isActive(link.path) ? 'var(--color-primary)' : 'var(--color-heading)',
+                    color: isActive(link.path) ? '#F26B2D' : 'var(--color-heading)',
                     padding: '0.5rem 0',
                     borderBottom: '1px solid var(--color-border)'
                   }}
@@ -236,7 +249,7 @@ const Navbar = () => {
                   style={{
                     fontWeight: 600,
                     fontSize: '1.05rem',
-                    color: isActive('/dashboard') ? 'var(--color-primary)' : 'var(--color-heading)',
+                    color: isActive('/dashboard') ? '#F26B2D' : 'var(--color-heading)',
                     padding: '0.5rem 0',
                     borderBottom: '1px solid var(--color-border)',
                     display: 'flex',
@@ -263,7 +276,7 @@ const Navbar = () => {
                   <Link to="/login" onClick={() => setMobileOpen(false)} className="btn btn-secondary" style={{ width: '100%' }}>
                     Sign In
                   </Link>
-                  <Link to="/register" onClick={() => setMobileOpen(false)} className="btn btn-primary" style={{ width: '100%' }}>
+                  <Link to="/register" onClick={() => setMobileOpen(false)} className="btn btn-primary" style={{ width: '100%', background: '#F26B2D', borderColor: '#F26B2D', color: '#ffffff' }}>
                     Register
                   </Link>
                 </div>
@@ -286,6 +299,9 @@ const Navbar = () => {
         @keyframes slideIn {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
+        }
+        .nav-link-hover:hover {
+          color: #F26B2D !important;
         }
       `}</style>
     </header>

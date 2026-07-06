@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { VolunteerProvider } from './context/VolunteerContext';
-import { NotificationsProvider } from './context/NotificationsContext';
 
 // Layouts
 import PublicLayout from './layouts/PublicLayout';
@@ -21,6 +20,7 @@ import ProfileSetup from './pages/ProfileSetup';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
 import VerifyCertificate from './pages/VerifyCertificate';
+import About from './pages/About';
 
 // Volunteer Pages
 import ApplicationForm from './pages/applications/ApplicationForm';
@@ -34,10 +34,6 @@ import AttendanceHistory from './pages/attendance/AttendanceHistory';
 import VolunteerHours from './pages/attendance/VolunteerHours';
 import Messages from './pages/messages/Messages';
 import Support from './pages/support/Support';
-import AdminSupport from './pages/support/AdminSupport';
-import NotificationCenter from './pages/notifications/NotificationCenter';
-import Announcements from './pages/announcements/Announcements';
-import AnnouncementDetails from './pages/announcements/AnnouncementDetails';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -45,17 +41,11 @@ import AdminPrograms from './pages/admin/AdminPrograms';
 import AdminApplications from './pages/admin/AdminApplications';
 import AdminAttendance from './pages/admin/AdminAttendance';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
-import AdminCertificates from './pages/admin/AdminCertificates';
 import Reports from './pages/admin/Reports';
 import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
-import AdminAnnouncementDashboard from './pages/admin/AdminAnnouncementDashboard';
-import AdminAnnouncementCreate from './pages/admin/AdminAnnouncementCreate';
-import AdminAnnouncementEdit from './pages/admin/AdminAnnouncementEdit';
 
 // Volunteer Pages
 import VolunteerAnalytics from './pages/volunteer/VolunteerAnalytics';
-import CollaborationDashboard from './pages/collaboration/CollaborationDashboard';
-import WorkspaceDetails from './pages/collaboration/WorkspaceDetails';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -144,97 +134,87 @@ function App() {
   return (
     <AuthProvider>
       <VolunteerProvider>
-        <NotificationsProvider>
-          <BrowserRouter>
-            <AuthExpiredHandler />
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<PublicLayout />}>
-                <Route index element={<Home />} />
-                <Route path="programs" element={<Programs />} />
-                <Route path="leaderboard" element={<Leaderboard />} />
-                <Route path="login" element={
-                  <RedirectIfAuthenticated>
-                    <Login />
-                  </RedirectIfAuthenticated>
-                } />
-                <Route path="register" element={
-                  <RedirectIfAuthenticated>
-                    <Register />
-                  </RedirectIfAuthenticated>
-                } />
-                <Route path="unauthorized" element={<Unauthorized />} />
-                <Route path="verify/:id" element={<VerifyCertificate />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
+        <BrowserRouter>
+          <AuthExpiredHandler />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<PublicLayout />}>
+              <Route index element={<Home />} />
+              <Route path="programs" element={<Programs />} />
+              <Route path="leaderboard" element={<Leaderboard />} />
+              <Route path="about" element={<About />} />
+              <Route path="login" element={
+                <RedirectIfAuthenticated>
+                  <Login />
+                </RedirectIfAuthenticated>
+              } />
+              <Route path="register" element={
+                <RedirectIfAuthenticated>
+                  <Register />
+                </RedirectIfAuthenticated>
+              } />
+              <Route path="unauthorized" element={<Unauthorized />} />
+              <Route path="verify/:id" element={<VerifyCertificate />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
 
-              {/* Protected Volunteer Routes */}
-              <Route path="/" element={
-                <ProtectedRoute allowedRoles={['VOLUNTEER', 'COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }>
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="notifications" element={<NotificationCenter />} />
-                <Route path="certificates" element={<Certificates />} />
-                <Route path="certificates/:id" element={<CertificateDetails />} />
-                <Route path="profile/setup" element={<ProfileSetup />} />
-                <Route path="applications" element={<MyApplications />} />
-                <Route path="applications/:id" element={<ApplicationDetails />} />
-                <Route path="programs/:programId/apply" element={<ApplicationForm />} />
-                <Route path="my-programs" element={<MyPrograms />} />
-                <Route path="attendance" element={<AttendanceDashboard />} />
-                <Route path="attendance/check-in" element={<CheckIn />} />
-                <Route path="attendance/checkout" element={<CheckOut />} />
-                <Route path="attendance/history" element={<AttendanceHistory />} />
-                <Route path="attendance/hours" element={<VolunteerHours />} />
-                <Route path="messages" element={<Messages />} />
-                <Route path="support" element={<Support />} />
-                <Route path="announcements" element={<Announcements />} />
-                <Route path="announcements/:id" element={<AnnouncementDetails />} />
-                <Route path="collaboration/workspaces" element={<CollaborationDashboard />} />
-                <Route path="collaboration/workspaces/:id" element={<WorkspaceDetails />} />
-              </Route>
-              {/* Protected Admin Routes */}
-              <Route path="/admin" element={
-                <ProtectedRoute allowedRoles={['COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }>
-                <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="analytics" element={<AdminAnalytics />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="programs" element={<AdminPrograms />} />
-                <Route path="applications" element={<AdminApplications />} />
-                <Route path="attendance" element={<AdminAttendance />} />
-                <Route path="certificates" element={<AdminCertificates />} />
-                <Route path="messages" element={<Messages />} />
-                <Route path="support" element={<AdminSupport />} />
-                <Route path="announcements" element={<AdminAnnouncementDashboard />} />
-                <Route path="announcements/create" element={<AdminAnnouncementCreate />} />
-                <Route path="announcements/:id/edit" element={<AdminAnnouncementEdit />} />
-              </Route>
+            {/* Protected Volunteer Routes */}
+            <Route path="/" element={
+              <ProtectedRoute allowedRoles={['VOLUNTEER', 'COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="certificates" element={<Certificates />} />
+              <Route path="certificates/:id" element={<CertificateDetails />} />
+              <Route path="profile/setup" element={<ProfileSetup />} />
+              <Route path="applications" element={<MyApplications />} />
+              <Route path="applications/:id" element={<ApplicationDetails />} />
+              <Route path="programs/:programId/apply" element={<ApplicationForm />} />
+              <Route path="my-programs" element={<MyPrograms />} />
+              <Route path="attendance" element={<AttendanceDashboard />} />
+              <Route path="attendance/check-in" element={<CheckIn />} />
+              <Route path="attendance/checkout" element={<CheckOut />} />
+              <Route path="attendance/history" element={<AttendanceHistory />} />
+              <Route path="attendance/hours" element={<VolunteerHours />} />
+              <Route path="messages" element={<Messages />} />
+              <Route path="support" element={<Support />} />
+            </Route>
+            {/* Protected Admin Routes */}
+            <Route path="/admin" element={
+              <ProtectedRoute allowedRoles={['COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="programs" element={<AdminPrograms />} />
+              <Route path="applications" element={<AdminApplications />} />
+              <Route path="attendance" element={<AdminAttendance />} />
+              <Route path="messages" element={<Messages />} />
+              <Route path="support" element={<Support />} />
+            </Route>
 
-              {/* Protected Super Admin Routes */}
-              <Route path="/super-admin" element={
-                <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }>
-                <Route path="dashboard" element={<SuperAdminDashboard />} />
-              </Route>
+            {/* Protected Super Admin Routes */}
+            <Route path="/super-admin" element={
+              <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
+              <Route path="dashboard" element={<SuperAdminDashboard />} />
+            </Route>
 
-              {/* Protected Volunteer Analytics */}
-              <Route path="/volunteer" element={
-                <ProtectedRoute allowedRoles={['VOLUNTEER', 'COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }>
-                <Route path="analytics" element={<VolunteerAnalytics />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </NotificationsProvider>
+            {/* Protected Volunteer Analytics */}
+            <Route path="/volunteer" element={
+              <ProtectedRoute allowedRoles={['VOLUNTEER', 'COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
+              <Route path="analytics" element={<VolunteerAnalytics />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
       </VolunteerProvider>
     </AuthProvider>
   );

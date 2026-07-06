@@ -121,6 +121,100 @@ class CollaborationController {
       return next(error);
     }
   };
+
+  inviteToWorkspace = async (req, res, next) => {
+    try {
+      const result = await collaborationService.inviteToWorkspace(req.params.id, req.body, req.user.id);
+      return successResponse(res, 200, result.message, {});
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  acceptInvitation = async (req, res, next) => {
+    try {
+      const result = await collaborationService.acceptInvitation(req.params.id, req.params.token, req.user.id);
+      return successResponse(res, 200, result.message, {});
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  declineInvitation = async (req, res, next) => {
+    try {
+      const result = await collaborationService.declineInvitation(req.params.id, req.params.token, req.user.id);
+      return successResponse(res, 200, result.message, {});
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  requestToJoin = async (req, res, next) => {
+    try {
+      const result = await collaborationService.requestToJoin(req.params.id, req.user.id, req.body.message || '');
+      return successResponse(res, 200, result.message, {});
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  reviewJoinRequest = async (req, res, next) => {
+    try {
+      const { action } = req.body;
+      const result = await collaborationService.reviewJoinRequest(req.params.id, parseInt(req.params.requestIndex), action, req.user.id, req.user.id);
+      return successResponse(res, 200, result.message, {});
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  updateMemberRole = async (req, res, next) => {
+    try {
+      const result = await collaborationService.updateMemberRole(req.params.id, req.params.userId, req.body.role, req.user.id);
+      return successResponse(res, 200, result.message, {});
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  getPendingInvitations = async (req, res, next) => {
+    try {
+      const result = await collaborationService.getPendingInvitations(req.params.id, req.user.id);
+      return successResponse(res, 200, result.message, { invitations: result.invitations });
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  getPendingJoinRequests = async (req, res, next) => {
+    try {
+      const result = await collaborationService.getPendingJoinRequests(req.params.id, req.user.id);
+      return successResponse(res, 200, result.message, { joinRequests: result.joinRequests });
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  getActivityTimeline = async (req, res, next) => {
+    try {
+      const result = await collaborationService.getActivityTimeline(req.params.id, req.query, req.user.id);
+      return successResponse(res, 200, result.message, {
+        timeline: result.timeline,
+        pagination: result.pagination,
+      });
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  getUserRecentActivity = async (req, res, next) => {
+    try {
+      const result = await collaborationService.getUserRecentActivity(req.user.id);
+      return successResponse(res, 200, result.message, { activities: result.activities });
+    } catch (error) {
+      return next(error);
+    }
+  };
 }
 
 module.exports = new CollaborationController();

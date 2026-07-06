@@ -1,5 +1,5 @@
 const ValidationError = require('../../utils/errors/ValidationError');
-const { STATUS, TASK_STATUS } = require('./collaboration.constants');
+const { STATUS, TASK_STATUS, MEMBER_ROLE } = require('./collaboration.constants');
 
 const validateCreateWorkspace = (req, res, next) => {
   const { name, description } = req.body;
@@ -183,6 +183,99 @@ const validateUpdateTask = (req, res, next) => {
   return next();
 };
 
+const validateInviteUser = (req, res, next) => {
+  const { email, userId, role } = req.body;
+  const errors = [];
+
+  if (!email && !userId) {
+    errors.push({ field: 'emailOrUserId', message: 'Email or user ID is required' });
+  }
+
+  if (email && email.trim() === '') {
+    errors.push({ field: 'email', message: 'Email cannot be empty' });
+  }
+
+  if (role && !Object.values(MEMBER_ROLE).includes(role)) {
+    errors.push({ field: 'role', message: 'Invalid role value' });
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Invitation validation failed', errors));
+  }
+
+  return next();
+};
+
+const validateJoinRequest = (req, res, next) => {
+  const { message } = req.body;
+  const errors = [];
+
+  if (message && message.length > 200) {
+    errors.push({ field: 'message', message: 'Message cannot exceed 200 characters' });
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Join request validation failed', errors));
+  }
+
+  return next();
+};
+
+const validateReviewJoinRequest = (req, res, next) => {
+  const { action } = req.body;
+  const errors = [];
+
+  if (!action || !['approved', 'declined'].includes(action)) {
+    errors.push({ field: 'action', message: 'Action must be either approved or declined' });
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Review validation failed', errors));
+  }
+
+  return next();
+};
+
+const validateUpdateMemberRole = (req, res, next) => {
+  const { role } = req.body;
+  const errors = [];
+
+  if (!role || !Object.values(MEMBER_ROLE).includes(role)) {
+    errors.push({ field: 'role', message: 'Valid role is required' });
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Role update validation failed', errors));
+  }
+
+  return next();
+};
+
+const validateTimeline = (req, res, next) => {
+  const { page, limit } = req.query;
+  const errors = [];
+
+  if (page !== undefined) {
+    const pageNum = parseInt(page, 10);
+    if (isNaN(pageNum) || pageNum < 1) {
+      errors.push({ field: 'page', message: 'Page must be a positive integer' });
+    }
+  }
+
+  if (limit !== undefined) {
+    const limitNum = parseInt(limit, 10);
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+      errors.push({ field: 'limit', message: 'Limit must be between 1 and 100' });
+    }
+  }
+
+  if (errors.length > 0) {
+    return next(new ValidationError('Validation failed', errors));
+  }
+
+  return next();
+};
+
 module.exports = {
   validateCreateWorkspace,
   validateUpdateWorkspace,
@@ -192,4 +285,9 @@ module.exports = {
   validateAddFile,
   validateAssignTask,
   validateUpdateTask,
+  validateInviteUser,
+  validateJoinRequest,
+  validateReviewJoinRequest,
+  validateUpdateMemberRole,
+  validateTimeline,
 };

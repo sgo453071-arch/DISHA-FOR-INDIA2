@@ -3,11 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Plus, Users, RefreshCw, AlertCircle, X } from 'lucide-react';
-import { getWorkspaces, createWorkspace, joinWorkspace, leaveWorkspace } from '../../services/collaborationService';
+import { getWorkspaces, createWorkspace, joinWorkspace, leaveWorkspace, getPendingInvitations, acceptInvitation, declineInvitation } from '../../services/collaborationService';
 import WorkspaceCard from '../../components/collaboration/WorkspaceCard';
 import CollaborationSkeleton from '../../components/collaboration/CollaborationSkeleton';
 import CollaborationEmptyState from '../../components/collaboration/CollaborationEmptyState';
 import CollaborationFilters from '../../components/collaboration/CollaborationFilters';
+import InvitationBanner from '../../components/collaboration/InvitationBanner';
 
 const PAGE_SIZE = 12;
 
@@ -19,6 +20,8 @@ const CollaborationDashboard = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createName, setCreateName] = useState('');
   const [createDescription, setCreateDescription] = useState('');
+  const [invitations, setInvitations] = useState([]);
+  const [invitationLoading, setInvitationLoading] = useState(false);
 
   const params = useMemo(() => {
     const p = { page, limit: PAGE_SIZE };
@@ -37,6 +40,32 @@ const CollaborationDashboard = () => {
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
+
+  const { data: invitationsData } = useQuery({
+    queryKey: ['collaboration-invitations'],
+    queryFn: async () => {
+      const res = await getWorkspaces({ limit: 100 });
+      if (res.success) {
+        const allInvitations = [];
+        for (const ws of res.data?.workspaces || []) {
+          const invRes = await getPendingInvitations(ws._id);
+          if (invRes.success && invRes.data?.invitations?.length > 0) {
+            allInvitations.push(...invRes.data.invitations.map(inv => ({ ...inv, workspaceName: ws.name, workspaceId: ws._id })));
+          }
+        }
+        return allInvitations;
+      }
+      return [];
+    },
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
+  React.useEffect(() => {
+    if (invitationsData) {
+      setInvitations(invitationsData);
+    }
+  }, [invitationsData]);
 
   const createMutation = useMutation({
     mutationFn: async (formData) => createWorkspace(formData),
@@ -62,6 +91,37 @@ const CollaborationDashboard = () => {
     },
   });
 
+  const acceptInvitationMutation = useMutation({
+    mutationFn: async ({ workspaceId, token }) => acceptInvitation(workspaceId, token),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['collaboration-workspaces']);
+      queryClient.invalidateQueries(['collaboration-invitations']);
+      setInvitations(prev => prev.filter(inv => inv.token !== variables.token));
+    },
+  });
+
+  const declineInvitationMutation = useMutation({
+    mutationFn: async ({ workspaceId, token }) => declineInvitation(workspaceId, token),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['collaboration-invitations']);
+      setInvitations(prev => prev.filter(inv => inv.token !== variables.token));
+    },
+  });
+
+  const handleAcceptInvitation = (invitation) => {
+    setInvitationLoading(true);
+    acceptInvitationMutation.mutate({ workspaceId: invitation.workspaceId, token: invitation.token }, {
+      onSettled: () => setInvitationLoading(false),
+    });
+  };
+
+  const handleDeclineInvitation = (invitation) => {
+    setInvitationLoading(true);
+    declineInvitationMutation.mutate({ workspaceId: invitation.workspaceId, token: invitation.token }, {
+      onSettled: () => setInvitationLoading(false),
+    });
+  };
+
   const handleCreateSubmit = (e) => {
     e.preventDefault();
     if (!createName.trim()) return;
@@ -74,7 +134,11 @@ const CollaborationDashboard = () => {
 
   return (
     <div style={{ padding: 'clamp(1rem, 3vw, 2rem)', maxWidth: 1240, margin: '0 auto', minHeight: '100vh' }}>
-      <div style={{ marginBottom: '1.5rem' }}>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{ marginBottom: '1.5rem' }}
+      >
         <Link to="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', marginBottom: '0.5rem' }}>
           ← Dashboard
         </Link>
@@ -83,14 +147,27 @@ const CollaborationDashboard = () => {
             <Users size={26} style={{ color: 'var(--color-primary)', flexShrink: 0 }} aria-hidden="true" />
             <h1 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 800, color: 'var(--color-heading)', margin: 0 }}>Collaboration</h1>
           </div>
-          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => setShowCreateModal(true)}
+            className="btn btn-primary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+          >
             <Plus size={18} aria-hidden="true" /> New Workspace
-          </button>
+          </motion.button>
         </div>
         <p style={{ color: 'var(--color-body)', margin: 0, fontSize: '0.95rem' }}>Create and manage collaborative workspaces with your team.</p>
-      </div>
+      </motion.div>
 
       <CollaborationFilters search={search} onSearchChange={setSearch} onClear={() => setSearch('')} />
+
+      <InvitationBanner
+        invitations={invitations}
+        onAccept={handleAcceptInvitation}
+        onDecline={handleDeclineInvitation}
+        loading={invitationLoading}
+      />
 
       {error && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '1rem 1.25rem', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 'var(--radius-md)', color: 'var(--color-error)', marginBottom: '1.5rem' }} role="alert">
@@ -114,7 +191,10 @@ const CollaborationDashboard = () => {
         />
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+          <motion.div
+            layout
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}
+          >
             {workspaces.map((workspace) => (
               <WorkspaceCard
                 key={workspace._id}
@@ -125,14 +205,36 @@ const CollaborationDashboard = () => {
                 isCreator={workspace.isCreator}
               />
             ))}
-          </div>
+          </motion.div>
 
           {totalPages > 1 && (
-            <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'var(--color-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', display: 'flex', justifyContent: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} disabled={page === 1} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', opacity: page === 1 ? 0.5 : 1 }}>Previous</button>
-              <span style={{ display: 'flex', alignItems: 'center', padding: '0 0.75rem', color: 'var(--color-body)', fontSize: '0.9rem' }}>Page {page} of {totalPages}</span>
-              <button onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} disabled={page === totalPages} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', opacity: page === totalPages ? 0.5 : 1 }}>Next</button>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'var(--color-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', display: 'flex', justifyContent: 'center', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}
+            >
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                disabled={page === 1}
+                className="btn btn-secondary"
+                style={{ padding: '0.5rem 1rem', opacity: page === 1 ? 0.5 : 1 }}
+              >
+                Previous
+              </motion.button>
+              <span style={{ display: 'flex', alignItems: 'center', padding: '0 0.75rem', color: 'var(--color-body)', fontSize: '0.9rem', fontWeight: 600 }}>
+                Page {page} of {totalPages}
+              </span>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                disabled={page === totalPages}
+                className="btn btn-secondary"
+                style={{ padding: '0.5rem 1rem', opacity: page === totalPages ? 0.5 : 1 }}
+              >
+                Next
+              </motion.button>
+            </motion.div>
           )}
         </>
       )}
@@ -142,10 +244,16 @@ const CollaborationDashboard = () => {
           <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCreateModal(false)} style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)' }} />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="card" style={{ position: 'relative', width: '100%', maxWidth: '500px', padding: '2rem', zIndex: 10, boxShadow: 'var(--shadow-xl)' }}>
-              <button onClick={() => setShowCreateModal(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', color: 'var(--color-body)', padding: '0.25rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Close create workspace modal">
+              <motion.button
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowCreateModal(false)}
+                style={{ position: 'absolute', top: '1rem', right: '1rem', color: 'var(--color-body)', padding: '0.25rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
+                aria-label="Close create workspace modal"
+              >
                 <X size={20} />
-              </button>
-              <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--color-heading)' }}>Create Workspace</h2>
+              </motion.button>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--color-heading)', fontWeight: 700 }}>Create Workspace</h2>
               <form onSubmit={handleCreateSubmit}>
                 <div className="form-group">
                   <label className="form-label" htmlFor="ws-name">Workspace Name</label>
@@ -157,9 +265,14 @@ const CollaborationDashboard = () => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
                   <button type="button" onClick={() => setShowCreateModal(false)} className="btn btn-secondary">Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={createMutation.isPending}>
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={createMutation.isPending}
+                  >
                     {createMutation.isPending ? 'Creating...' : 'Create Workspace'}
-                  </button>
+                  </motion.button>
                 </div>
               </form>
             </motion.div>

@@ -1,82 +1,155 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight, Calendar, Clock, Tag } from 'lucide-react';
-import { recentBlogs } from '../../constants/homeData';
+import { ArrowRight, Calendar, Clock, Tag, Star } from 'lucide-react';
+import './Blogs.css';
+
+const articles = [
+  {
+    id: 1,
+    title: 'How Digital Literacy is Changing Rural India',
+    category: 'Education',
+    image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800',
+    date: 'July 12, 2026',
+    readTime: '5 min read',
+    summary: 'Discover the impact of our recent tech camps across 15 villages and the stories of amazing volunteers who made it happen.',
+    featured: false
+  },
+  {
+    id: 2,
+    title: 'The Future of Verifiable Credentials in NGOs',
+    category: 'Technology',
+    image: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=800',
+    date: 'June 28, 2026',
+    readTime: '4 min read',
+    summary: 'Why we integrated blockchain-backed certificates and how it benefits our volunteers in their professional careers.',
+    featured: false
+  },
+  {
+    id: 3,
+    title: 'Volunteer Spotlight: 1000 Hours of Service',
+    category: 'Community',
+    image: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&q=80&w=800',
+    date: 'June 15, 2026',
+    readTime: '6 min read',
+    summary: 'Meet the incredible individuals who have dedicated over 1000 hours to community service this year.',
+    featured: false
+  },
+  {
+    id: 4,
+    title: 'Building Brighter Futures Through Education',
+    category: 'Impact',
+    image: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800',
+    date: 'July 2, 2026',
+    readTime: '7 min read',
+    summary: 'How our education programs are empowering children in underserved communities to dream bigger and achieve more.',
+    featured: true
+  }
+];
+
+const fallbackImage = 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800';
 
 const Blogs = () => {
-  return (
-    <section style={{ background: 'white', padding: '5rem 0' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
+  const handleImageError = (e) => {
+    if (e.target.src !== fallbackImage) {
+      e.target.src = fallbackImage;
+      e.target.alt = 'Article placeholder image';
+    }
+  };
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 800, color: 'var(--color-heading)', marginBottom: '0.5rem' }}>
+  return (
+    <section className="blogs-section" aria-labelledby="blogs-heading">
+      {/* Decorative background elements */}
+      <div className="blogs-deco-blob" aria-hidden="true" />
+      <div className="blogs-deco-pattern" aria-hidden="true">
+         {/* Simple SVG leaf pattern */}
+         <svg width="150" height="150" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 100 Q 20 50 50 0 Q 80 50 50 100" fill="none" stroke="currentColor" strokeWidth="0.5" />
+            <path d="M50 100 L 50 0" fill="none" stroke="currentColor" strokeWidth="0.5" />
+         </svg>
+      </div>
+
+      <div className="blogs-container">
+        
+        {/* Header Row */}
+        <div className="blogs-header">
+          <div className="blogs-header-left">
+            <span className="blogs-accent">Our Blog</span>
+            <h2 id="blogs-heading" className="blogs-title">
               Latest Insights
             </h2>
-            <p style={{ color: 'var(--color-body)', fontSize: '0.95rem' }}>
-              Stories, thoughts, and updates from the DFI community.
+            <p className="blogs-desc">
+              Stories, ideas, updates, and experiences from the Disha for India community.
             </p>
           </div>
-          <button
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-primary)', background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.5rem 0' }}
-          >
-            View All Articles <ArrowRight size={16} />
-          </button>
+          
+          <a href="#" className="blogs-view-btn" aria-label="View all blog articles">
+            View All Articles
+            <ArrowRight size={18} className="blogs-btn-arrow" />
+          </a>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
-          {recentBlogs.map((blog, i) => (
-            <motion.article
-              key={blog.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.1 }}
-              style={{ background: '#FDFBF7', borderRadius: 16, border: '1px solid #F0EDE8', overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'all 0.25s' }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-4px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
+        {/* Grid Layout */}
+        <div className="blogs-grid">
+          {articles.map((article) => (
+            <a 
+              key={article.id}
+              href="#" 
+              className={`blog-card ${article.featured ? 'featured' : ''}`}
+              aria-label={`Read article: ${article.title}`}
             >
-              {/* Image */}
-              <div style={{ height: 200, overflow: 'hidden', position: 'relative' }}>
+              
+              {/* Image & Badges */}
+              <div className="blog-img-wrap">
                 <img
-                  src={blog.image}
-                  alt={blog.title}
+                  src={article.image}
+                  alt={article.title}
+                  className="blog-img"
                   loading="lazy"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                  decoding="async"
+                  onError={handleImageError}
                 />
-                {/* Category badge */}
-                <span style={{ position: 'absolute', top: 12, left: 12, padding: '0.2rem 0.6rem', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-heading)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Tag size={10} color="var(--color-primary)" /> {blog.category}
-                </span>
+                
+                {article.featured ? (
+                  <>
+                    <span className="blog-badge">
+                      <Tag size={12} /> {article.category}
+                    </span>
+                    <span className="blog-badge featured-badge">
+                      <Star size={12} fill="currentColor" /> Featured Story
+                    </span>
+                  </>
+                ) : (
+                  <span className="blog-badge">
+                    <Tag size={12} /> {article.category}
+                  </span>
+                )}
               </div>
 
-              <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              {/* Card Content */}
+              <div className="blog-content">
+                
                 {/* Meta */}
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', color: '#9CA3AF', fontWeight: 600 }}>
-                    <Calendar size={12} /> {blog.date}
+                <div className="blog-meta">
+                  <span className="blog-meta-item">
+                    <Calendar size={14} />
+                    {article.date}
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.72rem', color: '#9CA3AF', fontWeight: 600 }}>
-                    <Clock size={12} /> {blog.readTime}
+                  <span className="blog-meta-item">
+                    <Clock size={14} />
+                    {article.readTime}
                   </span>
                 </div>
 
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.05rem', color: 'var(--color-heading)', lineHeight: 1.35, margin: 0 }}>
-                  {blog.title}
-                </h3>
-                <p style={{ fontSize: '0.83rem', color: 'var(--color-body)', lineHeight: 1.65, margin: 0, flex: 1 }}>
-                  {blog.excerpt}
-                </p>
+                {/* Title & Summary */}
+                <h3 className="blog-card-title">{article.title}</h3>
+                <p className="blog-card-summary">{article.summary}</p>
 
-                <button
-                  style={{ alignSelf: 'flex-start', marginTop: '0.5rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}
-                >
-                  Read More <ArrowRight size={14} />
-                </button>
+                {/* Read More */}
+                <span className="blog-read-more">
+                  Read More
+                  <ArrowRight size={16} className="blog-read-arrow" />
+                </span>
               </div>
-            </motion.article>
+            </a>
           ))}
         </div>
       </div>

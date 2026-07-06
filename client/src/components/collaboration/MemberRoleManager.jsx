@@ -2,28 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Crown, Shield, User, Users } from 'lucide-react';
 
-const MemberList = ({ members }) => {
-  if (!members || members.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        style={{
-          textAlign: 'center',
-          padding: '3rem 2rem',
-          color: 'var(--color-body)',
-          background: 'var(--color-card)',
-          borderRadius: 'var(--radius-xl)',
-          border: '1px dashed var(--color-border)',
-        }}
-      >
-        <Users size={40} style={{ margin: '0 auto 1rem', opacity: 0.4 }} aria-hidden="true" />
-        <p style={{ fontSize: '0.95rem', fontWeight: 500 }}>No members yet</p>
-        <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', opacity: 0.7 }}>Members will appear here once they join</p>
-      </motion.div>
-    );
-  }
-
+const MemberRoleManager = ({ members, currentUserId, workspaceCreatorId, onRoleChange, loading }) => {
   const getRoleIcon = (role) => {
     switch (role) {
       case 'admin': return <Crown size={14} aria-hidden="true" />;
@@ -51,10 +30,34 @@ const MemberList = ({ members }) => {
     return gradients[index % gradients.length];
   };
 
+  if (!members || members.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{
+          textAlign: 'center',
+          padding: '3rem 2rem',
+          color: 'var(--color-body)',
+          background: 'var(--color-card)',
+          borderRadius: 'var(--radius-xl)',
+          border: '1px dashed var(--color-border)',
+        }}
+      >
+        <Users size={40} style={{ margin: '0 auto 1rem', opacity: 0.4 }} aria-hidden="true" />
+        <p style={{ fontSize: '0.95rem', fontWeight: 500 }}>No members yet</p>
+        <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', opacity: 0.7 }}>Members will appear here once they join</p>
+      </motion.div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
       {members.map((member, idx) => {
         const memberId = member.userId?._id || member.userId;
+        const isCreator = memberId?.toString() === workspaceCreatorId?.toString();
+        const isCurrentUser = memberId?.toString() === currentUserId?.toString();
+        const canChangeRole = !isCreator && !isCurrentUser;
         const initial = (member.userId?.name || 'U').charAt(0).toUpperCase();
 
         return (
@@ -63,14 +66,14 @@ const MemberList = ({ members }) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05, duration: 0.3 }}
-            whileHover={{ scale: 1.01 }}
+            whileHover={{ scale: 1.005 }}
             className="card"
             style={{
               padding: '1rem 1.25rem',
               display: 'flex',
               alignItems: 'center',
               gap: '1rem',
-              cursor: 'default',
+              flexWrap: 'wrap',
             }}
           >
             <div style={{
@@ -89,16 +92,19 @@ const MemberList = ({ members }) => {
             }}>
               {initial}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontWeight: 600,
-                color: 'var(--color-heading)',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                fontSize: '0.95rem',
-              }}>
+            <div style={{ flex: 1, minWidth: '200px' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.95rem' }}>
                 {member.userId?.name || 'Unknown User'}
+                {isCreator && (
+                  <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: 'var(--color-accent)', fontWeight: 600 }}>
+                    (Creator)
+                  </span>
+                )}
+                {isCurrentUser && (
+                  <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: 'var(--color-primary)', fontWeight: 600 }}>
+                    (You)
+                  </span>
+                )}
               </div>
               <div style={{
                 fontSize: '0.8rem',
@@ -113,6 +119,26 @@ const MemberList = ({ members }) => {
             <span className={`badge ${getRoleBadgeClass(member.role)}`} style={{ textTransform: 'capitalize' }}>
               {getRoleIcon(member.role)} {member.role}
             </span>
+            {canChangeRole && (
+              <motion.select
+                whileFocus={{ scale: 1.02 }}
+                value={member.role}
+                onChange={(e) => onRoleChange(member.userId._id || member.userId, e.target.value)}
+                disabled={loading}
+                className="form-control"
+                style={{
+                  width: 'auto',
+                  padding: '0.5rem 0.75rem',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                }}
+                aria-label={`Change role for ${member.userId?.name || 'member'}`}
+              >
+                <option value="admin">Admin</option>
+                <option value="member">Member</option>
+                <option value="viewer">Viewer</option>
+              </motion.select>
+            )}
           </motion.div>
         );
       })}
@@ -120,4 +146,4 @@ const MemberList = ({ members }) => {
   );
 };
 
-export default MemberList;
+export default MemberRoleManager;

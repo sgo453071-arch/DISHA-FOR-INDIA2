@@ -171,6 +171,76 @@ const workspaceSchema = new mongoose.Schema(
         },
       },
     ],
+    invitations: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        email: {
+          type: String,
+          trim: true,
+          lowercase: true,
+        },
+        invitedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          required: true,
+        },
+        role: {
+          type: String,
+          enum: Object.values(MEMBER_ROLE),
+          default: MEMBER_ROLE.MEMBER,
+        },
+        status: {
+          type: String,
+          enum: ['pending', 'accepted', 'declined', 'expired'],
+          default: 'pending',
+        },
+        token: {
+          type: String,
+          unique: true,
+          sparse: true,
+        },
+        expiresAt: {
+          type: Date,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    joinRequests: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          required: true,
+        },
+        requestedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        status: {
+          type: String,
+          enum: ['pending', 'approved', 'declined'],
+          default: 'pending',
+        },
+        reviewedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        reviewedAt: {
+          type: Date,
+        },
+        message: {
+          type: String,
+          trim: true,
+          maxlength: [200, 'Message cannot exceed 200 characters'],
+        },
+      },
+    ],
     status: {
       type: String,
       enum: Object.values(STATUS),

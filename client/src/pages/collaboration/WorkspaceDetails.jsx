@@ -1,25 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Users, FileText, Activity, RefreshCw, AlertCircle,
-  Plus, CheckCircle, Upload
+  Plus, CheckCircle, Upload, Send
 } from 'lucide-react';
 import {
   getWorkspaceById,
   joinWorkspace,
   leaveWorkspace,
-  getWorkspaceMembers,
   addNote,
   addFile,
   assignTask,
   updateTaskStatus,
   getWorkspaceActivityLog,
+  requestToJoin,
+  getPendingJoinRequests,
+  reviewJoinRequest,
+  updateMemberRole,
+  getActivityTimeline,
 } from '../../services/collaborationService';
-import MemberList from '../../components/collaboration/MemberList';
+import MemberRoleManager from '../../components/collaboration/MemberRoleManager';
 import ActivityFeed from '../../components/collaboration/ActivityFeed';
+import ActivityTimeline from '../../components/collaboration/ActivityTimeline';
 import CollaborationSkeleton from '../../components/collaboration/CollaborationSkeleton';
+import JoinRequestBanner from '../../components/collaboration/JoinRequestBanner';
 import { useAuth } from '../../context/AuthContext';
 
 const TABS = [
@@ -29,6 +35,7 @@ const TABS = [
   { id: 'files', label: 'Files', icon: <Upload size={16} aria-hidden="true" /> },
   { id: 'tasks', label: 'Tasks', icon: <CheckCircle size={16} aria-hidden="true" /> },
   { id: 'activity', label: 'Activity', icon: <Activity size={16} aria-hidden="true" /> },
+  { id: 'timeline', label: 'Timeline', icon: <Activity size={16} aria-hidden="true" /> },
 ];
 
 const WorkspaceDetails = () => {
@@ -39,6 +46,10 @@ const WorkspaceDetails = () => {
   const [error, setError] = useState(null);
   const [isJoining, setIsJoining] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [showJoinRequestForm, setShowJoinRequestForm] = useState(false);
+  const [joinRequestMessage, setJoinRequestMessage] = useState('');
+  const [joinRequests, setJoinRequests] = useState([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['collaboration-workspace', id],
@@ -54,6 +65,24 @@ const WorkspaceDetails = () => {
   });
 
   const workspace = data;
+
+  const { data: pendingRequestsData, refetch: refetchPendingRequests } = useQuery({
+    queryKey: ['collaboration-pending-requests', id],
+    queryFn: async () => {
+      const res = await getPendingJoinRequests(id);
+      if (res.success) return res.data?.joinRequests || [];
+      return [];
+    },
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    enabled: !!id && !!workspace,
+  });
+
+  useEffect(() => {
+    if (pendingRequestsData) {
+      setJoinRequests(pendingRequestsData);
+    }
+  }, [pendingRequestsData]);
 
   const joinMutation = useMutation({
     mutationFn: async () => joinWorkspace(id),
@@ -73,6 +102,30 @@ const WorkspaceDetails = () => {
     },
   });
 
+  const requestToJoinMutation = useMutation({
+    mutationFn: async (message) => requestToJoin(id, message),
+    onSuccess: () => {
+      setShowJoinRequestForm(false);
+      setJoinRequestMessage('');
+    },
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: async ({ requestIndex, action }) => reviewJoinRequest(id, requestIndex, action),
+    onSuccess: () => {
+      refetchPendingRequests();
+      queryClient.invalidateQueries(['collaboration-workspace', id]);
+      queryClient.invalidateQueries(['collaboration-workspaces']);
+    },
+  });
+
+  const roleChangeMutation = useMutation({
+    mutationFn: async ({ userId, role }) => updateMemberRole(id, userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['collaboration-workspace', id]);
+    },
+  });
+
   const handleJoin = () => {
     setIsJoining(true);
     joinMutation.mutate();
@@ -83,8 +136,24 @@ const WorkspaceDetails = () => {
     leaveMutation.mutate();
   };
 
+  const handleRequestToJoin = (e) => {
+    e.preventDefault();
+    if (!joinRequestMessage.trim()) return;
+    requestToJoinMutation.mutate(joinRequestMessage.trim());
+  };
+
+  const handleReview = (requestIndex, action) => {
+    setReviewLoading(true);
+    reviewMutation.mutate({ requestIndex, action }, { onSettled: () => setReviewLoading(false) });
+  };
+
+  const handleRoleChange = (userId, role) => {
+    roleChangeMutation.mutate({ userId, role });
+  };
+
   const isMember = user ? workspace?.members?.some(m => m.toString() === user._id?.toString()) : false;
   const isCreator = user ? workspace?.createdBy?._id === user._id : false;
+  const isAdmin = workspace?.memberDetails?.some(m => m.userId?.toString() === user?._id?.toString() && m.role === 'admin');
 
   if (isLoading) {
     return (
@@ -97,7 +166,7 @@ const WorkspaceDetails = () => {
   if (!workspace) {
     return (
       <div style={{ padding: '2rem', maxWidth: 1240, margin: '0 auto', textAlign: 'center' }}>
-        <p style={{ color: 'var(--color-error)' }}>Workspace not found</p>
+        <p style={{ color: 'var(--color-error)', fontSize: '1rem', fontWeight: 600 }}>Workspace not found</p>
         <Link to="/collaboration/workspaces" className="btn btn-primary" style={{ marginTop: '1rem', textDecoration: 'none', display: 'inline-flex' }}>Back to Workspaces</Link>
       </div>
     );
@@ -105,28 +174,88 @@ const WorkspaceDetails = () => {
 
   return (
     <div style={{ padding: 'clamp(1rem, 3vw, 2rem)', maxWidth: 1240, margin: '0 auto', minHeight: '100vh' }}>
-      <div style={{ marginBottom: '1.5rem' }}>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{ marginBottom: '1.5rem' }}
+      >
         <Link to="/collaboration/workspaces" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', marginBottom: '0.5rem' }}>
           <ArrowLeft size={16} aria-hidden="true" /> Workspaces
         </Link>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h1 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 800, color: 'var(--color-heading)', margin: 0 }}>{workspace.name}</h1>
-            <p style={{ color: 'var(--color-body)', margin: '0.5rem 0 0', fontSize: '0.95rem' }}>{workspace.description || 'No description provided'}</p>
+          <div style={{ flex: 1, minWidth: '240px' }}>
+            <h1 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 800, color: 'var(--color-heading)', margin: 0, lineHeight: 1.2 }}>
+              {workspace.name}
+            </h1>
+            <p style={{ color: 'var(--color-body)', margin: '0.5rem 0 0', fontSize: '0.95rem', lineHeight: 1.5 }}>
+              {workspace.description || 'No description provided'}
+            </p>
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <motion.div
+            style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}
+            layout
+          >
             {!isMember ? (
-              <button onClick={handleJoin} disabled={joinMutation.isPending || isJoining} className="btn btn-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                {isJoining ? 'Joining...' : 'Join Workspace'}
-              </button>
+              <>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleJoin}
+                  disabled={joinMutation.isPending || isJoining}
+                  className="btn btn-success"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  {isJoining ? 'Joining...' : 'Join Workspace'}
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowJoinRequestForm(true)}
+                  className="btn btn-primary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <Send size={16} aria-hidden="true" /> Request to Join
+                </motion.button>
+              </>
             ) : !isCreator ? (
-              <button onClick={handleLeave} disabled={leaveMutation.isPending || isLeaving} className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-error)', borderColor: 'var(--color-error)' }}>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={handleLeave}
+                disabled={leaveMutation.isPending || isLeaving}
+                className="btn btn-secondary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-error)', borderColor: 'var(--color-error)' }}
+              >
                 {isLeaving ? 'Leaving...' : 'Leave Workspace'}
-              </button>
+              </motion.button>
             ) : null}
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
+
+      {showJoinRequestForm && (
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+          <h4 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--color-heading)' }}>Request to Join</h4>
+          <form onSubmit={handleRequestToJoin}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="join-message">Message (optional)</label>
+              <textarea id="join-message" value={joinRequestMessage} onChange={(e) => setJoinRequestMessage(e.target.value)} className="form-control" rows={2} placeholder="Introduce yourself and explain why you want to join..." />
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => { setShowJoinRequestForm(false); setJoinRequestMessage(''); }} className="btn btn-secondary">Cancel</button>
+              <button type="submit" className="btn btn-primary" disabled={requestToJoinMutation.isPending}>
+                {requestToJoinMutation.isPending ? 'Submitting...' : 'Submit Request'}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      )}
+
+      {isAdmin && joinRequests.length > 0 && activeTab !== 'members' && (
+        <JoinRequestBanner
+          requests={joinRequests}
+          onApprove={(idx) => handleReview(idx, 'approved')}
+          onDecline={(idx) => handleReview(idx, 'declined')}
+          loading={reviewLoading}
+        />
+      )}
 
       {error && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '1rem 1.25rem', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 'var(--radius-md)', color: 'var(--color-error)', marginBottom: '1.5rem' }} role="alert">
@@ -141,10 +270,21 @@ const WorkspaceDetails = () => {
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--color-border)' }} role="tablist">
+      <div style={{
+        display: 'flex',
+        gap: '0.5rem',
+        marginBottom: '2rem',
+        overflowX: 'auto',
+        paddingBottom: '0.5rem',
+        borderBottom: '1px solid var(--color-border)',
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'var(--color-border) transparent',
+      }} role="tablist" aria-label="Workspace tabs">
         {TABS.map(tab => (
-          <button
+          <motion.button
             key={tab.id}
+            whileHover={{ y: -2 }}
+            whileTap={{ y: 0 }}
             onClick={() => setActiveTab(tab.id)}
             role="tab"
             aria-selected={activeTab === tab.id}
@@ -159,39 +299,82 @@ const WorkspaceDetails = () => {
               fontWeight: activeTab === tab.id ? 600 : 500,
               borderBottom: activeTab === tab.id ? '2px solid var(--color-primary)' : '2px solid transparent',
               transition: 'var(--transition-fast)',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              cursor: 'pointer',
+              position: 'relative',
             }}
           >
             {tab.icon} {tab.label}
-          </button>
+            {activeTab === tab.id && (
+              <motion.div
+                layoutId="activeTab"
+                style={{
+                  position: 'absolute',
+                  bottom: '-2px',
+                  left: 0,
+                  right: 0,
+                  height: '2px',
+                  background: 'var(--color-primary)',
+                  borderRadius: '2px 2px 0 0',
+                }}
+              />
+            )}
+          </motion.button>
         ))}
       </div>
 
       <AnimatePresence mode="wait">
         <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
           {activeTab === 'overview' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <div className="card" style={{ padding: '1.25rem' }}>
-                <div style={{ fontSize: '0.85rem', color: 'var(--color-body)', marginBottom: '0.25rem' }}>Members</div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--color-heading)' }}>{workspace.members?.length || 0}</div>
-              </div>
-              <div className="card" style={{ padding: '1.25rem' }}>
-                <div style={{ fontSize: '0.85rem', color: 'var(--color-body)', marginBottom: '0.25rem' }}>Notes</div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--color-heading)' }}>{workspace.sharedNotes?.length || 0}</div>
-              </div>
-              <div className="card" style={{ padding: '1.25rem' }}>
-                <div style={{ fontSize: '0.85rem', color: 'var(--color-body)', marginBottom: '0.25rem' }}>Files</div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--color-heading)' }}>{workspace.sharedFiles?.length || 0}</div>
-              </div>
-              <div className="card" style={{ padding: '1.25rem' }}>
-                <div style={{ fontSize: '0.85rem', color: 'var(--color-body)', marginBottom: '0.25rem' }}>Tasks</div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--color-heading)' }}>{workspace.taskAssignments?.length || 0}</div>
-              </div>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}
+            >
+              {[
+                { label: 'Members', value: workspace.members?.length || 0, icon: <Users size={24} aria-hidden="true" />, color: 'var(--color-primary)', bg: 'rgba(37,99,235,0.08)' },
+                { label: 'Notes', value: workspace.sharedNotes?.length || 0, icon: <FileText size={24} aria-hidden="true" />, color: 'var(--color-secondary)', bg: 'rgba(16,185,129,0.08)' },
+                { label: 'Files', value: workspace.sharedFiles?.length || 0, icon: <Upload size={24} aria-hidden="true" />, color: 'var(--color-info)', bg: 'rgba(37,99,235,0.08)' },
+                { label: 'Tasks', value: workspace.taskAssignments?.length || 0, icon: <CheckCircle size={24} aria-hidden="true" />, color: 'var(--color-accent)', bg: 'rgba(217,119,6,0.08)' },
+              ].map((stat, idx) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="card"
+                  style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}
+                >
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: 'var(--radius-md)',
+                    background: stat.bg,
+                    color: stat.color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    {stat.icon}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--color-body)', marginBottom: '0.25rem', fontWeight: 500 }}>{stat.label}</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--color-heading)', lineHeight: 1 }}>{stat.value}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
           )}
 
           {activeTab === 'members' && (
-            <WorkspaceMembersTab workspaceId={id} />
+            <MemberRoleManager
+              members={workspace.memberDetails || []}
+              currentUserId={user?._id}
+              workspaceCreatorId={workspace.createdBy?._id}
+              onRoleChange={handleRoleChange}
+              loading={roleChangeMutation.isPending}
+            />
           )}
 
           {activeTab === 'notes' && (
@@ -209,27 +392,14 @@ const WorkspaceDetails = () => {
           {activeTab === 'activity' && (
             <ActivityLogTab workspaceId={id} />
           )}
+
+          {activeTab === 'timeline' && (
+            <TimelineTab workspaceId={id} />
+          )}
         </motion.div>
       </AnimatePresence>
     </div>
   );
-};
-
-const WorkspaceMembersTab = ({ workspaceId }) => {
-  const { data, isLoading } = useQuery({
-    queryKey: ['collaboration-workspace-members', workspaceId],
-    queryFn: async () => {
-      const res = await getWorkspaceMembers(workspaceId);
-      if (res.success) return res.data?.members || [];
-      throw new Error(res.message || 'Failed to load members');
-    },
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-  });
-
-  if (isLoading) return <CollaborationSkeleton count={1} />;
-
-  return <MemberList members={data} />;
 };
 
 const SharedNotesTab = ({ workspaceId, notes }) => {
@@ -549,6 +719,37 @@ const ActivityLogTab = ({ workspaceId }) => {
   if (isLoading) return <CollaborationSkeleton count={1} />;
 
   return <ActivityFeed activities={data} />;
+};
+
+const TimelineTab = ({ workspaceId }) => {
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useQuery({
+    queryKey: ['collaboration-timeline', workspaceId, page],
+    queryFn: async () => {
+      const res = await getActivityTimeline(workspaceId, { page, limit: 20 });
+      if (res.success) return res.data;
+      throw new Error(res.message || 'Failed to load timeline');
+    },
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
+  if (isLoading) return <CollaborationSkeleton count={1} />;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h4 style={{ fontSize: '1.1rem', color: 'var(--color-heading)' }}>Activity Timeline</h4>
+        {data?.pagination && data.pagination.totalPages > 1 && (
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} disabled={page === 1} className="btn btn-secondary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}>Previous</button>
+            <button onClick={() => { setPage(p => Math.min(data.pagination.totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }} disabled={page === data.pagination.totalPages} className="btn btn-secondary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}>Next</button>
+          </div>
+        )}
+      </div>
+      <ActivityTimeline timeline={data?.timeline || []} />
+    </div>
+  );
 };
 
 export default WorkspaceDetails;
