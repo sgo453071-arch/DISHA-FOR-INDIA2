@@ -111,8 +111,7 @@ const RecommendationsWidget = ({ compact = false }) => {
       )}
       {!isLoading && !isError && recommendations.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-        {/* Render recommendation cards */
-        {recommendations.slice(0, 3).map((rec) => (
+          {recommendations.slice(0, 3).map((rec) => (
           <RecommendationCard
             key={rec.programId}
             recommendation={{
