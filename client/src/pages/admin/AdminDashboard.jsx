@@ -8,6 +8,7 @@ import DashboardSkeleton from '../../components/DashboardSkeleton';
 import LeaderboardWidget from '../../components/LeaderboardWidget';
 import NotificationWidget from '../../components/NotificationWidget';
 import RecentAnnouncementsWidget from '../../components/announcements/RecentAnnouncementsWidget';
+import RecommendationsWidget from '../../components/dashboard/RecommendationsWidget';
 
 const AdminDashboard = () => {
   const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useQuery({
@@ -107,6 +108,7 @@ const AdminDashboard = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <RecommendationsWidget />
           <div className="card">
             <h3 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Activity size={18} className="text-primary" /> Platform Health
