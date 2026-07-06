@@ -111,27 +111,23 @@ const RecommendationsWidget = ({ compact = false }) => {
       )}
       {!isLoading && !isError && recommendations.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-          {recommendations.slice(0, 3).map((rec) => (
-            <Link
-              key={rec.programId}
-              to={`/matching/programs?highlight=${rec.programId}`}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid #F0EDE8', textDecoration: 'none', background: '#FDFBF7', transition: 'all 0.2s' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#F0FDF4'; e.currentTarget.style.borderColor = '#D1FAE5'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#FDFBF7'; e.currentTarget.style.borderColor = '#F0EDE8'; }}
-            >
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-heading)', margin: '0 0 0.15rem 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {rec.programTitle}
-                </p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--color-body)', margin: 0, lineHeight: 1.4 }}>
-                  {rec.programCity ? `${rec.programCity}, ` : ''}{rec.reasonForRecommendation?.split('; ')[0] || 'General match'}
-                </p>
-              </div>
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#059669', marginLeft: '0.75rem', flexShrink: 0 }}>
-                {rec.score}%
-              </span>
-            </Link>
-          ))}
+        {/* Render recommendation cards */
+        {recommendations.slice(0, 3).map((rec) => (
+          <RecommendationCard
+            key={rec.programId}
+            recommendation={{
+              id: rec.programId,
+              title: rec.programTitle,
+              description: rec.reasonForRecommendation,
+              reason: rec.reasonForRecommendation,
+              priority: rec.priority || 'Medium',
+            }}
+            onSavedChange={(id, saved) => {
+              // Simple optimistic UI: refetch after any action
+              refetch();
+            }}
+          />
+        ))}
         </div>
       )}
     </div>

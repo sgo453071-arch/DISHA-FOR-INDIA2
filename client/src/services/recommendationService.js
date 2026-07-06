@@ -19,11 +19,14 @@ export const getRecommendationHistory = async (params = {}) => {
 export const refreshRecommendations = async (params = {}) => {
   return api.get('/matching/refresh', { params });
 };
+export const submitRecommendationFeedback = async (payload) => {
+  return api.post('/matching/feedback', payload);
+};
 
 export default {
   saveRecommendation,
   unsaveRecommendation,
   getSavedRecommendations,
   getRecommendationHistory,
-  refreshRecommendations,
+  refreshRecommendations, submitRecommendationFeedback,
 };

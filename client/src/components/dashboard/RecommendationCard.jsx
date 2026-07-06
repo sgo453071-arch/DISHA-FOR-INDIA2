@@ -1,11 +1,7 @@
 import React from 'react';
 import { Check, X, MessageSquare } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import {
-  saveRecommendation,
-  unsaveRecommendation,
-  submitRecommendationFeedback,
-} from '../services/recommendationService';
+import { saveRecommendation, unsaveRecommendation, submitRecommendationFeedback } from '../../services/recommendationService';
 
 /**
  * RecommendationCard – displays a single recommendation with actions.
