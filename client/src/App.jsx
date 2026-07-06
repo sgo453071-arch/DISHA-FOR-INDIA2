@@ -53,6 +53,10 @@ import AdminAnnouncementCreate from './pages/admin/AdminAnnouncementCreate';
 // Volunteer Pages
 import VolunteerAnalytics from './pages/volunteer/VolunteerAnalytics';
 
+// Matching Pages
+import RecommendedPrograms from './pages/matching/RecommendedPrograms';
+import RecommendedVolunteers from './pages/matching/RecommendedVolunteers';
+
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -161,7 +165,6 @@ function App() {
               } />
               <Route path="unauthorized" element={<Unauthorized />} />
               <Route path="verify/:id" element={<VerifyCertificate />} />
-              <Route path="*" element={<NotFound />} />
             </Route>
 
             {/* Protected Volunteer Routes */}
@@ -189,6 +192,7 @@ function App() {
               <Route path="attendance/hours" element={<VolunteerHours />} />
               <Route path="messages" element={<Messages />} />
               <Route path="support" element={<Support />} />
+              <Route path="matching/programs" element={<RecommendedPrograms />} />
             </Route>
 
             {/* Protected Admin Routes */}
@@ -210,6 +214,7 @@ function App() {
               <Route path="admin/certificates" element={<AdminCertificates />} />
               <Route path="admin/messages" element={<Messages />} />
               <Route path="admin/support" element={<Support />} />
+              <Route path="matching/volunteers" element={<RecommendedVolunteers />} />
             </Route>
 
             {/* Protected Super Admin Routes */}
@@ -233,6 +238,9 @@ function App() {
             }>
               <Route path="volunteer/analytics" element={<VolunteerAnalytics />} />
             </Route>
+
+            {/* Global 404 - placed last so it only matches when nothing else does */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </VolunteerProvider>
