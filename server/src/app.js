@@ -39,7 +39,6 @@ require('./modules/announcement/announcement.model');
 const collaborationRoutes = require('./modules/collaboration/collaboration.routes');
 require('./modules/collaboration/collaboration.model');
 const matchingRoutes = require('./modules/matching/matching.routes');
-const recommendationRoutes = require('./modules/recommendation/recommendation.routes');
 require('./modules/matching/recommendation.model');
 const { successResponse } = require('./utils/response');
 
