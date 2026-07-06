@@ -3,6 +3,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Heart, AlertCircle } from 'lucide-react';
 import recommendationService from '../../services/recommendationService';
 import { useAuth } from '../../context/AuthContext';
+import styles from './MatchScoreCard.module.css';
+import ScoreBadge from './ScoreBadge';
+import RecommendationBadge from './RecommendationBadge';
 
 const MatchScoreCard = ({ recommendation, onClick }) => {
   const { user } = useAuth();
@@ -98,28 +101,7 @@ const MatchScoreCard = ({ recommendation, onClick }) => {
   };
 
   return (
-    <div
-      onClick={onClick}
-      style={{
-        background: 'white',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--color-border)',
-        padding: '1.25rem',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
-        e.currentTarget.style.transform = 'translateY(-2px)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.03)';
-        e.currentTarget.style.transform = 'translateY(0)';
-      }}
-    >
+    <div className={styles.card} onClick={onClick} onMouseEnter={(e) => (e.currentTarget.style.boxShadow = 'var(--shadow-elevate)')} onMouseLeave={(e) => (e.currentTarget.style.boxShadow = 'var(--shadow-rest)')}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
         <div style={{ flex: 1 }}>
           <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-heading)', margin: '0 0 0.5rem 0', lineHeight: 1.3 }}>
@@ -127,21 +109,7 @@ const MatchScoreCard = ({ recommendation, onClick }) => {
           </h4>
           <p style={{ fontSize: '0.8rem', color: 'var(--color-body)', margin: 0, lineHeight: 1.4 }}>{recommendation.reasonForRecommendation}</p>
         </div>
-        <div style={{
-          flexShrink: 0,
-          marginLeft: '1rem',
-          background: scoreColor.bg,
-          color: scoreColor.text,
-          fontWeight: 800,
-          fontSize: '1.1rem',
-          padding: '0.5rem 0.875rem',
-          borderRadius: 'var(--radius-md)',
-          border: `1px solid ${scoreColor.stroke}`,
-          minWidth: '52px',
-          textAlign: 'center',
-        }}>
-          {recommendation.score}%
-        </div>
+        <ScoreBadge score={recommendation.score} />
       </div>
 
       {renderDetails()}
