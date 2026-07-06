@@ -13,7 +13,7 @@ import LeaderboardWidget from '../components/LeaderboardWidget';
 import NotificationWidget from '../components/NotificationWidget';
 import RecentAnnouncementsWidget from '../components/announcements/RecentAnnouncementsWidget';
 import RecentActivityWidget from '../components/collaboration/RecentActivityWidget';
-import { safeSlice } from '../utils/safeSlice';
+import RecommendationsWidget from '../components/dashboard/RecommendationsWidget';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -133,7 +133,6 @@ const Dashboard = () => {
   ];
 
   const joinedPrograms = programsData || [];
-  const activePrograms = joinedPrograms.filter(p => p.status === 'ongoing' || p.status === 'active');
   const pendingApps = (joinedPrograms || []).filter(a => a.status === 'pending' || a.status === 'under_review');
 
   if (dashboardLoading) {
@@ -199,6 +198,8 @@ const Dashboard = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <RecommendationsWidget />
+
             <div style={{ background: 'white', borderRadius: 16, padding: '1.5rem', border: '1px solid #F0EDE8', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', color: 'var(--color-heading)', fontWeight: 700, margin: 0 }}>Current Activity</h3>
@@ -217,7 +218,7 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                  {safeSlice(activePrograms, 0, 2).map(prog => (
+                  {joinedPrograms.filter(p => p.status === 'ongoing' || p.status === 'active').slice(0, 2).map(prog => (
                     <div key={prog.id || prog._id} style={{ padding: '1rem 1.125rem', border: '1px solid #D1FAE5', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F0FDF4' }}>
                       <div>
                         <h4 style={{ fontSize: '0.9rem', color: 'var(--color-heading)', fontWeight: 700, marginBottom: '0.3rem', margin: 0 }}>{prog.title || prog.programTitle}</h4>
@@ -230,7 +231,7 @@ const Dashboard = () => {
                       </Link>
                     </div>
                   ))}
-                  {safeSlice(pendingApps, 0, 2).map(app => (
+                  {(joinedPrograms || []).filter(a => a.status === 'pending' || a.status === 'under_review').slice(0, 2).map(app => (
                     <div key={app.id || app._id} style={{ padding: '1rem 1.125rem', border: '1px solid #F0EDE8', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
                       <div>
                         <h4 style={{ fontSize: '0.9rem', color: 'var(--color-heading)', fontWeight: 700, margin: 0, marginBottom: '0.3rem' }}>{app.title || app.programTitle}</h4>

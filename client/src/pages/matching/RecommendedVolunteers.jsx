@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
-import { getVolunteerRecommendations } from '../services/matchingService';
-import MatchScoreCard from '../components/matching/MatchScoreCard';
-import SearchFilter from '../components/volunteer/SearchFilter';
-import SkeletonLoader from '../components/volunteer/SkeletonLoader';
-import EmptyState from '../components/volunteer/EmptyState';
-import RecommendationDetails from '../components/matching/RecommendationDetails';
+import { useAuth } from '../../context/AuthContext';
+import { getVolunteerRecommendations } from '../../services/matchingService';
+import MatchScoreCard from '../../components/matching/MatchScoreCard';
+import SearchFilter from '../../components/volunteer/SearchFilter';
+import SkeletonLoader from '../../components/volunteer/SkeletonLoader';
+import EmptyState from '../../components/volunteer/EmptyState';
+import RecommendationDetails from '../../components/matching/RecommendationDetails';
 
 const RecommendedVolunteers = () => {
   const { user } = useAuth();

@@ -56,6 +56,8 @@ import VolunteerAnalytics from './pages/volunteer/VolunteerAnalytics';
 // Matching Pages
 import RecommendedPrograms from './pages/matching/RecommendedPrograms';
 import RecommendedVolunteers from './pages/matching/RecommendedVolunteers';
+import SavedRecommendations from './pages/recommendations/SavedRecommendations';
+import RecommendationHistory from './pages/recommendations/RecommendationHistory';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -193,6 +195,8 @@ function App() {
               <Route path="messages" element={<Messages />} />
               <Route path="support" element={<Support />} />
               <Route path="matching/programs" element={<RecommendedPrograms />} />
+              <Route path="recommendations/saved" element={<SavedRecommendations />} />
+              <Route path="recommendations/history" element={<RecommendationHistory />} />
             </Route>
 
             {/* Protected Admin Routes */}

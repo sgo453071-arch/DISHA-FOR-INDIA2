@@ -106,7 +106,6 @@ const programSchema = new mongoose.Schema(
     isDeleted: {
       type: Boolean,
       default: false,
-      index: true,
     },
     deletedAt: {
       type: Date,
@@ -131,7 +130,6 @@ programSchema.index({ endDate: 1 });
 programSchema.index({ createdBy: 1 });
 programSchema.index({ isDeleted: 1 });
 programSchema.index({ createdAt: -1 });
-programSchema.index({ slug: 1 }, { unique: true, sparse: true });
 
 programSchema.set('toJSON', {
   transform: function (doc, ret) {

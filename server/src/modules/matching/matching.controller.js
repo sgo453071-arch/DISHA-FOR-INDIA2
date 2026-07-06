@@ -29,6 +29,52 @@ class MatchingController {
       return next(error);
     }
   };
+
+  saveRecommendation = async (req, res, next) => {
+    try {
+      const result = await matchingService.saveRecommendation(req.user, req.body);
+      return successResponse(res, 201, MESSAGES.RECOMMENDATION_SAVED, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  unsaveRecommendation = async (req, res, next) => {
+    try {
+      const result = await matchingService.unsaveRecommendation(req.user, req.params.id);
+      return successResponse(res, 200, MESSAGES.RECOMMENDATION_UNSAVED, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  getSavedRecommendations = async (req, res, next) => {
+    try {
+      const result = await matchingService.getSavedRecommendations(req.user, req.query);
+      return successResponse(res, 200, MESSAGES.SAVED_RECOMMENDATIONS_FETCHED, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  getRecommendationHistory = async (req, res, next) => {
+    try {
+      const result = await matchingService.getRecommendationHistory(req.user, req.query);
+      return successResponse(res, 200, MESSAGES.RECOMMENDATION_HISTORY_FETCHED, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  refreshRecommendations = async (req, res, next) => {
+    try {
+      const type = req.query.type || 'programs';
+      const result = await matchingService.refreshRecommendations(req.user, type);
+      return successResponse(res, 200, MESSAGES.RECOMMENDATIONS_REFRESHED, { recommendations: result });
+    } catch (error) {
+      return next(error);
+    }
+  };
 }
 
 module.exports = new MatchingController();

@@ -1,7 +1,7 @@
 const Organization = require('../../modules/organization/organization.model');
 const User = require('../../modules/user/user.model');
 const { VERIFICATION_STATUS } = require('../../modules/organization/organization.constants');
-const { ROLES } = require('../../constants/roles.constants');
+const ROLES = require('../../constants/roles.constants');
 
 const seedOrganization = async () => {
   try {

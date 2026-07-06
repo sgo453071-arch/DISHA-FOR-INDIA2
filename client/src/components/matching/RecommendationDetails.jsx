@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { X, MapPin, Tag, Briefcase } from 'lucide-react';
+import { X, MapPin, Tag, Briefcase, Sparkles } from 'lucide-react';
 
 const RecommendationDetails = ({ recommendation, onClose }) => {
   if (!recommendation) return null;
@@ -52,7 +52,14 @@ const RecommendationDetails = ({ recommendation, onClose }) => {
             <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-heading)', margin: '0 0 0.4rem 0', fontFamily: 'var(--font-heading)' }}>
               {isProgram ? recommendation.programTitle : recommendation.volunteerName}
             </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--color-body)', margin: 0, lineHeight: 1.5 }}>{recommendation.reasonForRecommendation}</p>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+              {recommendation.reasonForRecommendation?.split('; ').map((reason, idx) => (
+                <span key={idx} style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem', borderRadius: '999px', background: 'rgba(16, 185, 129, 0.08)', color: '#059669', fontWeight: 600, border: '1px solid #D1FAE5' }}>
+                  <Sparkles size={10} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                  {reason}
+                </span>
+              ))}
+            </div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-body)', padding: '0.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-sm)', transition: 'all 0.15s' }}>
             <X size={20} />
@@ -108,8 +115,15 @@ const RecommendationDetails = ({ recommendation, onClose }) => {
           </div>
 
           <div style={{ background: '#F9FAFB', borderRadius: 'var(--radius-md)', padding: '1rem', border: '1px solid #F0EDE8' }}>
-            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-heading)', margin: '0 0 0.5rem 0' }}>Volunteer Compatibility</h4>
-            <p style={{ fontSize: '0.8rem', color: 'var(--color-body)', margin: 0, lineHeight: 1.5 }}>{recommendation.reasonForRecommendation}</p>
+            <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-heading)', margin: '0 0 0.5rem 0' }}>Why this recommendation?</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {recommendation.reasonForRecommendation?.split('; ').map((reason, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--color-body)' }}>
+                  <Sparkles size={12} color="#059669" />
+                  <span>{reason}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div style={{ background: '#F9FAFB', borderRadius: 'var(--radius-md)', padding: '1rem', border: '1px solid #F0EDE8' }}>

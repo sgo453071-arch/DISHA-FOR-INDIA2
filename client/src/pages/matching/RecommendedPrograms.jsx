@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
-import { getProgramRecommendations } from '../services/matchingService';
-import MatchScoreCard from '../components/matching/MatchScoreCard';
-import SearchFilter from '../components/volunteer/SearchFilter';
-import EmptyState from '../components/volunteer/EmptyState';
-import RecommendationDetails from '../components/matching/RecommendationDetails';
+import { useAuth } from '../../context/AuthContext';
+import { getProgramRecommendations } from '../../services/matchingService';
+import MatchScoreCard from '../../components/matching/MatchScoreCard';
+import SearchFilter from '../../components/volunteer/SearchFilter';
+import EmptyState from '../../components/volunteer/EmptyState';
+import RecommendationDetails from '../../components/matching/RecommendationDetails';
 
 const RecommendedPrograms = () => {
   const { user } = useAuth();

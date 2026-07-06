@@ -1,47 +1,66 @@
 const User = require('../user/user.model');
 const Program = require('../program/program.model');
 const Application = require('../application/application.model');
+const SavedRecommendation = require('./recommendation.model');
 const { PROGRAM_STATUS } = require('../program/program.constants');
-const { MATCHING_WEIGHTS } = require('./matching.constants');
+const { MATCHING_WEIGHTS, MESSAGES } = require('./matching.constants');
 const NotFoundError = require('../../utils/errors/NotFoundError');
 const ValidationError = require('../../utils/errors/ValidationError');
+const Notification = require('../notification/notification.model');
+const { NOTIFICATION_TYPES, PRIORITY } = require('../notification/notification.constants');
 
 class MatchingService {
   async getProgramRecommendations(user, query) {
     const targetUserId = query.userId || user.id;
 
     const targetUser = await User.findById(targetUserId).select(
-      'name skills interests languages availability city state hoursCompleted certificatesEarned programsCompleted programsJoined role'
+      'name skills interests languages availability city state hoursCompleted certificatesEarned programsCompleted programsJoined role profilePhoto'
     );
 
     if (!targetUser) {
       throw new NotFoundError('User not found');
     }
 
-    // Access control: only allow self or admin/coordinator to view another user's recommendations
     if (targetUserId !== user.id && user.role !== 'admin' && user.role !== 'superadmin' && user.role !== 'coordinator') {
       throw new NotFoundError('User not found');
     }
 
-    const programs = await Program.find({ status: PROGRAM_STATUS.PUBLISHED, isDeleted: false }).lean();
+    const search = (query.search || '').toLowerCase().trim();
+    let programs = await Program.find({ status: PROGRAM_STATUS.PUBLISHED, isDeleted: false }).lean();
+
+    if (search) {
+      programs = programs.filter((p) => {
+        const text = [p.title, p.shortDescription, p.description, p.category, ...(p.tags || [])].join(' ').toLowerCase();
+        return text.includes(search);
+      });
+    }
 
     const recommendations = programs.map((program) => this._calculateMatchScore(targetUser, program));
 
     recommendations.sort((a, b) => b.score - a.score);
 
+    let filtered = recommendations;
+    if (query.minScore) {
+      const min = parseInt(query.minScore, 10);
+      filtered = recommendations.filter((r) => r.score >= min);
+    }
+    if (query.programCategory) {
+      filtered = filtered.filter((r) => (r.programCategory || '').toLowerCase() === query.programCategory.toLowerCase());
+    }
+
     const page = Math.max(1, parseInt(query.page, 10) || 1);
     const limit = Math.min(Math.max(1, parseInt(query.limit, 10) || 10), 50);
     const start = (page - 1) * limit;
-    const paginated = recommendations.slice(start, start + limit);
+    const paginated = filtered.slice(start, start + limit);
 
     return {
       recommendations: paginated,
       pagination: {
-        total: recommendations.length,
+        total: filtered.length,
         page,
         limit,
-        totalPages: Math.ceil(recommendations.length / limit),
-        hasNextPage: start + limit < recommendations.length,
+        totalPages: Math.ceil(filtered.length / limit),
+        hasNextPage: start + limit < filtered.length,
         hasPreviousPage: page > 1,
       },
     };
@@ -60,26 +79,41 @@ class MatchingService {
 
     const volunteers = await User.find({ role: 'volunteer', isDeleted: false })
       .select(
-        'name skills interests languages availability city state hoursCompleted certificatesEarned programsCompleted programsJoined'
+        'name skills interests languages availability city state hoursCompleted certificatesEarned programsCompleted programsJoined profilePhoto'
       )
       .lean();
 
-    const recommendations = volunteers.map((volunteer) => this._calculateMatchScore(volunteer, program));
+    const search = (query.search || '').toLowerCase().trim();
+    let filteredVolunteers = volunteers;
+    if (search) {
+      filteredVolunteers = volunteers.filter((v) => {
+        const text = [v.name, ...(v.skills || []), ...(v.interests || []), v.city, v.state].join(' ').toLowerCase();
+        return text.includes(search);
+      });
+    }
+
+    const recommendations = filteredVolunteers.map((volunteer) => this._calculateMatchScore(volunteer, program));
     recommendations.sort((a, b) => b.score - a.score);
+
+    let finalRecs = recommendations;
+    if (query.minScore) {
+      const min = parseInt(query.minScore, 10);
+      finalRecs = recommendations.filter((r) => r.score >= min);
+    }
 
     const page = Math.max(1, parseInt(query.page, 10) || 1);
     const limit = Math.min(Math.max(1, parseInt(query.limit, 10) || 10), 50);
     const start = (page - 1) * limit;
-    const paginated = recommendations.slice(start, start + limit);
+    const paginated = finalRecs.slice(start, start + limit);
 
     return {
       recommendations: paginated,
       pagination: {
-        total: recommendations.length,
+        total: finalRecs.length,
         page,
         limit,
-        totalPages: Math.ceil(recommendations.length / limit),
-        hasNextPage: start + limit < recommendations.length,
+        totalPages: Math.ceil(finalRecs.length / limit),
+        hasNextPage: start + limit < finalRecs.length,
         hasPreviousPage: page > 1,
       },
     };
@@ -130,13 +164,186 @@ class MatchingService {
     return detail;
   }
 
+  async saveRecommendation(user, payload) {
+    const { programId, volunteerId, score, reasonForRecommendation, matchingSkills, missingSkills, metadata } = payload;
+
+    if (!programId && !volunteerId) {
+      throw new ValidationError('Either programId or volunteerId is required');
+    }
+
+    if (programId) {
+      const existing = await SavedRecommendation.findOne({ user: user.id, program: programId, isDeleted: false });
+      if (existing) {
+        return { ...existing.toJSON(), alreadySaved: true };
+      }
+    }
+
+    if (volunteerId) {
+      const existing = await SavedRecommendation.findOne({ user: user.id, volunteer: volunteerId, isDeleted: false });
+      if (existing) {
+        return { ...existing.toJSON(), alreadySaved: true };
+      }
+    }
+
+    const saved = await SavedRecommendation.create({
+      user: user.id,
+      program: programId || null,
+      volunteer: volunteerId || null,
+      score,
+      reasonForRecommendation,
+      matchingSkills,
+      missingSkills,
+      metadata: metadata || {},
+    });
+
+    return { ...saved.toJSON(), alreadySaved: false };
+  }
+
+  async unsaveRecommendation(user, recommendationId) {
+    const saved = await SavedRecommendation.findOne({ _id: recommendationId, user: user.id, isDeleted: false });
+    if (!saved) {
+      throw new NotFoundError('Saved recommendation not found');
+    }
+
+    saved.isDeleted = true;
+    saved.deletedAt = new Date();
+    saved.deletedBy = user.id;
+    await saved.save();
+
+    return { success: true };
+  }
+
+  async getSavedRecommendations(user, query) {
+    const filter = { user: user.id, isDeleted: false };
+
+    const page = Math.max(1, parseInt(query.page, 10) || 1);
+    const limit = Math.min(Math.max(1, parseInt(query.limit, 10) || 10), 50);
+    const start = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      SavedRecommendation.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(start)
+        .limit(limit)
+        .lean(),
+      SavedRecommendation.countDocuments(filter),
+    ]);
+
+    return {
+      savedRecommendations: items,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: start + limit < total,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
+  async getRecommendationHistory(user, query) {
+    const filter = { user: user.id, isDeleted: false };
+
+    const page = Math.max(1, parseInt(query.page, 10) || 1);
+    const limit = Math.min(Math.max(1, parseInt(query.limit, 10) || 10), 50);
+    const start = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      SavedRecommendation.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(start)
+        .limit(limit)
+        .lean(),
+      SavedRecommendation.countDocuments(filter),
+    ]);
+
+    return {
+      history: items,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: start + limit < total,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
+  async refreshRecommendations(user, type = 'programs') {
+    if (type === 'programs') {
+      const res = await this.getProgramRecommendations(user, { page: '1', limit: '12' });
+      return res.recommendations;
+    }
+
+    if (type === 'volunteers') {
+      const res = await this.getVolunteerRecommendations(user, { programId: '', page: '1', limit: '12' });
+      return res.recommendations;
+    }
+
+    throw new ValidationError('Invalid recommendation type');
+  }
+
+  async sendRecommendationNotification(user, recommendation) {
+    const isProgram = !!recommendation.programId;
+    const title = isProgram ? 'New Program Recommendation' : 'New Volunteer Match';
+    const message = isProgram
+      ? `We found a ${recommendation.score}% match: ${recommendation.programTitle}`
+      : `We found a volunteer match: ${recommendation.volunteerName}`;
+
+    await Notification.create({
+      recipient: user.id,
+      sender: null,
+      title,
+      message,
+      type: NOTIFICATION_TYPES.RECOMMENDATION_READY,
+      category: 'recommendation',
+      priority: PRIORITY.MEDIUM,
+      channel: 'in-app',
+      relatedEntityType: isProgram ? 'program' : 'volunteer',
+      relatedEntityId: isProgram ? recommendation.programId : recommendation.volunteerId,
+      actionUrl: isProgram ? `/matching/programs?highlight=${recommendation.programId}` : `/matching/volunteers`,
+      metadata: {
+        score: recommendation.score,
+        reasonForRecommendation: recommendation.reasonForRecommendation,
+        matchingSkills: recommendation.matchingSkills,
+      },
+    });
+  }
+
+  async sendSavedRecommendationNotification(user, recommendation) {
+    const isProgram = !!recommendation.programId;
+    const title = isProgram ? 'Program Saved' : 'Volunteer Saved';
+    const message = isProgram
+      ? `You saved ${recommendation.programTitle} (${recommendation.score}% match)`
+      : `You saved volunteer ${recommendation.volunteerName} (${recommendation.score}% match)`;
+
+    await Notification.create({
+      recipient: user.id,
+      sender: null,
+      title,
+      message,
+      type: NOTIFICATION_TYPES.RECOMMENDATION_SAVED,
+      category: 'recommendation',
+      priority: PRIORITY.LOW,
+      channel: 'in-app',
+      relatedEntityType: isProgram ? 'program' : 'volunteer',
+      relatedEntityId: isProgram ? recommendation.programId : recommendation.volunteerId,
+      actionUrl: isProgram ? `/matching/programs?saved=true` : '/recommendations/saved',
+      metadata: {
+        score: recommendation.score,
+      },
+    });
+  }
+
   _normalize(arr) {
     return (arr || [])
       .map((s) => (typeof s === 'string' ? s.toLowerCase().trim() : ''))
       .filter(Boolean);
   }
 
-  _calculateMatchScore(volunteer, program, relatedPastProgramCount = 0) {
+  _calculateMatchScore(volunteer, program, relatedPastProgramCount = 0, includeMeta = false) {
     const volunteerSkills = this._normalize(volunteer.skills);
     const volunteerInterests = this._normalize(volunteer.interests);
     const volunteerLanguages = this._normalize(volunteer.languages);
@@ -148,7 +355,6 @@ class MatchingService {
       .join(' ')
       .toLowerCase();
 
-    // Skills
     const matchedSkills = volunteerSkills.filter((skill) =>
       programTags.includes(skill) || programCategory.includes(skill) || skill.includes(programCategory)
     );
@@ -157,7 +363,6 @@ class MatchingService {
         ? (matchedSkills.length / volunteerSkills.length) * MATCHING_WEIGHTS.SKILLS
         : 0;
 
-    // Interests
     const matchedInterests = volunteerInterests.filter((interest) =>
       programTags.includes(interest) || programCategory.includes(interest) || interest.includes(programCategory)
     );
@@ -166,7 +371,6 @@ class MatchingService {
         ? (matchedInterests.length / volunteerInterests.length) * MATCHING_WEIGHTS.INTERESTS
         : 0;
 
-    // Languages
     const matchedLanguages = volunteerLanguages.filter(
       (lang) =>
         programTags.includes(lang) ||
@@ -179,7 +383,6 @@ class MatchingService {
         ? (matchedLanguages.length / volunteerLanguages.length) * MATCHING_WEIGHTS.LANGUAGES
         : 0;
 
-    // Location
     const vCity = (volunteer.city || '').toLowerCase().trim();
     const vState = (volunteer.state || '').toLowerCase().trim();
     const pCity = (program.city || '').toLowerCase().trim();
@@ -193,14 +396,12 @@ class MatchingService {
       locationScore += MATCHING_WEIGHTS.LOCATION / 2;
     }
 
-    // Availability
     let availabilityScore = 0;
     if (volunteerAvailability.length > 0) {
       const hasFlexible = volunteerAvailability.some((a) => a === 'flexible');
       availabilityScore = hasFlexible ? MATCHING_WEIGHTS.AVAILABILITY : MATCHING_WEIGHTS.AVAILABILITY / 2;
     }
 
-    // Previous Programs / Experience
     let previousProgramScore = 0;
     if (relatedPastProgramCount > 0) {
       previousProgramScore = Math.min(MATCHING_WEIGHTS.PREVIOUS_PROGRAMS, 5 + relatedPastProgramCount * 5);
@@ -225,14 +426,11 @@ class MatchingService {
       )
     );
 
-    // Missing skills: program tags not matched by volunteer skills or interests
     const allVolunteerKeywords = [...new Set([...volunteerSkills, ...volunteerInterests])];
     const missingSkills = programTags.filter((tag) => !allVolunteerKeywords.some((kw) => kw.includes(tag) || tag.includes(kw)));
 
-    // Matching skills
     const matchingSkillsList = [...new Set(matchedSkills)];
 
-    // Reason for recommendation
     const reasons = [];
     if (matchedSkills.length > 0) reasons.push(`Skills: ${matchedSkills.join(', ')}`);
     if (matchedInterests.length > 0) reasons.push(`Interests: ${matchedInterests.join(', ')}`);

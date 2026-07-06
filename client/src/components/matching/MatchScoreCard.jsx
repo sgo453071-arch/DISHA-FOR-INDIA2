@@ -1,7 +1,15 @@
-import React from 'react';
-import { AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Heart, AlertCircle } from 'lucide-react';
+import recommendationService from '../../services/recommendationService';
+import { useAuth } from '../../context/AuthContext';
 
 const MatchScoreCard = ({ recommendation, onClick }) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   if (!recommendation) return null;
 
   const isProgram = !!recommendation.programId;
@@ -10,6 +18,31 @@ const MatchScoreCard = ({ recommendation, onClick }) => {
     : recommendation.score >= 50
     ? { bg: '#FEF3C7', text: '#D97706', stroke: '#FCD34D' }
     : { bg: '#FEE2E2', text: '#DC2626', stroke: '#FCA5A5' };
+
+  const handleSave = async (e) => {
+    e.stopPropagation();
+    if (!user || saving) return;
+    setSaving(true);
+    try {
+      const res = await recommendationService.saveRecommendation({
+        programId: recommendation.programId || null,
+        volunteerId: recommendation.volunteerId || null,
+        score: recommendation.score,
+        reasonForRecommendation: recommendation.reasonForRecommendation,
+        matchingSkills: recommendation.matchingSkills || [],
+        missingSkills: recommendation.missingSkills || [],
+        metadata: {},
+      });
+      if (res.success) {
+        setSaved(true);
+        queryClient.invalidateQueries(['saved-recommendations']);
+      }
+    } catch (err) {
+      console.error('Failed to save recommendation', err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const renderDetails = () => {
     if (isProgram) {
@@ -133,6 +166,23 @@ const MatchScoreCard = ({ recommendation, onClick }) => {
           </div>
         </div>
       )}
+
+      <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+        {!saved && (
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{ padding: '0.4rem 0.75rem', borderRadius: 8, border: '1px solid var(--color-border)', background: saved ? '#DCFCE7' : 'white', color: saved ? '#059669' : 'var(--color-heading)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+          >
+            <Heart size={14} /> {saving ? 'Saving...' : 'Save'}
+          </button>
+        )}
+        {saved && (
+          <span style={{ padding: '0.4rem 0.75rem', borderRadius: 8, border: '1px solid #D1FAE5', background: '#DCFCE7', color: '#059669', fontSize: '0.78rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+            <Heart size={14} /> Saved
+          </span>
+        )}
+      </div>
     </div>
   );
 };

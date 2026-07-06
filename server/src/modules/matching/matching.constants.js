@@ -2,6 +2,12 @@ const MESSAGES = {
   PROGRAMS_RECOMMENDED: 'Program recommendations retrieved successfully',
   VOLUNTEERS_RECOMMENDED: 'Volunteer recommendations retrieved successfully',
   RECOMMENDATION_FETCHED: 'Detailed recommendation retrieved successfully',
+  RECOMMENDATION_SAVED: 'Recommendation saved successfully',
+  RECOMMENDATION_UNSAVED: 'Recommendation unsaved successfully',
+  SAVED_RECOMMENDATIONS_FETCHED: 'Saved recommendations retrieved successfully',
+  RECOMMENDATION_HISTORY_FETCHED: 'Recommendation history retrieved successfully',
+  RECOMMENDATIONS_REFRESHED: 'Recommendations refreshed successfully',
+  RECOMMENDATIONS_NOTIFICATION_SENT: 'Recommendation notification sent',
 };
 
 const MATCHING_WEIGHTS = {

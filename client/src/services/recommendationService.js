@@ -1,0 +1,29 @@
+import api from './api';
+
+export const saveRecommendation = async (data) => {
+  return api.post('/matching/save', data);
+};
+
+export const unsaveRecommendation = async (recommendationId) => {
+  return api.delete(`/matching/save/${recommendationId}`);
+};
+
+export const getSavedRecommendations = async (params = {}) => {
+  return api.get('/matching/saved', { params });
+};
+
+export const getRecommendationHistory = async (params = {}) => {
+  return api.get('/matching/history', { params });
+};
+
+export const refreshRecommendations = async (params = {}) => {
+  return api.get('/matching/refresh', { params });
+};
+
+export default {
+  saveRecommendation,
+  unsaveRecommendation,
+  getSavedRecommendations,
+  getRecommendationHistory,
+  refreshRecommendations,
+};

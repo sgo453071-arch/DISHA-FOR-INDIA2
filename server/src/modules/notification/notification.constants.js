@@ -30,6 +30,8 @@ const NOTIFICATION_TYPES = {
   WORKSPACE_JOIN_REQUEST_DECLINED: 'workspace_join_request_declined',
   WORKSPACE_MEMBER_ROLE_UPDATED: 'workspace_member_role_updated',
   WORKSPACE_MEMBER_LEFT: 'workspace_member_left',
+  RECOMMENDATION_READY: 'recommendation_ready',
+  RECOMMENDATION_SAVED: 'recommendation_saved',
 };
 
 const CATEGORY = {
