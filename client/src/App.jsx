@@ -144,7 +144,7 @@ function App() {
           <AuthExpiredHandler />
           <Routes>
             {/* Public Routes */}
-            <Route path="/" element={<PublicLayout />}>
+            <Route element={<PublicLayout />}>
               <Route index element={<Home />} />
               <Route path="programs" element={<Programs />} />
               <Route path="leaderboard" element={<Leaderboard />} />
@@ -165,7 +165,7 @@ function App() {
             </Route>
 
             {/* Protected Volunteer Routes */}
-            <Route path="/" element={
+            <Route element={
               <ProtectedRoute allowedRoles={['VOLUNTEER', 'COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
                 <NotificationsProvider>
                   <DashboardLayout />
@@ -190,47 +190,48 @@ function App() {
               <Route path="messages" element={<Messages />} />
               <Route path="support" element={<Support />} />
             </Route>
+
             {/* Protected Admin Routes */}
-            <Route path="/admin" element={
+            <Route element={
               <ProtectedRoute allowedRoles={['COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
                 <NotificationsProvider>
                   <DashboardLayout />
                 </NotificationsProvider>
               </ProtectedRoute>
             }>
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="announcements" element={<AdminAnnouncementDashboard />} />
-               <Route path="announcements/create" element={<AdminAnnouncementCreate />} />
-              <Route path="analytics" element={<AdminAnalytics />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="programs" element={<AdminPrograms />} />
-              <Route path="applications" element={<AdminApplications />} />
-              <Route path="attendance" element={<AdminAttendance />} />
-              <Route path="certificates" element={<AdminCertificates />} />
-              <Route path="messages" element={<Messages />} />
-              <Route path="support" element={<Support />} />
+              <Route path="admin/dashboard" element={<AdminDashboard />} />
+              <Route path="admin/announcements" element={<AdminAnnouncementDashboard />} />
+              <Route path="admin/announcements/create" element={<AdminAnnouncementCreate />} />
+              <Route path="admin/analytics" element={<AdminAnalytics />} />
+              <Route path="admin/reports" element={<Reports />} />
+              <Route path="admin/programs" element={<AdminPrograms />} />
+              <Route path="admin/applications" element={<AdminApplications />} />
+              <Route path="admin/attendance" element={<AdminAttendance />} />
+              <Route path="admin/certificates" element={<AdminCertificates />} />
+              <Route path="admin/messages" element={<Messages />} />
+              <Route path="admin/support" element={<Support />} />
             </Route>
 
             {/* Protected Super Admin Routes */}
-            <Route path="/super-admin" element={
+            <Route element={
               <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
                 <NotificationsProvider>
                   <DashboardLayout />
                 </NotificationsProvider>
               </ProtectedRoute>
             }>
-              <Route path="dashboard" element={<SuperAdminDashboard />} />
+              <Route path="super-admin/dashboard" element={<SuperAdminDashboard />} />
             </Route>
 
             {/* Protected Volunteer Analytics */}
-            <Route path="/volunteer" element={
+            <Route element={
               <ProtectedRoute allowedRoles={['VOLUNTEER', 'COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
                 <NotificationsProvider>
                   <DashboardLayout />
                 </NotificationsProvider>
               </ProtectedRoute>
             }>
-              <Route path="analytics" element={<VolunteerAnalytics />} />
+              <Route path="volunteer/analytics" element={<VolunteerAnalytics />} />
             </Route>
           </Routes>
         </BrowserRouter>

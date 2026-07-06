@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
@@ -56,7 +57,6 @@ app.use(helmet(helmetConfig));
 // 2. CORS
 // ─────────────────────────────────────────────
 app.use(cors(getCorsConfig()));
-app.options('/{*splat}', cors(getCorsConfig())); // Handle pre-flight requests for all routes
 
 // ─────────────────────────────────────────────
 // 3. HTTP Request Logging (Morgan)
@@ -169,7 +169,14 @@ app.use(express.static(clientBuildPath));
 app.use((req, res, next) => {
   if (req.method !== 'GET') return next();
   if (req.path.startsWith('/api') || req.path.startsWith('/api-docs')) return next();
-  return res.sendFile(path.join(clientBuildPath, 'index.html'));
+  if (req.path.includes('.')) return next();
+
+  const indexPath = path.join(clientBuildPath, 'index.html');
+  if (!fs.existsSync(indexPath)) {
+    return next();
+  }
+
+  return res.sendFile(indexPath);
 });
 
 // ─────────────────────────────────────────────
