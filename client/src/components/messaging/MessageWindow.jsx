@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { ArrowLeft, Pin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,20 +9,21 @@ import { getMessages, sendMessage, pinMessage, unpinMessage, deleteMessage, upda
 import { getConversation } from '../../services/conversationsService';
 import { MessagingSkeletons, ErrorState } from './MessagingSkeletons';
 import useSocket from '../../hooks/useSocket';
+import { generateUUID } from '../../utils/uuid';
 
-const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
-  const [page, setPage] = useState(1);
+const MessageWindow = React.memo(({ conversationId, onBack, currentUserId }) => {
+  const [cursor, setCursor] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [showPinned, setShowPinned] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
   const messagesEndRef = useRef(null);
   const topRef = useRef(null);
   const queryClient = useQueryClient();
+  const sendingRef = useRef(new Set());
 
-  const pageRef = useRef(page);
   const currentUserIdRef = useRef(currentUserId);
+  const readSentinelRef = useRef(null);
 
-  useEffect(() => { pageRef.current = page; }, [page]);
   useEffect(() => { currentUserIdRef.current = currentUserId; }, [currentUserId]);
 
   const {
@@ -43,83 +44,147 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
     queryKey: ['conversation', conversationId],
     queryFn: async () => {
       const res = await getConversation(conversationId);
-      return res.data;
+      return res.conversation;
     },
     enabled: !!conversationId,
   });
 
   const { data: messagesData, isLoading: messagesLoading, isError: messagesError, refetch: refetchMessages, hasNextPage, isFetchingNextPage } = useQuery({
-    queryKey: ['messages', conversationId],
+    queryKey: ['messages', conversationId, cursor],
     queryFn: async () => {
-      const res = await getMessages(conversationId, { page, limit: 50 });
-      return res.data;
+      const res = await getMessages(conversationId, { cursor, limit: 50 });
+      return res;
     },
     enabled: !!conversationId,
     keepPreviousData: true,
   });
 
-  const messages = messagesData?.messages || [];
+  const rawMessages = useMemo(() => {
+    const arr = messagesData?.messages || [];
+    const map = new Map();
+    for (const msg of arr) {
+      if (!map.has(msg._id)) map.set(msg._id, msg);
+    }
+    return Array.from(map.values());
+  }, [messagesData?.messages]);
+
+  const messages = useMemo(() => {
+    return rawMessages.map((msg) => {
+      if (msg._id?.startsWith?.('temp-')) return msg;
+      if (msg.status === 'sent' || msg.status === 'sending') {
+        return { ...msg, status: 'delivered' };
+      }
+      return msg;
+    });
+  }, [rawMessages]);
+
   const otherUser = conversationData?.participants?.find((p) => p._id !== currentUserId);
 
   const sendMutation = useMutation({
-    mutationFn: (data) => sendMessage(conversationId, data),
+    mutationFn: ({ content, attachments = [], clientMessageId }) =>
+      sendMessage(conversationId, { content, attachments, clientMessageId }),
     onMutate: async (data) => {
       await queryClient.cancelQueries(['messages', conversationId]);
-      const tempId = `temp-${Date.now()}`;
-      
+      const clientMessageId = data.clientMessageId || generateUUID();
       const optimisticMessage = {
-        _id: tempId,
+        _id: clientMessageId,
         content: data.content,
         attachments: data.attachments || [],
         senderId: { _id: currentUserId },
         createdAt: new Date().toISOString(),
         status: 'sending',
+        clientMessageId,
+        _optimistic: true,
       };
 
+      sendingRef.current.add(clientMessageId);
+
       queryClient.setQueryData(['messages', conversationId], (oldData) => {
-        if (!oldData) return oldData;
+        if (!oldData || !oldData.messages) {
+          return { messages: [optimisticMessage], pagination: {} };
+        }
+        if (oldData.messages.some((m) => m._id === clientMessageId)) return oldData;
         return {
           ...oldData,
-          messages: [...(oldData.messages || []), optimisticMessage],
+          messages: [...oldData.messages, optimisticMessage],
         };
       });
 
-      return { tempId };
+      return { clientMessageId };
     },
-    onError: (err, data, context) => {
-      queryClient.setQueryData(['messages', conversationId], (oldData) => {
-        if (!oldData) return oldData;
-        const messages = oldData.messages.map((m) =>
-          m._id === context.tempId ? { ...m, status: 'failed' } : m
-        );
-        return { ...oldData, messages };
-      });
+    onError: (err, variables, context) => {
+      if (context?.clientMessageId) {
+        sendingRef.current.delete(context.clientMessageId);
+        queryClient.setQueryData(['messages', conversationId], (oldData) => {
+          if (!oldData?.messages) return oldData;
+          const updated = oldData.messages.map((m) =>
+            m._id === context.clientMessageId ? { ...m, status: 'failed' } : m
+          );
+          return { ...oldData, messages: updated };
+        });
+      }
     },
-    onSuccess: (res) => {
-      const realMessage = res?.data?.message || res?.message;
+    onSuccess: (res, variables, context) => {
+      if (context?.clientMessageId) {
+        sendingRef.current.delete(context.clientMessageId);
+      }
+      const realMessage = res?.message;
       if (!realMessage) {
         queryClient.invalidateQueries(['messages', conversationId]);
         return;
       }
-      
+
       queryClient.setQueryData(['messages', conversationId], (oldData) => {
-        if (!oldData) return oldData;
-        let messages = oldData.messages.map((m) =>
-          m._id === context.tempId ? realMessage : m
-        );
-        
-        const realCount = messages.filter((m) => m._id === realMessage._id).length;
-        if (realCount > 1) {
-          messages = messages.filter((m, index, self) => 
-            index === self.findIndex((t) => t._id === m._id)
-          );
+        if (!oldData?.messages) {
+          return oldData ? { ...oldData, messages: [{ ...realMessage, _optimistic: false }] } : oldData;
         }
-        
-        return { ...oldData, messages };
+        const hasReal = oldData.messages.some((m) => m._id === realMessage._id);
+        if (hasReal) {
+          return {
+            ...oldData,
+            messages: oldData.messages.map((m) =>
+              m._id === realMessage._id ? { ...realMessage, _optimistic: false } : m
+            ),
+          };
+        }
+        const cleaned = context?.clientMessageId
+          ? oldData.messages.filter((m) => m._id !== context.clientMessageId)
+          : oldData.messages;
+        return {
+          ...oldData,
+          messages: [...cleaned, { ...realMessage, _optimistic: false }],
+        };
       });
-      queryClient.invalidateQueries(['conversations']);
     },
   });
+
+  const retryMessage = useCallback((message) => {
+    if (!message?.content && (!message?.attachments || message.attachments.length === 0)) return;
+    if (sendingRef.current.has(message._id)) return;
+
+    queryClient.setQueryData(['messages', conversationId], (oldData) => {
+      if (!oldData?.messages) return oldData;
+      const updated = oldData.messages.map((m) =>
+        m._id === message._id ? { ...m, status: 'sending' } : m
+      );
+      return { ...oldData, messages: updated };
+    });
+
+    sendMutation.mutate({
+      content: message.content,
+      attachments: message.attachments || [],
+      clientMessageId: message.clientMessageId || message._id,
+    });
+  }, [conversationId, queryClient, sendMutation]);
+
+  const handleSend = useCallback((data) => {
+    if (editingMessage) {
+      editMutation.mutate({ messageId: editingMessage._id, content: data.content });
+    } else {
+      const clientMessageId = generateUUID();
+      sendMutation.mutate({ content: data.content, attachments: data.attachments || [], clientMessageId });
+    }
+  }, [editingMessage, sendMutation, editMutation]);
 
   const deleteMutation = useMutation({
     mutationFn: (messageId) => deleteMessage(conversationId, messageId),
@@ -144,51 +209,55 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
   });
 
   const handleNewMessage = useCallback((data) => {
-    if (data.conversationId === conversationId) {
-      queryClient.setQueryData(['messages', conversationId], (oldData) => {
-        if (!oldData) return oldData;
-        const exists = oldData.messages?.some((m) => m._id === data.message._id);
-        if (exists) return oldData;
-        return {
-          ...oldData,
-          messages: [...(oldData.messages || []), data.message],
-        };
-      });
-      
-      const me = currentUserIdRef.current;
-      if (data.message.senderId !== me && data.message.senderId?._id !== me) {
-        markMessageAsDelivered(conversationId, data.message._id);
-      }
+    if (data.conversationId !== conversationId) return;
+    const incoming = data.message;
+    if (!incoming || !incoming._id) return;
+
+    queryClient.setQueryData(['messages', conversationId], (oldData) => {
+      if (!oldData?.messages) return oldData;
+      const exists = oldData.messages.some(
+        (m) => m._id === incoming._id || m.clientMessageId === incoming.clientMessageId
+      );
+      if (exists) return oldData;
+      const merged = [...oldData.messages, incoming];
+      return { ...oldData, messages: merged };
+    });
+
+    const me = currentUserIdRef.current;
+    const senderId = incoming.senderId?._id || incoming.senderId;
+    if (senderId !== me) {
+      markMessageAsDelivered(conversationId, incoming._id);
     }
   }, [conversationId, queryClient, markMessageAsDelivered]);
 
   const handleTyping = useCallback((data) => {
-    if (data.conversationId === conversationId && data.userId !== currentUserId) {
-      setTypingUsers((prev) => {
-        if (prev.some((u) => u.userId === data.userId)) return prev;
-        return [...prev, { userId: data.userId, name: data.name || 'Someone' }];
-      });
-      setTimeout(() => {
-        setTypingUsers((prev) => prev.filter((u) => u.userId !== data.userId));
-      }, 3000);
-    }
+    if (data.conversationId !== conversationId || data.userId === currentUserId) return;
+    setTypingUsers((prev) => {
+      if (prev.some((u) => u.userId === data.userId)) return prev;
+      return [...prev, { userId: data.userId, name: data.name || 'Someone' }];
+    });
   }, [conversationId, currentUserId]);
 
   const handleStopTyping = useCallback((data) => {
-    if (data.conversationId === conversationId) {
-      setTypingUsers((prev) => prev.filter((u) => u.userId !== data.userId));
-    }
+    if (data.conversationId !== conversationId) return;
+    setTypingUsers((prev) => prev.filter((u) => u.userId !== data.userId));
   }, [conversationId]);
 
   const handleMessageRead = useCallback((data) => {
     if (data.conversationId !== conversationId) return;
     queryClient.setQueryData(['messages', conversationId], (oldData) => {
       if (!oldData?.messages) return oldData;
-      const updated = oldData.messages.map((m) =>
-        m._id === data.messageId || m.status === 'delivered' || m.status === 'sent'
-          ? { ...m, status: 'read', isRead: true, readBy: [...(m.readBy || []), { userId: data.userId, readAt: new Date() }] }
-          : m
-      );
+      const updated = oldData.messages.map((m) => {
+        if (m._id === data.messageId || m.status === 'delivered') {
+          return {
+            ...m,
+            status: 'read',
+            isRead: true,
+            readBy: [...(m.readBy || []), { userId: data.userId, readAt: new Date() }],
+          };
+        }
+        return m;
+      });
       return { ...oldData, messages: updated };
     });
   }, [conversationId, queryClient]);
@@ -197,11 +266,12 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
     if (data.conversationId !== conversationId) return;
     queryClient.setQueryData(['messages', conversationId], (oldData) => {
       if (!oldData?.messages) return oldData;
-      const updated = oldData.messages.map((m) =>
-        (m._id === data.messageId || (new Date(m.createdAt) <= new Date() && m.status === 'sent')) && m.status !== 'read'
-          ? { ...m, status: 'delivered' }
-          : m
-      );
+      const updated = oldData.messages.map((m) => {
+        if (m._id === data.messageId && m.status !== 'read') {
+          return { ...m, status: 'delivered' };
+        }
+        return m;
+      });
       return { ...oldData, messages: updated };
     });
   }, [conversationId, queryClient]);
@@ -230,39 +300,32 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
   }, [conversationId, joinConversation, leaveConversation]);
 
   useEffect(() => {
-    if (messages && messages.length > 0) {
-      const unreadMessages = messages.filter(
-        (m) =>
-          (m.senderId !== currentUserId && m.senderId?._id !== currentUserId) &&
-          !m.readBy?.some((r) => r.userId === currentUserId) &&
-          m.status !== 'read' && 
-          m._id && !m._id.startsWith('temp-')
+    if (!messages?.length || !currentUserId || !conversationId) return;
+    const placeholder = 'temp-';
+    const unreadMessages = messages.filter(
+      (m) =>
+        (m.senderId?._id !== currentUserId && m.senderId !== currentUserId) &&
+        !m._id?.startsWith?.(placeholder) &&
+        !m.readBy?.some((r) => r.userId === currentUserId)
+    );
+
+    if (!unreadMessages.length) return;
+    const lastUnread = unreadMessages[unreadMessages.length - 1];
+    if (readSentinelRef.current !== lastUnread._id) {
+      readSentinelRef.current = lastUnread._id;
+      markMessageAsRead(conversationId, lastUnread._id);
+    }
+
+    queryClient.setQueryData(['messages', conversationId], (oldData) => {
+      if (!oldData?.messages) return oldData;
+      const updated = oldData.messages.map((m) =>
+        unreadMessages.some((u) => u._id === m._id)
+          ? { ...m, status: 'read', isRead: true, readBy: [...(m.readBy || []), { userId: currentUserId, readAt: new Date() }] }
+          : m
       );
-
-      if (unreadMessages.length > 0) {
-        const lastUnread = unreadMessages[unreadMessages.length - 1];
-        markMessageAsRead(conversationId, lastUnread._id);
-        
-        queryClient.setQueryData(['messages', conversationId], (oldData) => {
-          if (!oldData?.messages) return oldData;
-          const updated = oldData.messages.map((m) =>
-            unreadMessages.some(u => u._id === m._id) || (new Date(m.createdAt) <= new Date(lastUnread.createdAt))
-              ? { ...m, status: 'read', isRead: true, readBy: [...(m.readBy || []), { userId: currentUserId, readAt: new Date() }] }
-              : m
-          );
-          return { ...oldData, messages: updated };
-        });
-      }
-    }
+      return { ...oldData, messages: updated };
+    });
   }, [messages, currentUserId, conversationId, markMessageAsRead, queryClient]);
-
-  const handleSend = useCallback((data) => {
-    if (editingMessage) {
-      editMutation.mutate({ messageId: editingMessage._id, content: data.content });
-    } else {
-      sendMutation.mutate(data);
-    }
-  }, [editingMessage, sendMutation, editMutation]);
 
   const handleEdit = useCallback((message) => {
     setEditingMessage(message);
@@ -292,15 +355,18 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
 
   const handleScroll = useCallback(() => {
     if (topRef.current && topRef.current.scrollTop === 0 && hasNextPage && !isFetchingNextPage) {
+      const nextCursor = messagesData?.pagination?.nextCursor;
+      if (nextCursor) {
+        setCursor(nextCursor);
+      }
       const prevHeight = topRef.current.scrollHeight;
-      setPage((p) => p + 1);
       setTimeout(() => {
         if (topRef.current) {
           topRef.current.scrollTop = topRef.current.scrollHeight - prevHeight;
         }
       }, 100);
     }
-  }, [hasNextPage, isFetchingNextPage]);
+  }, [hasNextPage, isFetchingNextPage, messagesData?.pagination?.nextCursor]);
 
   const shouldShowEmpty = !messagesLoading && (!messages || messages.length === 0);
   const isDisabled = sendMutation.isPending || editMutation.isPending;
@@ -415,6 +481,7 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
           <>
             {messages.map((msg, index) => {
               const showDateDivider = index === 0 || new Date(msg.createdAt).toDateString() !== new Date(messages[index - 1].createdAt).toDateString();
+              const isFailed = msg.status === 'failed' && !msg._id?.startsWith?.('temp-');
               return (
                 <React.Fragment key={msg._id}>
                   {showDateDivider && (
@@ -425,7 +492,6 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
                     </div>
                   )}
                   <MessageBubble
-                    key={msg._id}
                     message={msg}
                     isOwn={msg.senderId?._id === currentUserId}
                     onPin={(id) => handlePinToggle(id, false)}
@@ -433,7 +499,7 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
                     onDelete={handleDelete}
                     onEdit={handleEdit}
                     isPinned={msg.isPinned}
-                    onRetry={() => sendMutation.mutate({ content: msg.content, attachments: msg.attachments || [] })}
+                    onRetry={isFailed ? () => retryMessage(msg) : undefined}
                   />
                 </React.Fragment>
               );
@@ -456,6 +522,8 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
       />
     </div>
   );
-};
+});
+
+MessageWindow.displayName = 'MessageWindow';
 
 export default MessageWindow;

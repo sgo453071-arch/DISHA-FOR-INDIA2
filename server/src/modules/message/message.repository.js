@@ -10,26 +10,41 @@ class MessageRepository {
   }
 
   async findByConversationId(conversationId, options = {}) {
-    const { page = 1, limit = 50, cursor, sortBy = 'createdAt', order = 'asc' } = options;
-    const skip = (page - 1) * limit;
-    const sortOrder = order === 'desc' ? -1 : 1;
+    const { limit = 50, cursor, sortBy = 'createdAt', order = 'asc' } = options;
+    const limitNum = Math.min(Number(limit) || 50, 100);
 
     const filter = {
       conversationId,
       isDeleted: false,
-      ...(cursor && { createdAt: { $lt: new Date(cursor) } }),
+      ...(cursor && {
+        [order === 'asc' ? 'createdAt' : '_id']:
+          order === 'asc' ? { $gt: new Date(cursor) } : { $lt: new Date(cursor) },
+      }),
     };
 
-    const [messages, total] = await Promise.all([
+    const sortField = order === 'asc' ? 'createdAt' : 'createdAt';
+    const sortDir = order === 'asc' ? 1 : -1;
+
+    const [messages] = await Promise.all([
       Message.find(filter)
-        .sort({ [sortBy]: sortOrder })
-        .skip(skip)
-        .limit(limit)
+        .sort({ [sortBy === 'createdAt' ? sortField : sortBy]: sortDir })
+        .limit(limitNum)
         .populate('senderId', 'name email avatar role'),
       Message.countDocuments(filter),
     ]);
 
-    return { messages, total, hasMore: skip + messages.length < total };
+    const totalMsg = await Message.countDocuments(filter);
+    const isAsc = order === 'asc';
+    const first = messages[0];
+    const last = messages[messages.length - 1];
+
+    return {
+      messages,
+      hasMore: messages.length >= limitNum,
+      nextCursor: last ? last.createdAt.toISOString() : null,
+      prevCursor: first ? first.createdAt.toISOString() : null,
+      total: totalMsg,
+    };
   }
 
   async findPinnedByConversationId(conversationId, limit = 50) {
@@ -72,6 +87,7 @@ class MessageRepository {
       {
         conversationId,
         isDeleted: false,
+        senderId: { $ne: userId },
         'readBy.userId': { $ne: userId },
       },
       { $addToSet: { readBy: { userId, readAt: new Date() } } }

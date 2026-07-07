@@ -77,6 +77,11 @@ const messageSchema = new mongoose.Schema(
       enum: Object.values(MESSAGE_STATUS),
       default: MESSAGE_STATUS.SENT,
     },
+    clientMessageId: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
     isDeleted: {
       type: Boolean,
       default: false,
@@ -100,6 +105,7 @@ const messageSchema = new mongoose.Schema(
 messageSchema.index({ conversationId: 1, createdAt: 1 });
 messageSchema.index({ senderId: 1, createdAt: -1 });
 messageSchema.index({ conversationId: 1, isPinned: 1 });
+messageSchema.index({ clientMessageId: 1 });
 
 messageSchema.set('toJSON', {
   transform: function (doc, ret) {

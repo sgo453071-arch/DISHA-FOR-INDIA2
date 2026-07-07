@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Check, CheckCheck, Pin, PinOff, Edit3, Trash2, RefreshCcw, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const MessageBubble = React.memo(({ message, isOwn, onPin, onUnpin, onDelete, onEdit, isPinned, onRetry }) => {
+const MessageBubble = React.memo(({ message, isOwn, onPin, onUnpin, onDelete, onEdit, isPinned, onRetry, extraActions }) => {
   const [showActions, setShowActions] = useState(false);
   const isFailed = message.status === 'failed';
 
@@ -108,6 +108,7 @@ const MessageBubble = React.memo(({ message, isOwn, onPin, onUnpin, onDelete, on
             marginTop: '0.25rem',
             justifyContent: isOwn ? 'flex-end' : 'flex-start',
             opacity: 0.7,
+            flexWrap: 'wrap',
           }}
         >
           <span style={{ fontSize: '0.65rem' }}>{formatTime(message.createdAt)}</span>

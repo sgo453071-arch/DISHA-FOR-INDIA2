@@ -15,8 +15,9 @@ class ConversationService {
     }
 
     const trimmed = participantId.trim();
+    const mongoose = require('mongoose');
 
-    if (require('mongoose').Types.ObjectId.isValid(trimmed)) {
+    if (mongoose.Types.ObjectId.isValid(trimmed)) {
       const exists = await User.findById(trimmed).select('_id');
       if (exists) return trimmed;
     }
@@ -45,7 +46,21 @@ class ConversationService {
       throw new ValidationError('A conversation requires at least 2 participants');
     }
 
-    const conversation = await conversationRepository.create({
+    const otherParticipants = resolvedParticipants.slice(1);
+    let conversation = await conversationRepository.findExistingConversation(
+      creatorResolved,
+      otherParticipants,
+      type
+    );
+
+    if (conversation) {
+      return {
+        conversation,
+        successMessage: 'Using existing conversation',
+      };
+    }
+
+    conversation = await conversationRepository.create({
       participants: resolvedParticipants,
       type,
       title,
@@ -142,9 +157,7 @@ class ConversationService {
 
     await conversationRepository.softDelete(conversationId, userId);
 
-    return {
-      successMessage: 'Conversation deleted successfully',
-    };
+    return { successMessage: 'Conversation deleted successfully' };
   }
 }
 

@@ -12,31 +12,29 @@ export const SocketProvider = ({ children }) => {
   const { user, loading } = useAuth();
   const socketRef = useRef(null);
   const statusRef = useRef(connectionStatus);
+  const reconnectAttemptRef = useRef(0);
   const userId = user?.id;
+
+  const updateStatus = useCallback((status) => {
+    setConnectionStatus(status);
+    statusRef.current = status;
+  }, []);
 
   useEffect(() => {
     if (loading) return;
 
-    if (!userId) {
+    const token = localStorage.getItem('authToken');
+    if (!userId || !token) {
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
       setSocket(null);
-      setConnectionStatus('disconnected');
-      statusRef.current = 'disconnected';
+      updateStatus('disconnected');
       return;
     }
 
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-      setSocket(null);
-      setConnectionStatus('disconnected');
-      statusRef.current = 'disconnected';
+    if (socketRef.current) {
       return;
     }
 
@@ -44,26 +42,29 @@ export const SocketProvider = ({ children }) => {
       auth: { token },
       withCredentials: true,
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      randomizationFactor: 0.5,
     });
 
     const handleConnect = () => {
-      setConnectionStatus('connected');
-      statusRef.current = 'connected';
+      updateStatus('connected');
+      reconnectAttemptRef.current = 0;
     };
 
-    const handleDisconnect = () => {
-      setConnectionStatus('disconnected');
-      statusRef.current = 'disconnected';
+    const handleDisconnect = (reason) => {
+      updateStatus('disconnected');
     };
 
-    const handleConnectError = () => {
-      setConnectionStatus('error');
-      statusRef.current = 'error';
+    const handleConnectError = (err) => {
+      updateStatus('error');
     };
 
-    const handleReconnect = () => {
-      setConnectionStatus('connected');
-      statusRef.current = 'connected';
+    const handleReconnect = (attempt) => {
+      updateStatus('connected');
+      reconnectAttemptRef.current = attempt || 0;
     };
 
     newSocket.on('connect', handleConnect);
@@ -82,52 +83,12 @@ export const SocketProvider = ({ children }) => {
       newSocket.disconnect();
       socketRef.current = null;
       setSocket(null);
-      setConnectionStatus('disconnected');
-      statusRef.current = 'disconnected';
+      updateStatus('disconnected');
     };
-  }, [userId, loading]);
-
-  const on = useCallback((event, callback) => {
-    const s = socketRef.current;
-    if (s) {
-      s.on(event, callback);
-      return () => s.off(event, callback);
-    }
-    return () => {};
-  }, []);
-
-  const once = useCallback((event, callback) => {
-    const s = socketRef.current;
-    if (s) {
-      s.once(event, callback);
-      return () => s.off(event, callback);
-    }
-    return () => {};
-  }, []);
-
-  const emit = useCallback((event, data) => {
-    const s = socketRef.current;
-    if (s && statusRef.current === 'connected') {
-      s.emit(event, data);
-    }
-  }, []);
-
-  const joinConversation = useCallback((conversationId) => {
-    const s = socketRef.current;
-    if (s && conversationId) {
-      s.emit('join-room', conversationId);
-    }
-  }, []);
-
-  const leaveConversation = useCallback((conversationId) => {
-    const s = socketRef.current;
-    if (s && conversationId) {
-      s.emit('leave-room', conversationId);
-    }
-  }, []);
+  }, [userId, loading, updateStatus]);
 
   return (
-    <SocketContext.Provider value={{ socket, connectionStatus, on, once, emit, joinConversation, leaveConversation }}>
+    <SocketContext.Provider value={{ socket, connectionStatus, setConnectionStatus, updateStatus, statusRef, socketRef, reconnectAttemptRef }}>
       {children}
     </SocketContext.Provider>
   );

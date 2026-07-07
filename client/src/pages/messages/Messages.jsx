@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { MessageSquare, Plus, X, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,7 +17,7 @@ const Messages = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const queryClient = useQueryClient();
   const { user, loading } = useAuth();
-  const { onUserOnline, onUserOffline } = useSocket();
+  const { onUserOnline, onUserOffline, onNewMessage } = useSocket();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -43,30 +43,79 @@ const Messages = () => {
     };
   }, [onUserOnline, onUserOffline]);
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  useEffect(() => {
+    const handleNewMessage = (data) => {
+      queryClient.setQueryData(['conversations'], (oldData) => {
+        if (!oldData?.conversations) return oldData;
+        const exists = oldData.conversations.some((c) => c._id === data.conversationId);
+        if (!exists) return oldData;
+
+        const updated = oldData.conversations.map((c) => {
+          if (c._id === data.conversationId) {
+            return {
+              ...c,
+              lastMessageAt: data.message?.createdAt || c.lastMessageAt,
+              lastMessagePreview: data.message?.content || data.message?.attachments?.length
+                ? `${data.message.attachments.length} attachment(s)`
+                : c.lastMessagePreview,
+              unreadCount: c._id !== activeConversation
+                ? (c.unreadCount || 0) + 1
+                : c.unreadCount,
+            };
+          }
+          return c;
+        });
+
+        return {
+          ...oldData,
+          conversations: updated.sort(
+            (a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt)
+          ),
+        };
+      });
+    };
+
+    const cleanup = onNewMessage(handleNewMessage);
+    return () => cleanup();
+  }, [queryClient, activeConversation, onNewMessage]);
+
+  const { data: conversationData, isLoading, isError, refetch } = useQuery({
     queryKey: ['conversations'],
     queryFn: async () => {
       const res = await getConversations({ page: 1, limit: 50 });
-      return res.data || [];
+      return res;
     },
     enabled: !loading && !!user,
     refetchInterval: 30000,
   });
 
+  const conversations = useMemo(() => {
+    const list = conversationData?.conversations || [];
+    return list.sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+  }, [conversationData?.conversations]);
+
   const createMutation = useMutation({
     mutationFn: createConversation,
     onSuccess: (res) => {
-      const conversation = res.data?.conversation;
+      const conversation = res?.conversation;
       if (conversation) {
-        queryClient.invalidateQueries(['conversations']);
-        setActiveConversation(conversation);
+        queryClient.setQueryData(['conversations'], (oldData) => {
+          const list = oldData?.conversations || [];
+          const exists = list.some((c) => c._id === conversation._id);
+          if (exists) {
+            return { ...oldData, conversations: list };
+          }
+          return {
+            ...oldData,
+            conversations: [conversation, ...list],
+          };
+        });
+        setActiveConversation(conversation._id);
         setShowCreateModal(false);
         setSidebarOpen(false);
       }
     },
   });
-
-  const conversations = data?.conversations || [];
 
   const handleSelectConversation = useCallback((conversation) => {
     setActiveConversation(conversation._id);
@@ -82,7 +131,7 @@ const Messages = () => {
     refetch();
   }, [refetch]);
 
-  if (isError && !data) {
+  if (isError && !conversations.length) {
     return (
       <div style={{ padding: '1.5rem', maxWidth: 1400, margin: '0 auto', height: 'calc(100vh - 120px)', minHeight: 600 }}>
         <div style={{ marginBottom: '1.5rem' }}>
@@ -270,11 +319,23 @@ const Messages = () => {
 const NewConversationModal = ({ onClose, onCreate, isSubmitting }) => {
   const [participantIds, setParticipantIds] = useState('');
   const [type, setType] = useState('private');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const ids = participantIds.split(',').map((id) => id.trim()).filter(Boolean);
-    onCreate({ participantIds: ids, type });
+    setError('');
+
+    const ids = participantIds
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
+
+    if (ids.length === 0) {
+      setError('Enter at least one volunteer ID or user ID.');
+      return;
+    }
+
+    onCreate({ volunteerIds: ids, type });
   };
 
   return (
@@ -326,10 +387,14 @@ const NewConversationModal = ({ onClose, onCreate, isSubmitting }) => {
               type="text"
               className="form-control"
               value={participantIds}
-              onChange={(e) => setParticipantIds(e.target.value)}
+              onChange={(e) => {
+                setParticipantIds(e.target.value);
+                setError('');
+              }}
               placeholder="e.g. DFI-000123, DFI-000456"
               required
             />
+            {error && <p style={{ fontSize: '0.75rem', color: '#E74C3C', marginTop: '0.25rem' }}>{error}</p>}
             <p style={{ fontSize: '0.75rem', color: 'var(--color-body)', marginTop: '0.25rem' }}>
               Enter volunteer IDs like DFI-000123 or user IDs.
             </p>

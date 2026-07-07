@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Conversation = require('./conversation.model');
 
 class ConversationRepository {
@@ -38,6 +39,22 @@ class ConversationRepository {
     ]);
 
     return { conversations, total };
+  }
+
+  async findExistingConversation(userId, otherUserIds, type = 'private') {
+    const allParticipants = [userId, ...otherUserIds].filter(Boolean);
+    const count = allParticipants.length;
+
+    return Conversation.findOne({
+      type,
+      isDeleted: false,
+      $expr: {
+        $and: [
+          { $setIsSubset: [allParticipants, '$participants'] },
+          { $eq: [{ $size: '$participants' }, count] },
+        ],
+      },
+    }).populate('participants', 'name email avatar role volunteerId');
   }
 
   async update(id, updateData) {

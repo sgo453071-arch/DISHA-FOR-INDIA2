@@ -6,17 +6,29 @@ const MessageInput = ({ onSend, placeholder = 'Type a message...', disabled = fa
   const [content, setContent] = useState('');
   const [attachments, setAttachments] = useState([]);
   const textareaRef = useRef(null);
+  const typingSessionStartedRef = useRef(false);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const stopTypingSession = useCallback(() => {
+    if (typingSessionStartedRef.current) {
+      typingSessionStartedRef.current = false;
+      onTypingStop?.();
+    }
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+  }, [onTypingStop]);
 
   const handleSend = useCallback(() => {
     if (!content.trim() && attachments.length === 0) return;
     onSend({ content: content.trim(), attachments });
     setContent('');
     setAttachments([]);
-    if (onTypingStop) onTypingStop();
+    stopTypingSession();
     textareaRef.current?.focus();
-  }, [content, attachments, onSend, onTypingStop]);
+  }, [content, attachments, onSend, stopTypingSession]);
 
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -30,14 +42,15 @@ const MessageInput = ({ onSend, placeholder = 'Type a message...', disabled = fa
 
   const handleChange = useCallback((e) => {
     setContent(e.target.value);
-    if (onTypingStart) {
+    if (onTypingStart && !typingSessionStartedRef.current) {
+      typingSessionStartedRef.current = true;
       onTypingStart();
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = setTimeout(() => {
-        if (onTypingStop) onTypingStop();
-      }, 2000);
     }
-  }, [onTypingStart, onTypingStop]);
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      stopTypingSession();
+    }, 2000);
+  }, [onTypingStart, stopTypingSession]);
 
   const handleFileChange = useCallback((e) => {
     const files = Array.from(e.target.files || []);

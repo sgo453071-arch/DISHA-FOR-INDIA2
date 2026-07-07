@@ -9,6 +9,7 @@ const MESSAGE_TYPES = {
 };
 
 const MESSAGE_STATUS = {
+  SENDING: 'sending',
   SENT: 'sent',
   DELIVERED: 'delivered',
   READ: 'read',
@@ -36,7 +37,7 @@ const DEFAULTS = {
 const VALIDATION = {
   CONTENT_MAX_LENGTH: 5000,
   ATTACHMENTS_MAX_COUNT: 10,
-  ATTACHMENT_MAX_SIZE: 50 * 1024 * 1024, // 50MB
+  ATTACHMENT_MAX_SIZE: 50 * 1024 * 1024,
 };
 
 module.exports = {

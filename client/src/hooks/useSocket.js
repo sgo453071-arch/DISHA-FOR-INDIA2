@@ -1,87 +1,123 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useSocketContext } from '../context/SocketContext';
 
 export const useSocket = () => {
-  const { socket, connectionStatus, joinConversation, leaveConversation, emit, on } = useSocketContext();
+  const { socket, connectionStatus, setConnectionStatus, updateStatus, statusRef, socketRef, reconnectAttemptRef } = useSocketContext();
+  const typingTimersRef = useRef(new Map());
 
   const sendTypingEvent = useCallback((conversationId) => {
-    emit('typing', { conversationId });
-  }, [emit]);
+    const s = socketRef.current;
+    if (s && statusRef.current === 'connected') {
+      s.emit('typing', { conversationId });
+    }
+  }, []);
 
   const sendStopTypingEvent = useCallback((conversationId) => {
-    emit('stop-typing', { conversationId });
-  }, [emit]);
+    const s = socketRef.current;
+    if (s && statusRef.current === 'connected') {
+      s.emit('stop-typing', { conversationId });
+    }
+    const key = String(conversationId);
+    const existing = typingTimersRef.current.get(key);
+    if (existing) {
+      clearTimeout(existing);
+      typingTimersRef.current.delete(key);
+    }
+  }, []);
 
   const markMessageAsRead = useCallback((conversationId, messageId) => {
-    emit('message-read', { conversationId, messageId });
-  }, [emit]);
+    const s = socketRef.current;
+    if (s && statusRef.current === 'connected') {
+      s.emit('message-read', { conversationId, messageId });
+    }
+  }, []);
 
   const markMessageAsDelivered = useCallback((conversationId, messageId) => {
-    emit('message-delivered', { conversationId, messageId });
-  }, [emit]);
+    const s = socketRef.current;
+    if (s && statusRef.current === 'connected') {
+      s.emit('message-delivered', { conversationId, messageId });
+    }
+  }, []);
 
   const onNewMessage = useCallback((callback) => {
-    return on('new-message', callback);
-  }, [on]);
+    const s = socketRef.current;
+    if (s) {
+      s.on('new-message', callback);
+      return () => s.off('new-message', callback);
+    }
+    return () => {};
+  }, []);
 
   const onTyping = useCallback((callback) => {
-    return on('typing', callback);
-  }, [on]);
+    const s = socketRef.current;
+    if (s) {
+      s.on('typing', callback);
+      return () => s.off('typing', callback);
+    }
+    return () => {};
+  }, []);
 
   const onStopTyping = useCallback((callback) => {
-    return on('stop-typing', callback);
-  }, [on]);
+    const s = socketRef.current;
+    if (s) {
+      s.on('stop-typing', callback);
+      return () => s.off('stop-typing', callback);
+    }
+    return () => {};
+  }, []);
 
   const onMessageRead = useCallback((callback) => {
-    return on('message-read', callback);
-  }, [on]);
+    const s = socketRef.current;
+    if (s) {
+      s.on('message-read', callback);
+      return () => s.off('message-read', callback);
+    }
+    return () => {};
+  }, []);
 
   const onMessageDelivered = useCallback((callback) => {
-    return on('message-delivered', callback);
-  }, [on]);
+    const s = socketRef.current;
+    if (s) {
+      s.on('message-delivered', callback);
+      return () => s.off('message-delivered', callback);
+    }
+    return () => {};
+  }, []);
 
   const onUserOnline = useCallback((callback) => {
-    return on('user-online', callback);
-  }, [on]);
+    const s = socketRef.current;
+    if (s) {
+      s.on('user-online', callback);
+      return () => s.off('user-online', callback);
+    }
+    return () => {};
+  }, []);
 
   const onUserOffline = useCallback((callback) => {
-    return on('user-offline', callback);
-  }, [on]);
-
-  const offNewMessage = useCallback((callback) => {
-    if (socket) socket.off('new-message', callback);
-  }, [socket]);
-
-  const offTyping = useCallback((callback) => {
-    if (socket) socket.off('typing', callback);
-  }, [socket]);
-
-  const offStopTyping = useCallback((callback) => {
-    if (socket) socket.off('stop-typing', callback);
-  }, [socket]);
-
-  const offMessageRead = useCallback((callback) => {
-    if (socket) socket.off('message-read', callback);
-  }, [socket]);
-
-  const offMessageDelivered = useCallback((callback) => {
-    if (socket) socket.off('message-delivered', callback);
-  }, [socket]);
-
-  const offUserOnline = useCallback((callback) => {
-    if (socket) socket.off('user-online', callback);
-  }, [socket]);
-
-  const offUserOffline = useCallback((callback) => {
-    if (socket) socket.off('user-offline', callback);
-  }, [socket]);
+    const s = socketRef.current;
+    if (s) {
+      s.on('user-offline', callback);
+      return () => s.off('user-offline', callback);
+    }
+    return () => {};
+  }, []);
 
   return {
     socket,
     connectionStatus,
     isConnected: connectionStatus === 'connected',
-    joinConversation,
-    leaveConversation,
+    joinConversation: (conversationId) => {
+      const s = socketRef.current;
+      if (s && conversationId) {
+        s.emit('join-room', conversationId);
+      }
+    },
+    leaveConversation: (conversationId) => {
+      const s = socketRef.current;
+      if (s && conversationId) {
+        s.emit('leave-room', conversationId);
+      }
+    },
     sendTypingEvent,
     sendStopTypingEvent,
     markMessageAsRead,
@@ -93,13 +129,10 @@ export const useSocket = () => {
     onMessageDelivered,
     onUserOnline,
     onUserOffline,
-    offNewMessage,
-    offTyping,
-    offStopTyping,
-    offMessageRead,
-    offMessageDelivered,
-    offUserOnline,
-    offUserOffline,
+    updateStatus,
+    statusRef,
+    socketRef,
+    reconnectAttemptRef,
   };
 };
 

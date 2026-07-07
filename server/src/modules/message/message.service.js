@@ -17,46 +17,60 @@ class MessageService {
       throw new ValidationError('You are not a participant of this conversation');
     }
 
-    const { content, attachments = [], type = 'text' } = data;
+    const { content, attachments = [], type = 'text', clientMessageId } = data;
+    const trimmedContent = typeof content === 'string' ? content.trim() : '';
+    const hasAttachments = Array.isArray(attachments) && attachments.length > 0;
 
-    if (!content && (!attachments || attachments.length === 0)) {
+    if (!trimmedContent && !hasAttachments) {
       throw new ValidationError('Message must have content or attachments');
     }
+
+    if (trimmedContent.length > 5000) {
+      throw new ValidationError('Message content cannot exceed 5000 characters');
+    }
+
+    const safeAttachments = hasAttachments
+      ? attachments.map((a) => ({
+          type: a.type || MESSAGE_TYPES.DOCUMENT,
+          url: a.url,
+          name: a.name,
+          size: a.size,
+          mimeType: a.mimeType,
+        }))
+      : [];
 
     const message = await messageRepository.create({
       conversationId,
       senderId,
-      content: content || '',
+      content: trimmedContent,
       type,
-      attachments: attachments.map((a) => ({
-        type: a.type || MESSAGE_TYPES.DOCUMENT,
-        url: a.url,
-        name: a.name,
-        size: a.size,
-        mimeType: a.mimeType,
-      })),
+      attachments: safeAttachments,
       status: MESSAGE_STATUS.SENT,
+      clientMessageId: clientMessageId || undefined,
     });
 
     await message.populate('senderId', 'name email avatar role');
 
+    const replyPayload = {
+      message,
+      conversationId: conversationId.toString(),
+    };
+
+    if (clientMessageId) {
+      replyPayload.clientMessageId = clientMessageId;
+    }
+
     await conversationRepository.update(conversationId, {
       lastMessageAt: new Date(),
-      lastMessagePreview: content || `${attachments.length} attachment(s)`,
+      lastMessagePreview: trimmedContent || `${safeAttachments.length} attachment(s)`,
     });
 
     try {
-      await broadcastToConversation(conversationId.toString(), 'new-message', {
-        message,
-        conversationId: conversationId.toString(),
-      });
-      
+      await broadcastToConversation(conversationId.toString(), 'new-message', replyPayload);
+
       if (conversation.participants && Array.isArray(conversation.participants)) {
         conversation.participants.forEach((participantId) => {
-          broadcastToUser(participantId.toString(), 'new-message', {
-            message,
-            conversationId: conversationId.toString(),
-          });
+          broadcastToUser(participantId.toString(), 'new-message', replyPayload);
         });
       }
     } catch (_error) {
@@ -65,6 +79,7 @@ class MessageService {
 
     return {
       message,
+      clientMessageId: clientMessageId || undefined,
       successMessage: 'Message sent successfully',
     };
   }
@@ -93,6 +108,8 @@ class MessageService {
         total: result.total,
         totalPages: Math.ceil(result.total / Number(limit)) || 1,
         hasMore: result.hasMore,
+        nextCursor: result.nextCursor || null,
+        prevCursor: result.prevCursor || null,
       },
       successMessage: 'Messages retrieved successfully',
     };
@@ -134,8 +151,18 @@ class MessageService {
       throw new ValidationError('You can only edit your own messages');
     }
 
+    const trimmedContent = typeof content === 'string' ? content.trim() : '';
+
+    if (!trimmedContent) {
+      throw new ValidationError('Message content cannot be empty');
+    }
+
+    if (trimmedContent.length > 5000) {
+      throw new ValidationError('Message content cannot exceed 5000 characters');
+    }
+
     const updated = await messageRepository.update(messageId, {
-      content,
+      content: trimmedContent,
       isEdited: true,
     });
 
