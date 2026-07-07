@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Search, MapPin, Calendar, Users, Filter, BookOpen, Leaf, Heart, Globe, Shield, Zap, Grid3X3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getPrograms } from '../services/programsService';
+import useSocket from '../hooks/useSocket';
 
 const CATEGORY_META = {
   Education:       { icon: BookOpen,   color: '#3b82f6' },
@@ -40,11 +41,9 @@ const ProgramCard = ({ program }) => {
     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = 'var(--shadow-xl)'; }}
     onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
     >
-      {/* Color bar */}
       <div style={{ height: '4px', backgroundColor: meta.color, width: '100%' }} />
 
       <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        {/* Category badge + status */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
@@ -62,25 +61,21 @@ const ProgramCard = ({ program }) => {
           </span>
         </div>
 
-        {/* Mode badge */}
         <div>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-body)', textTransform: 'capitalize' }}>
             {mode} program
           </span>
         </div>
 
-        {/* Title */}
         <h4 style={{ margin: 0, fontSize: '1.05rem', lineHeight: 1.4, color: 'var(--color-heading)' }}>
           {title || 'Untitled Program'}
         </h4>
 
-        {/* Description */}
         <p style={{ fontSize: '0.875rem', color: 'var(--color-body)', margin: 0, lineHeight: 1.6, flex: 1,
           display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {displayDesc}
         </p>
 
-        {/* Meta info */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.5rem' }}>
           {location && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--color-body)' }}>
@@ -104,7 +99,6 @@ const ProgramCard = ({ program }) => {
         </div>
       </div>
 
-      {/* CTA footer */}
       <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)' }}>
         <Link
           to={`/programs/${_id}`}
@@ -124,22 +118,68 @@ const Programs = () => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedMode, setSelectedMode] = useState('all');
+  const { on, isConnected } = useSocket();
+
+  const fetchPrograms = useCallback(async () => {
+    try {
+      const res = await getPrograms();
+      const list = res.programs || [];
+      setPrograms(list);
+    } catch (err) {
+      console.error('Failed to fetch programs', err);
+      setPrograms([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchPrograms = async () => {
-      try {
-        const res = await getPrograms();
-        const list = res?.data?.programs || res?.programs || (Array.isArray(res?.data) ? res.data : []);
-        setPrograms(list);
-      } catch (err) {
-        console.error('Failed to fetch programs', err);
-        setPrograms([]);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchPrograms();
-  }, []);
+  }, [fetchPrograms]);
+
+  useEffect(() => {
+    const handleProgramCreated = (data) => {
+      const program = data?.program;
+      if (!program || program.status !== 'published') return;
+      setPrograms((prev) => {
+        if (prev.some((p) => p._id === program._id)) return prev;
+        return [program, ...prev];
+      });
+    };
+
+    const handleProgramPublished = (data) => {
+      const program = data?.program;
+      if (!program) return;
+      setPrograms((prev) => {
+        if (prev.some((p) => p._id === program._id)) {
+          return prev.map((p) => p._id === program._id ? program : p);
+        }
+        return [program, ...prev];
+      });
+    };
+
+    const handleProgramUpdated = (data) => {
+      const program = data?.program;
+      if (!program) return;
+      setPrograms((prev) => prev.map((p) => (p._id === program._id ? program : p)));
+    };
+
+    const handleReconnect = () => {
+      fetchPrograms();
+    };
+
+    const unsubCreated = on('program-created', handleProgramCreated);
+    const unsubPublished = on('program-published', handleProgramPublished);
+    const unsubUpdated = on('program-updated', handleProgramUpdated);
+    const unsubReconnect = on('reconnect', handleReconnect);
+
+    return () => {
+      unsubCreated();
+      unsubPublished();
+      unsubUpdated();
+      unsubReconnect();
+    };
+  }, [on, fetchPrograms]);
 
   const categories = useMemo(() => ['All', ...Object.keys(CATEGORY_META)], []);
 
@@ -158,23 +198,25 @@ const Programs = () => {
 
   return (
     <div style={{ padding: '0.5rem 0 3rem' }}>
-      {/* Header */}
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-heading)' }}>
           Browse Opportunities
         </h1>
         <p style={{ color: 'var(--color-body)', fontSize: '1rem' }}>
           Discover social campaigns, teaching initiatives, and ecological programs you can join.
+          {isConnected && (
+            <span style={{ fontSize: '0.8rem', color: '#22c55e', marginLeft: '0.5rem' }}>
+              ● Live
+            </span>
+          )}
         </p>
       </div>
 
-      {/* Filters bar */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem',
         padding: '1.25rem', backgroundColor: 'var(--color-card)',
         borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)',
       }}>
-        {/* Search */}
         <div style={{ position: 'relative', flex: '1 1 220px' }}>
           <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-body)' }} />
           <input
@@ -187,7 +229,6 @@ const Programs = () => {
           />
         </div>
 
-        {/* Mode filter */}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Filter size={15} style={{ color: 'var(--color-body)' }} />
           <select
@@ -204,7 +245,6 @@ const Programs = () => {
         </div>
       </div>
 
-      {/* Category pills */}
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.75rem' }}>
         {categories.map((cat) => {
           const meta = CATEGORY_META[cat];
@@ -233,14 +273,12 @@ const Programs = () => {
         })}
       </div>
 
-      {/* Results count */}
       {!loading && (
         <p style={{ color: 'var(--color-body)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
           Showing <strong>{filtered.length}</strong> of <strong>{programs.length}</strong> programs
         </p>
       )}
 
-      {/* Grid */}
       {loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
           {[1,2,3,4,5,6].map((i) => (

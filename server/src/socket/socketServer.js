@@ -22,6 +22,12 @@ const broadcastToConversation = (conversationId, event, data) => {
   }
 };
 
+const broadcastToAll = (event, data) => {
+  if (io) {
+    io.emit(event, data);
+  }
+};
+
 const logSocketEvent = (event, userId, data = {}) => {
   if (process.env.NODE_ENV === 'development') {
     console.log(`[Socket] ${event}`, { userId, ...data });
@@ -167,6 +173,7 @@ module.exports = {
   getSocketServer,
   broadcastToUser,
   broadcastToConversation,
+  broadcastToAll,
   getOnlineUsers,
   logSocketEvent,
 };

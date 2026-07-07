@@ -4,9 +4,42 @@ const { PROGRAM_STATUS, PROGRAM_MODE, PAGINATION } = require('./program.constant
 const NotFoundError = require('../../utils/errors/NotFoundError');
 const ValidationError = require('../../utils/errors/ValidationError');
 const notificationService = require('../notification/notification.service');
+const { broadcastToAll } = require('../../socket/socketServer');
 
 const ALLOWED_SORT_FIELDS = ['createdAt', 'startDate', 'registrationDeadline', 'title', 'status'];
 const ALLOWED_SORT_ORDERS = ['asc', 'desc'];
+
+const serializeProgram = (program) => {
+  if (!program) return null;
+  const obj = program.toObject ? program.toObject() : program;
+  return {
+    _id: obj._id,
+    programId: obj.programId,
+    title: obj.title,
+    slug: obj.slug,
+    shortDescription: obj.shortDescription,
+    description: obj.description,
+    category: obj.category,
+    tags: obj.tags || [],
+    mode: obj.mode,
+    status: obj.status,
+    approvalRequired: obj.approvalRequired,
+    maxVolunteers: obj.maxVolunteers,
+    startDate: obj.startDate,
+    endDate: obj.endDate,
+    registrationDeadline: obj.registrationDeadline,
+    country: obj.country,
+    state: obj.state,
+    city: obj.city,
+    address: obj.address,
+    customFields: obj.customFields || {},
+    createdBy: obj.createdBy,
+    updatedBy: obj.updatedBy,
+    isDeleted: obj.isDeleted,
+    createdAt: obj.createdAt,
+    updatedAt: obj.updatedAt,
+  };
+};
 
 class ProgramService {
   async createProgram(userId, programData) {
@@ -56,7 +89,16 @@ class ProgramService {
       updatedBy: userId,
     });
 
-    return { program };
+    const created = await programRepository.findById(program._id.toString());
+    const serialized = serializeProgram(created);
+
+    try {
+      broadcastToAll('program-created', { program: serialized, createdBy: userId.toString() });
+    } catch (_socketError) {
+      // Socket broadcast failure must not block creation
+    }
+
+    return { program: serialized };
   }
 
   async getProgram(programId, userRole) {
@@ -73,7 +115,7 @@ class ProgramService {
       throw new NotFoundError('Program not found');
     }
 
-    return { program };
+    return { program: serializeProgram(program) };
   }
 
   async updateProgram(userId, programId, updateData) {
@@ -130,17 +172,15 @@ class ProgramService {
       updatedBy: userId,
     });
 
+    const serialized = serializeProgram(updatedProgram);
+
     try {
-      await notificationService.sendInAppNotification('buildProgramUpdated', {
-        recipientId: program.createdBy.toString(),
-        programName: updatedProgram.title,
-        programId: updatedProgram._id.toString(),
-      });
-    } catch (_error) {
-      // Notification failure is non-blocking
+      broadcastToAll('program-updated', { program: serialized, updatedBy: userId.toString() });
+    } catch (_socketError) {
+      // Socket broadcast failure is non-blocking
     }
 
-    return { program: updatedProgram };
+    return { program: serialized };
   }
 
   async deleteProgram(userId, programId) {
@@ -152,18 +192,20 @@ class ProgramService {
 
     await programRepository.softDelete(programId, userId);
 
-    return { program };
+    try {
+      broadcastToAll('program-deleted', { programId: programId.toString(), deletedBy: userId.toString() });
+    } catch (_socketError) {
+      // Socket broadcast failure is non-blocking
+    }
+
+    return { programId: programId.toString() };
   }
 
   async restoreProgram(userId, programId) {
-    const program = await programRepository.findById(programId, true);
+    const program = await programRepository.findById(programId);
 
     if (!program) {
       throw new NotFoundError('Program not found');
-    }
-
-    if (!program.isDeleted) {
-      throw new ValidationError('Program is not deleted');
     }
 
     const restoredProgram = await programRepository.restore(programId);
@@ -176,7 +218,15 @@ class ProgramService {
       }
     }
 
-    return { program: restoredProgram };
+    const serialized = serializeProgram(restoredProgram);
+
+    try {
+      broadcastToAll('program-restored', { program: serialized, restoredBy: userId.toString() });
+    } catch (_socketError) {
+      // Socket broadcast failure is non-blocking
+    }
+
+    return { program: serialized };
   }
 
   async publishProgram(userId, programId) {
@@ -215,7 +265,10 @@ class ProgramService {
       });
     }
     if (!program.endDate) {
-      validationErrors.push({ field: 'endDate', message: 'End date is required for publishing' });
+      validationErrors.push({
+        field: 'endDate',
+        message: 'End date is required for publishing',
+      });
     }
     if (program.mode !== 'online' && (!program.city || program.city.trim() === '')) {
       validationErrors.push({ field: 'city', message: 'City is required for offline/hybrid programs' });
@@ -226,8 +279,8 @@ class ProgramService {
     }
 
     const publishedProgram = await programRepository.publish(programId);
+    const serialized = serializeProgram(publishedProgram);
 
-    // ── Broadcast to ALL active volunteers ──────────────────────────────────
     try {
       const User = require('../user/user.model');
       const volunteers = await User.find(
@@ -236,22 +289,26 @@ class ProgramService {
       ).lean();
 
       if (volunteers.length > 0) {
-        const recipientIds = volunteers.map((v) => v._id.toString());
-        await notificationService.sendBulkInAppNotification(recipientIds, 'buildProgramCreated', {
-          programName: publishedProgram.title,
-          programId: publishedProgram._id.toString(),
-          createdBy: userId,
-        });
+        await notificationService.sendBulkInAppNotification(
+          volunteers.map((v) => v._id.toString()),
+          'buildProgramCreated',
+          {
+            programName: publishedProgram.title,
+            programId: publishedProgram._id.toString(),
+            createdBy: userId,
+          }
+        );
       }
-    } catch (_error) {
+
+      broadcastToAll('program-published', { program: serialized, publishedBy: userId.toString() });
+    } catch (_err) {
       // Broadcast failure is non-blocking
     }
 
-    return { program: publishedProgram };
+    return { program: serialized };
   }
 
   async archiveProgram(userId, programId) {
-
     const program = await programRepository.findById(programId);
 
     if (!program) {
@@ -263,6 +320,7 @@ class ProgramService {
     }
 
     const archivedProgram = await programRepository.archive(programId);
+    const serialized = serializeProgram(archivedProgram);
 
     try {
       await notificationService.sendInAppNotification('buildProgramCancelled', {
@@ -270,11 +328,13 @@ class ProgramService {
         programName: program.title,
         programId: program._id.toString(),
       });
+
+      broadcastToAll('program-archived', { program: serialized, archivedBy: userId.toString() });
     } catch (_error) {
       // Notification failure is non-blocking
     }
 
-    return { program: archivedProgram };
+    return { program: serialized };
   }
 
   async listPrograms(queryParams, userRole) {
@@ -339,7 +399,7 @@ class ProgramService {
     const totalPages = Math.ceil(result.total / validLimit);
 
     return {
-      programs: result.programs,
+      programs: result.programs.map(serializeProgram),
       pagination: {
         total: result.total,
         page: validPage,
@@ -370,6 +430,7 @@ class ProgramService {
     }
 
     const updatedProgram = await programRepository.updateStatus(programId, newStatus);
+    const serialized = serializeProgram(updatedProgram);
 
     if (newStatus === PROGRAM_STATUS.ONGOING) {
       try {
@@ -425,7 +486,13 @@ class ProgramService {
       }
     }
 
-    return { program: updatedProgram };
+    try {
+      broadcastToAll('program-status-updated', { program: serialized, status: newStatus, updatedBy: userId.toString() });
+    } catch (_socketError) {
+      // Socket broadcast failure is non-blocking
+    }
+
+    return { program: serialized };
   }
 
   _getValidTransitions(currentStatus) {

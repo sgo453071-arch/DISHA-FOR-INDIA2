@@ -1,81 +1,106 @@
 import api from './api';
 
-/**
- * Get all public programs (available to all users).
- */
+const unwrap = (res) => {
+  if (!res) return undefined;
+  if (res.data && typeof res.data === 'object' && 'success' in res.data) {
+    return res.data;
+  }
+  return res;
+};
+
 export const getPrograms = async (params = {}) => {
-  return await api.get('/programs', { params });
+  const res = await api.get('/programs', { params });
+  const payload = unwrap(res);
+  return {
+    programs: payload?.data?.programs || payload?.programs || [],
+    pagination: payload?.data?.pagination || payload?.pagination || {},
+    successMessage: payload?.message || 'Programs retrieved',
+  };
 };
 
-/**
- * Get all programs for admin (requires admin role).
- */
 export const getAllPrograms = async (params = {}) => {
-  return await api.get('/programs', { params });
+  const res = await api.get('/programs', { params });
+  const payload = unwrap(res);
+  return {
+    programs: payload?.data?.programs || payload?.programs || [],
+    pagination: payload?.data?.pagination || payload?.pagination || {},
+    successMessage: payload?.message || 'Programs retrieved',
+  };
 };
 
-/**
- * Create a new program (admin only).
- */
 export const createProgram = async (data) => {
-  return await api.post('/programs', data);
+  const res = await api.post('/programs', data);
+  const payload = unwrap(res);
+  return {
+    program: payload?.data?.program || payload?.program,
+    successMessage: payload?.message || 'Program created',
+  };
 };
 
-/**
- * Update an existing program (admin only).
- */
 export const updateProgram = async (id, data) => {
-  return await api.put(`/programs/${id}`, data);
+  const res = await api.put(`/programs/${id}`, data);
+  const payload = unwrap(res);
+  return {
+    program: payload?.data?.program || payload?.program,
+    successMessage: payload?.message || 'Program updated',
+  };
 };
 
-/**
- * Delete a program (admin only).
- */
 export const deleteProgram = async (id) => {
-  return await api.delete(`/programs/${id}`);
+  const res = await api.delete(`/programs/${id}`);
+  const payload = unwrap(res);
+  return {
+    successMessage: payload?.message || 'Program deleted',
+  };
 };
 
-/**
- * Get current user's enrolled programs.
- * Backend route: GET /api/v1/programs/me
- */
 export const getJoinedPrograms = async () => {
-  return await api.get('/programs/me');
+  const res = await api.get('/programs/me');
+  const payload = unwrap(res);
+  return {
+    programs: payload?.data?.programs || payload?.programs || [],
+    pagination: payload?.data?.pagination || payload?.pagination || {},
+    successMessage: payload?.message || 'Programs retrieved',
+  };
 };
 
-/**
- * Get program by ID or slug.
- */
 export const getProgramById = async (id) => {
-  return await api.get(`/programs/${id}`);
+  const res = await api.get(`/programs/${id}`);
+  const payload = unwrap(res);
+  return {
+    program: payload?.data?.program || payload?.program,
+    successMessage: payload?.message || 'Program retrieved',
+  };
 };
 
-/**
- * Get current user's enrolled programs (alias for getJoinedPrograms).
- */
 export const getMyPrograms = async () => {
-  return await api.get('/programs/me');
+  const res = await api.get('/programs/me');
+  const payload = unwrap(res);
+  return {
+    programs: payload?.data?.programs || payload?.programs || [],
+    pagination: payload?.data?.pagination || payload?.pagination || {},
+    successMessage: payload?.message || 'Programs retrieved',
+  };
 };
 
-/**
- * Publish a program (admin only).
- * Backend route: PATCH /api/v1/programs/:id/publish
- */
 export const publishProgram = async (id) => {
-  return await api.patch(`/programs/${id}/publish`);
+  const res = await api.patch(`/programs/${id}/publish`);
+  const payload = unwrap(res);
+  return {
+    program: payload?.data?.program || payload?.program,
+    successMessage: payload?.message || 'Program published',
+  };
 };
 
-/**
- * Change a program's status via the dedicated status endpoint.
- * Backend route: PATCH /api/v1/programs/:id/status
- */
 export const changeProgramStatus = async (id, status) => {
-  return await api.patch(`/programs/${id}/status`, { status });
+  const res = await api.patch(`/programs/${id}/status`, { status });
+  const payload = unwrap(res);
+  return {
+    program: payload?.data?.program || payload?.program,
+    successMessage: payload?.message || 'Program updated',
+  };
 };
 
-/**
- * Volunteer hours placeholder (backend not implemented yet).
- */
 export const getVolunteerHours = async () => {
   return {
     success: true,

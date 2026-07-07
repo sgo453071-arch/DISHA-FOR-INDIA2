@@ -16,11 +16,10 @@ const AdminPrograms = () => {
     try {
       setLoading(true);
       const res = await getAllPrograms();
-      if (res.success && res.data) {
-        setPrograms(res.data.programs || []);
-      }
+      const list = res.programs || [];
+      setPrograms(list);
     } catch (err) {
-      toast.error('Failed to load programs');
+      toast.error(err.message || 'Failed to load programs');
     } finally {
       setLoading(false);
     }
@@ -34,12 +33,12 @@ const AdminPrograms = () => {
     if (!window.confirm('Are you sure you want to delete this program?')) return;
     try {
       const res = await deleteProgram(id);
-      if (res.success) {
+      if (res.success || res.successMessage) {
         toast.success('Program deleted successfully');
-        setPrograms((prev) => prev.filter((p) => p.id !== id && p._id !== id));
+        setPrograms((prev) => prev.filter((p) => (p.id || p._id) !== id));
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error deleting program');
+      toast.error(err.message || 'Error deleting program');
     }
   };
 
@@ -98,11 +97,11 @@ const AdminPrograms = () => {
                   <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-body)' }}>No programs found.</td></tr>
                 ) : (
                   programs.map((prog) => (
-                    <tr key={prog.id || prog._id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <tr key={prog._id || prog.programId} style={{ borderBottom: '1px solid var(--color-border)' }}>
                       <td style={{ padding: '1rem 1.5rem', fontWeight: 600, color: 'var(--color-heading)' }}>{prog.title}</td>
                       <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem' }}>{prog.category}</td>
                       <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <MapPin size={14} className="text-body" /> {prog.location?.city || 'Virtual'}
+                        <MapPin size={14} className="text-body" /> {prog.city || 'Virtual'}
                       </td>
                       <td style={{ padding: '1rem 1.5rem' }}>
                         <StatusBadge status={prog.status} />
@@ -112,7 +111,7 @@ const AdminPrograms = () => {
                           <button className="btn btn-secondary" style={{ padding: '0.4rem' }} onClick={() => handleEdit(prog)} aria-label="Edit">
                             <Edit2 size={16} />
                           </button>
-                          <button className="btn btn-secondary" style={{ padding: '0.4rem', color: 'var(--color-error)' }} onClick={() => handleDelete(prog.id || prog._id)} aria-label="Delete">
+                          <button className="btn btn-secondary" style={{ padding: '0.4rem', color: 'var(--color-error)' }} onClick={() => handleDelete(prog._id || prog.id)} aria-label="Delete">
                             <Trash2 size={16} />
                           </button>
                         </div>

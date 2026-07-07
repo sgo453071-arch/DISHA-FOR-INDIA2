@@ -3,7 +3,6 @@ import { X, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createProgram, updateProgram, changeProgramStatus } from '../../services/programsService';
 
-// Backend expects lowercase mode & status values
 const MODE_OPTIONS = [
   { value: 'offline', label: 'Offline' },
   { value: 'online', label: 'Online' },
@@ -32,18 +31,17 @@ const CATEGORY_OPTIONS = [
 const ProgramModal = ({ isOpen, onClose, onSuccess, editData }) => {
   const isEditing = !!editData;
 
-  // Normalize existing data — backend stores lowercase mode/status
   const normalizeMode = (m) => {
     if (!m) return 'offline';
     return m.toLowerCase();
   };
   const normalizeStatus = (s) => {
     if (!s) return 'draft';
-    // Handle UPPER_CASE from older responses (e.g. "DRAFT" -> "draft")
     return s.toLowerCase();
   };
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     title: editData?.title || '',
     shortDescription: editData?.shortDescription || '',
@@ -73,14 +71,14 @@ const ProgramModal = ({ isOpen, onClose, onSuccess, editData }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
-    // Build the program data payload (no status — managed separately)
     const payload = {
       title: formData.title.trim(),
       description: formData.description.trim(),
       shortDescription: formData.shortDescription.trim() || undefined,
       category: formData.category,
-      mode: formData.mode,          // already lowercase
+      mode: formData.mode,
       startDate: formData.startDate || undefined,
       endDate: formData.endDate || undefined,
       registrationDeadline: formData.registrationDeadline || undefined,
@@ -88,7 +86,6 @@ const ProgramModal = ({ isOpen, onClose, onSuccess, editData }) => {
       approvalRequired: formData.approvalRequired,
     };
 
-    // Only include location fields for offline/hybrid
     if (formData.mode !== 'online') {
       payload.city = formData.city.trim() || undefined;
       payload.state = formData.state.trim() || undefined;
@@ -97,26 +94,21 @@ const ProgramModal = ({ isOpen, onClose, onSuccess, editData }) => {
 
     try {
       if (isEditing) {
-        const programId = editData.id || editData._id;
-
-        // 1. Update program fields
+        const programId = editData._id || editData.id;
         await updateProgram(programId, payload);
-
-        // 2. If status changed, call the dedicated status endpoint
         const originalStatus = normalizeStatus(editData?.status);
         if (formData.status !== originalStatus) {
           await changeProgramStatus(programId, formData.status);
         }
-
         toast.success('Program updated successfully!');
       } else {
-        await createProgram(payload);
-        toast.success('Program created successfully! It is saved as a draft.');
+        const result = await createProgram(payload);
+        toast.success(result.successMessage || 'Program created successfully! It is saved as a draft.');
       }
       onSuccess();
     } catch (err) {
-      // api.js interceptor transforms errors to { message, status, data, originalError }
       const msg = err.message || 'Error saving program. Please check all fields.';
+      setError(msg);
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -146,7 +138,7 @@ const ProgramModal = ({ isOpen, onClose, onSuccess, editData }) => {
         <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--color-bg)' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--color-heading)' }}>
-              {isEditing ? '✏️ Edit Program' : '🚀 Create New Program'}
+              {isEditing ? 'Edit Program' : 'Create New Program'}
             </h2>
             <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--color-body)' }}>
               {isEditing ? 'Update program details below.' : 'Programs are created as Draft. Publish them when ready.'}
@@ -159,6 +151,11 @@ const ProgramModal = ({ isOpen, onClose, onSuccess, editData }) => {
 
         {/* Form Body */}
         <div style={{ padding: '1.5rem 2rem', overflowY: 'auto', flex: 1 }}>
+          {error && (
+            <div style={{ padding: '0.75rem 1rem', borderRadius: 8, backgroundColor: '#FEE2E2', color: '#991B1B', marginBottom: '1rem', fontSize: '0.85rem' }}>
+              {error}
+            </div>
+          )}
           <form id="program-form" onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
 
             {/* Title */}
@@ -284,7 +281,7 @@ const ProgramModal = ({ isOpen, onClose, onSuccess, editData }) => {
                   ))}
                 </select>
                 <p style={{ fontSize: '0.8rem', color: 'var(--color-body)', marginTop: '0.35rem' }}>
-                  ⚠️ Status transitions must follow: Draft → Published → Ongoing → Completed
+                  Status transitions: Draft → Published → Ongoing → Completed
                 </p>
               </div>
             )}

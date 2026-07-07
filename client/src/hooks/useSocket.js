@@ -5,6 +5,24 @@ export const useSocket = () => {
   const { socket, connectionStatus, setConnectionStatus, updateStatus, statusRef, socketRef, reconnectAttemptRef } = useSocketContext();
   const typingTimersRef = useRef(new Map());
 
+  const on = useCallback((event, callback) => {
+    const s = socketRef.current;
+    if (s) {
+      s.on(event, callback);
+      return () => s.off(event, callback);
+    }
+    return () => {};
+  }, []);
+
+  const once = useCallback((event, callback) => {
+    const s = socketRef.current;
+    if (s) {
+      s.once(event, callback);
+      return () => s.off(event, callback);
+    }
+    return () => {};
+  }, []);
+
   const sendTypingEvent = useCallback((conversationId) => {
     const s = socketRef.current;
     if (s && statusRef.current === 'connected') {
@@ -129,6 +147,8 @@ export const useSocket = () => {
     onMessageDelivered,
     onUserOnline,
     onUserOffline,
+    on,
+    once,
     updateStatus,
     statusRef,
     socketRef,
