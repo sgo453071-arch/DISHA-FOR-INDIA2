@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { VolunteerProvider } from './context/VolunteerContext';
 import { NotificationsProvider } from './context/NotificationsContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Layouts
 import PublicLayout from './layouts/PublicLayout';
@@ -58,44 +59,6 @@ import RecommendedPrograms from './pages/matching/RecommendedPrograms';
 import RecommendedVolunteers from './pages/matching/RecommendedVolunteers';
 import SavedRecommendations from './pages/recommendations/SavedRecommendations';
 import RecommendationHistory from './pages/recommendations/RecommendationHistory';
-
-// Protected Route Component
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        backgroundColor: '#f4f1ea' 
-      }}>
-        <div style={{ 
-          width: '40px', 
-          height: '40px', 
-          border: '3px solid #4a90e2', 
-          borderTopColor: 'transparent', 
-          borderRadius: '50%', 
-          animation: 'spin 1s linear infinite' 
-        }}></div>
-        <p style={{ marginTop: '1rem', color: '#333', fontWeight: 500 }}>Loading session...</p>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (allowedRoles && !allowedRoles.includes(user?.role?.toUpperCase())) {
-    return <Navigate to="/unauthorized" replace />;
-  }
-
-  return children;
-};
 
 // Guard for auth pages
 const RedirectIfAuthenticated = ({ children }) => {
