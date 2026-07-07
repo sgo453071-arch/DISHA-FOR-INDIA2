@@ -38,6 +38,8 @@ class MessageService {
       status: MESSAGE_STATUS.SENT,
     });
 
+    await message.populate('senderId', 'name email avatar role');
+
     await conversationRepository.update(conversationId, {
       lastMessageAt: new Date(),
       lastMessagePreview: content || `${attachments.length} attachment(s)`,

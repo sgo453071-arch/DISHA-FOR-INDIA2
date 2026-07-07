@@ -56,6 +56,8 @@ import AdminAnnouncementCreate from './pages/admin/AdminAnnouncementCreate';
 import VolunteerAnalytics from './pages/volunteer/VolunteerAnalytics';
 import Contributions from './pages/contributions/Contributions';
 import ContributionWizard from './components/contributions/ContributionWizard';
+import MyContributions from './pages/contributions/MyContributions';
+import ContributionDetailPage from './pages/contributions/ContributionDetailPage';
 
 // Matching Pages
 import RecommendedPrograms from './pages/matching/RecommendedPrograms';
@@ -211,6 +213,8 @@ function App() {
                <Route path="volunteer/analytics" element={<VolunteerAnalytics />} />
                <Route path="contributions" element={<Contributions />} />
                <Route path="contributions/new" element={<ContributionWizard />} />
+               <Route path="my-contributions" element={<MyContributions />} />
+               <Route path="contributions/:id" element={<ContributionDetailPage />} />
             </Route>
 
             {/* Global 404 - placed last so it only matches when nothing else does */}

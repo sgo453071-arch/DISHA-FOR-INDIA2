@@ -1,8 +1,37 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { PlusCircle } from 'lucide-react';
 
-const ContributionEmptyState = ({ onStartContributing }) => {
+const ContributionEmptyState = ({ type = 'default', title, description, action }) => {
+  const getIllustration = () => {
+    switch (type) {
+      case 'drafts':
+        return (
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="20" y="20" width="80" height="80" rx="12" fill="var(--color-bg)" stroke="var(--color-border)" strokeWidth="4"/>
+            <rect x="40" y="45" width="40" height="8" rx="4" fill="var(--color-primary)" opacity="0.4"/>
+            <rect x="40" y="65" width="24" height="8" rx="4" fill="var(--color-secondary)" opacity="0.4"/>
+            <circle cx="90" cy="90" r="24" fill="var(--color-primary)" opacity="0.1"/>
+          </svg>
+        );
+      case 'approved':
+        return (
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="40" fill="var(--color-bg)" stroke="var(--color-border)" strokeWidth="4"/>
+            <path d="M45 60L55 70L75 50" stroke="var(--color-success)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        );
+      case 'search':
+      default:
+        return (
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="30" fill="var(--color-bg)" stroke="var(--color-border)" strokeWidth="4"/>
+            <path d="M72 72L100 100" stroke="var(--color-border)" strokeWidth="4" strokeLinecap="round"/>
+            <circle cx="50" cy="50" r="15" fill="var(--color-purple)" opacity="0.1"/>
+          </svg>
+        );
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -21,28 +50,18 @@ const ContributionEmptyState = ({ onStartContributing }) => {
         margin: '2rem 0',
       }}
     >
-      <div style={{
-        width: 80,
-        height: 80,
-        borderRadius: '50%',
-        background: 'rgba(211, 84, 0, 0.10)',
-        color: 'var(--color-primary)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: '1.5rem',
-      }}>
-        <PlusCircle size={40} />
+      <div style={{ marginBottom: '1.5rem' }}>
+        {getIllustration()}
       </div>
       <h3 style={{ fontSize: '1.5rem', marginBottom: '0.75rem', color: 'var(--color-heading)' }}>
-        No Contributions Yet
+        {title}
       </h3>
-      <p style={{ color: 'var(--color-body)', maxWidth: '480px', marginBottom: '2rem', fontSize: '1rem', lineHeight: 1.7 }}>
-        Be the first to contribute! Share your skills, earn coins, and make a real impact in your community.
+      <p style={{ color: 'var(--color-body)', maxWidth: '400px', marginBottom: '2rem', fontSize: '1rem' }}>
+        {description}
       </p>
-      {onStartContributing && (
-        <button onClick={onStartContributing} className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-          <PlusCircle size={18} /> Start Contributing
+      {action && (
+        <button onClick={action.onClick} className="btn btn-primary">
+          {action.label}
         </button>
       )}
     </motion.div>

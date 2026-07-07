@@ -42,6 +42,7 @@ const DashboardLayout = () => {
     { name: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },
     { name: 'Announcements', path: '/announcements',  icon: <Megaphone size={18} /> },
     { name: 'Opportunities', path: '/opportunities', icon: <Calendar size={18} /> },
+    { name: 'My Contributions', path: '/my-contributions', icon: <FileText size={18} /> },
     { name: 'Certificates',  path: '/certificates',  icon: <Award size={18} /> },
     { name: 'Messages',      path: '/messages',       icon: <MessageSquare size={18} /> },
     { name: 'Support',       path: '/support',        icon: <HelpCircle size={18} /> },
