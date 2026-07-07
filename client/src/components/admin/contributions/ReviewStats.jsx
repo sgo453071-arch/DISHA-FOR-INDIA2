@@ -3,19 +3,27 @@ import { Clock, CheckCircle, XCircle, AlertCircle, Star, Timer } from 'lucide-re
 
 const ReviewStats = ({ stats = {} }) => {
   const items = [
-    { label: 'Pending Reviews', value: stats.pending || 0, icon: Clock, color: 'var(--color-accent)' },
-    { label: 'Under Review', value: stats.underReview || 0, icon: AlertCircle, color: 'var(--color-primary)' },
-    { label: 'Approved Today', value: stats.approvedToday || 0, icon: CheckCircle, color: 'var(--color-success)' },
-    { label: 'Rejected Today', value: stats.rejectedToday || 0, icon: XCircle, color: 'var(--color-error)' },
-    { label: 'Needs Changes', value: stats.needsChanges || 0, icon: AlertCircle, color: 'var(--color-orange)' },
-    { label: 'Featured', value: stats.featured || 0, icon: Star, color: 'var(--color-purple)' },
+    { label: 'Pending Reviews', value: stats.pending ?? 0, icon: Clock, color: 'var(--color-accent)' },
+    { label: 'Under Review', value: stats.underReview ?? 0, icon: AlertCircle, color: 'var(--color-primary)' },
+    { label: 'Approved Today', value: stats.approvedToday ?? 0, icon: CheckCircle, color: 'var(--color-success)' },
+    { label: 'Rejected Today', value: stats.rejectedToday ?? 0, icon: XCircle, color: 'var(--color-error)' },
+    { label: 'Needs Changes', value: stats.needsChanges ?? 0, icon: AlertCircle, color: 'var(--color-accent)' },
+    { label: 'Featured', value: stats.featured ?? 0, icon: Star, color: 'var(--color-purple)' },
     { label: 'Avg Review Time', value: stats.avgReviewTime || 'N/A', icon: Timer, color: 'var(--color-secondary)' },
   ];
 
   return (
-    <div className="grid grid-cols-4" style={{ marginBottom: '2rem', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
       {items.map((item) => (
-        <div key={item.label} className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem' }}>
+        <div
+          key={item.label}
+          className="card"
+          style={{
+            flex: '1 1 180px',
+            display: 'flex', alignItems: 'center', gap: '1rem',
+            padding: '1.25rem',
+          }}
+        >
           <div style={{ padding: '0.75rem', borderRadius: '50%', background: `${item.color}20`, color: item.color, flexShrink: 0 }}>
             <item.icon size={24} />
           </div>

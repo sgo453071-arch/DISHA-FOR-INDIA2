@@ -9,7 +9,7 @@ import VersionHistory from '../../contributions/VersionHistory';
 import ActivityTimeline from './ActivityTimeline';
 import ReviewPanel from './ReviewPanel';
 
-const AdminContributionDetail = ({ contributionId, onBack }) => {
+const AdminContributionDetail = ({ contributionId, onBack, hideReviewPanel = false }) => {
   const { data, isLoading, error } = useAdminContributionDetail(contributionId);
 
   if (!contributionId) {
@@ -61,15 +61,17 @@ const AdminContributionDetail = ({ contributionId, onBack }) => {
           <ContributionFiles files={files} links={links} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <ActivityTimeline currentStatus={contribution.status} />
+          <ActivityTimeline currentStatus={contribution.status} reviews={data.reviews || []} />
           <ReviewHistory reviews={data.reviews || []} />
           <VersionHistory versions={contribution.versions || []} />
         </div>
       </div>
 
-      <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1.5rem' }}>
-        <ReviewPanel contribution={contribution} onClose={onBack} />
-      </div>
+      {!hideReviewPanel && (
+        <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1.5rem' }}>
+          <ReviewPanel contribution={contribution} onClose={onBack} />
+        </div>
+      )}
     </div>
   );
 };

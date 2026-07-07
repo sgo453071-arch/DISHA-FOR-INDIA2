@@ -4,6 +4,8 @@ import ContributionQueueCard from './ContributionQueueCard';
 import ContributionSkeleton from '../../contributions/ContributionSkeleton';
 import ContributionEmptyState from '../../contributions/ContributionEmptyState';
 import ReviewStats from './ReviewStats';
+import FilterBar from './FilterBar';
+import SearchBar from './SearchBar';
 
 const ContributionQueue = ({ contributions, loading, onSelect }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,9 +29,15 @@ const ContributionQueue = ({ contributions, loading, onSelect }) => {
       result = result.filter((c) => c.category === filters.category);
     }
     result.sort((a, b) => {
-      if (filters.sortBy === 'title') return (a.title || '').localeCompare(b.title || '');
-      if (filters.sortBy === '-createdAt') return new Date(b.createdAt) - new Date(a.createdAt);
-      return new Date(a.createdAt) - new Date(b.createdAt);
+      switch (filters.sortBy) {
+        case 'title':
+          return (a.title || '').localeCompare(b.title || '');
+        case '-createdAt':
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        case 'createdAt':
+        default:
+          return new Date(a.createdAt) - new Date(b.createdAt);
+      }
     });
     return result;
   }, [contributions, searchQuery, filters]);
@@ -51,27 +59,8 @@ const ContributionQueue = ({ contributions, loading, onSelect }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <ReviewStats stats={stats} />
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by volunteer, title, category, or tags..."
-          className="form-control"
-          style={{ flex: 1, minWidth: '240px' }}
-        />
-        <select
-          value={filters.status}
-          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          className="form-control"
-          style={{ minWidth: '140px' }}
-        >
-          <option value="">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="under_review">Under Review</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-          <option value="needs_changes">Needs Changes</option>
-        </select>
+        <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search by volunteer, title, category, or tags..." />
+        <FilterBar filters={filters} onChange={setFilters} />
       </div>
       {loading ? (
         <ContributionSkeleton count={6} />

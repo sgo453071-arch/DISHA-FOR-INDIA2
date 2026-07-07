@@ -33,7 +33,7 @@ class ConversationRepository {
         .sort({ [sortBy]: sortOrder })
         .skip(skip)
         .limit(limit)
-        .populate('participants', 'name email avatar role'),
+        .populate('participants', 'name email avatar role volunteerId'),
       Conversation.countDocuments(filter),
     ]);
 

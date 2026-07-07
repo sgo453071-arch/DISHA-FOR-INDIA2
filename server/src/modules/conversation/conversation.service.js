@@ -2,19 +2,51 @@ const conversationRepository = require('./conversation.repository');
 const { CONVERSATION_STATUS } = require('./conversation.constants');
 const NotFoundError = require('../../utils/errors/NotFoundError');
 const ValidationError = require('../../utils/errors/ValidationError');
+const User = require('../user/user.model');
 
 class ConversationService {
+  async resolveParticipantId(participantId) {
+    if (!participantId || typeof participantId !== 'string') {
+      throw new ValidationError('Invalid participant identifier');
+    }
+
+    if (participantId.trim() === '') {
+      throw new ValidationError('Participant identifier cannot be empty');
+    }
+
+    const trimmed = participantId.trim();
+
+    if (require('mongoose').Types.ObjectId.isValid(trimmed)) {
+      const exists = await User.findById(trimmed).select('_id');
+      if (exists) return trimmed;
+    }
+
+    const user = await User.findOne({ volunteerId: trimmed }).select('_id');
+    if (!user) {
+      throw new NotFoundError(`User with ID "${trimmed}" not found`);
+    }
+    return user._id.toString();
+  }
+
   async createConversation(userId, data) {
-    const { participantIds, type = 'private', title } = data;
+    const { participantIds = [], type = 'private', title } = data;
 
-    const uniqueParticipants = Array.from(new Set([userId, ...participantIds]));
+    const creatorResolved = await this.resolveParticipantId(userId.toString());
+    const resolvedParticipants = [creatorResolved];
 
-    if (uniqueParticipants.length < 2) {
+    for (const id of participantIds) {
+      const resolved = await this.resolveParticipantId(id);
+      if (!resolvedParticipants.includes(resolved)) {
+        resolvedParticipants.push(resolved);
+      }
+    }
+
+    if (resolvedParticipants.length < 2) {
       throw new ValidationError('A conversation requires at least 2 participants');
     }
 
     const conversation = await conversationRepository.create({
-      participants: uniqueParticipants,
+      participants: resolvedParticipants,
       type,
       title,
       status: CONVERSATION_STATUS.ACTIVE,

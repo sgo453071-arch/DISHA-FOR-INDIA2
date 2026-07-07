@@ -73,19 +73,6 @@ const initializeSocket = (server) => {
       socket.leave(`conversation:${conversationId}`);
     });
 
-    socket.on('send-message', async (data) => {
-      const { conversationId, message } = data;
-      try {
-        await broadcastToConversation(conversationId, 'new-message', {
-          message,
-          conversationId,
-          userId: user._id.toString(),
-        });
-      } catch (_error) {
-        // Socket broadcast is non-blocking
-      }
-    });
-
     socket.on('typing', ({ conversationId }) => {
       socket.to(`conversation:${conversationId}`).emit('typing', {
         userId: user._id.toString(),
@@ -107,14 +94,14 @@ const initializeSocket = (server) => {
         conversationId,
         messageId,
       });
-      
+
       try {
         const Message = require('../modules/message/message.model');
         await Message.updateMany(
-          { 
-            conversationId, 
+          {
+            conversationId,
             status: { $in: ['sent', 'delivered'] },
-            createdAt: { $lte: new Date() } 
+            createdAt: { $lte: new Date() }
           },
           { $set: { status: 'read' }, $addToSet: { readBy: { userId: user._id, readAt: new Date() } } }
         );
@@ -129,15 +116,14 @@ const initializeSocket = (server) => {
         conversationId,
         messageId,
       });
-      
+
       try {
         const Message = require('../modules/message/message.model');
         await Message.updateMany(
-          { 
-            conversationId, 
+          {
+            conversationId,
             status: 'sent',
-            // Update all previous messages in this conversation to delivered too
-            createdAt: { $lte: new Date() } 
+            createdAt: { $lte: new Date() }
           },
           { $set: { status: 'delivered' } }
         );

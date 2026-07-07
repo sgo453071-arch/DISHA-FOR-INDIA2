@@ -17,7 +17,7 @@ const Messages = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const queryClient = useQueryClient();
   const { user, loading } = useAuth();
-  const { onNewMessage, onMessageRead, onUserOnline, onUserOffline, offNewMessage, offMessageRead, offUserOnline, offUserOffline, onMessageDelivered, offMessageDelivered, markMessageAsDelivered } = useSocket();
+  const { onUserOnline, onUserOffline } = useSocket();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -34,37 +34,14 @@ const Messages = () => {
       setOnlineUserIds((prev) => prev.filter((id) => id !== data.userId));
     };
 
-    const handleNewMessage = (data) => {
-      queryClient.invalidateQueries(['messages']);
-      queryClient.invalidateQueries(['conversations']);
-      
-      if (data.message.senderId !== user?._id && data.message.senderId?._id !== user?._id) {
-        markMessageAsDelivered(data.conversationId, data.message._id);
-      }
-    };
-
-    const handleMessageRead = () => {
-      queryClient.invalidateQueries(['messages']);
-    };
-
-    const handleMessageDelivered = () => {
-      queryClient.invalidateQueries(['messages']);
-    };
-
-    onUserOnline(handleUserOnline);
-    onUserOffline(handleUserOffline);
-    onNewMessage(handleNewMessage);
-    onMessageRead(handleMessageRead);
-    onMessageDelivered(handleMessageDelivered);
+    const cleanup1 = onUserOnline(handleUserOnline);
+    const cleanup2 = onUserOffline(handleUserOffline);
 
     return () => {
-      offUserOnline(handleUserOnline);
-      offUserOffline(handleUserOffline);
-      offNewMessage(handleNewMessage);
-      offMessageRead(handleMessageRead);
-      offMessageDelivered(handleMessageDelivered);
+      cleanup1();
+      cleanup2();
     };
-  }, [queryClient, onNewMessage, onMessageRead, onMessageDelivered, onUserOnline, onUserOffline, offNewMessage, offMessageRead, offMessageDelivered, offUserOnline, offUserOffline]);
+  }, [onUserOnline, onUserOffline]);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['conversations'],
@@ -344,15 +321,18 @@ const NewConversationModal = ({ onClose, onCreate, isSubmitting }) => {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Participant IDs (comma-separated)</label>
+            <label className="form-label">Volunteer IDs (comma-separated)</label>
             <input
               type="text"
               className="form-control"
               value={participantIds}
               onChange={(e) => setParticipantIds(e.target.value)}
-              placeholder="Enter user IDs separated by commas"
+              placeholder="e.g. DFI-000123, DFI-000456"
               required
             />
+            <p style={{ fontSize: '0.75rem', color: 'var(--color-body)', marginTop: '0.25rem' }}>
+              Enter volunteer IDs like DFI-000123 or user IDs.
+            </p>
           </div>
 
           <div className="form-group">

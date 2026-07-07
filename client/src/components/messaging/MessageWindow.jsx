@@ -19,22 +19,22 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
   const topRef = useRef(null);
   const queryClient = useQueryClient();
 
+  const pageRef = useRef(page);
+  const currentUserIdRef = useRef(currentUserId);
+
+  useEffect(() => { pageRef.current = page; }, [page]);
+  useEffect(() => { currentUserIdRef.current = currentUserId; }, [currentUserId]);
+
   const {
     joinConversation,
     leaveConversation,
-    sendMessage: socketSendMessage,
     sendTypingEvent,
     sendStopTypingEvent,
     onNewMessage,
     onTyping,
     onStopTyping,
     onMessageRead,
-    offNewMessage,
-    offTyping,
-    offStopTyping,
-    offMessageRead,
     onMessageDelivered,
-    offMessageDelivered,
     markMessageAsDelivered,
     markMessageAsRead,
   } = useSocket();
@@ -49,7 +49,7 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
   });
 
   const { data: messagesData, isLoading: messagesLoading, isError: messagesError, refetch: refetchMessages, hasNextPage, isFetchingNextPage } = useQuery({
-    queryKey: ['messages', conversationId, page],
+    queryKey: ['messages', conversationId],
     queryFn: async () => {
       const res = await getMessages(conversationId, { page, limit: 50 });
       return res.data;
@@ -65,7 +65,6 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
     mutationFn: (data) => sendMessage(conversationId, data),
     onMutate: async (data) => {
       await queryClient.cancelQueries(['messages', conversationId]);
-      const previousMessages = queryClient.getQueryData(['messages', conversationId, page]);
       const tempId = `temp-${Date.now()}`;
       
       const optimisticMessage = {
@@ -77,53 +76,46 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
         status: 'sending',
       };
 
-      queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
+      queryClient.setQueryData(['messages', conversationId], (oldData) => {
         if (!oldData) return oldData;
         return {
           ...oldData,
-          data: {
-            ...oldData.data,
-            messages: [...(oldData.data.messages || []), optimisticMessage],
-          },
+          messages: [...(oldData.messages || []), optimisticMessage],
         };
       });
 
-      return { previousMessages, tempId };
+      return { tempId };
     },
     onError: (err, data, context) => {
-      queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
+      queryClient.setQueryData(['messages', conversationId], (oldData) => {
         if (!oldData) return oldData;
-        const messages = oldData.data.messages.map((m) =>
+        const messages = oldData.messages.map((m) =>
           m._id === context.tempId ? { ...m, status: 'failed' } : m
         );
-        return { ...oldData, data: { ...oldData.data, messages } };
+        return { ...oldData, messages };
       });
     },
-    onSuccess: (res, variables, context) => {
+    onSuccess: (res) => {
       const realMessage = res?.data?.message || res?.message;
       if (!realMessage) {
         queryClient.invalidateQueries(['messages', conversationId]);
         return;
       }
       
-      queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
+      queryClient.setQueryData(['messages', conversationId], (oldData) => {
         if (!oldData) return oldData;
-        let messages = oldData.data.messages.map((m) =>
+        let messages = oldData.messages.map((m) =>
           m._id === context.tempId ? realMessage : m
         );
         
-        // Remove duplicate if socket arrived before onSuccess
-        const realExistsCount = messages.filter(m => m._id === realMessage._id).length;
-        if (realExistsCount > 1) {
-          // Remove the one that might be at the end, keep unique
+        const realCount = messages.filter((m) => m._id === realMessage._id).length;
+        if (realCount > 1) {
           messages = messages.filter((m, index, self) => 
-            index === self.findIndex((t) => (
-              t._id === m._id
-            ))
+            index === self.findIndex((t) => t._id === m._id)
           );
         }
         
-        return { ...oldData, data: { ...oldData.data, messages } };
+        return { ...oldData, messages };
       });
       queryClient.invalidateQueries(['conversations']);
     },
@@ -151,6 +143,85 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
     },
   });
 
+  const handleNewMessage = useCallback((data) => {
+    if (data.conversationId === conversationId) {
+      queryClient.setQueryData(['messages', conversationId], (oldData) => {
+        if (!oldData) return oldData;
+        const exists = oldData.messages?.some((m) => m._id === data.message._id);
+        if (exists) return oldData;
+        return {
+          ...oldData,
+          messages: [...(oldData.messages || []), data.message],
+        };
+      });
+      
+      const me = currentUserIdRef.current;
+      if (data.message.senderId !== me && data.message.senderId?._id !== me) {
+        markMessageAsDelivered(conversationId, data.message._id);
+      }
+    }
+  }, [conversationId, queryClient, markMessageAsDelivered]);
+
+  const handleTyping = useCallback((data) => {
+    if (data.conversationId === conversationId && data.userId !== currentUserId) {
+      setTypingUsers((prev) => {
+        if (prev.some((u) => u.userId === data.userId)) return prev;
+        return [...prev, { userId: data.userId, name: data.name || 'Someone' }];
+      });
+      setTimeout(() => {
+        setTypingUsers((prev) => prev.filter((u) => u.userId !== data.userId));
+      }, 3000);
+    }
+  }, [conversationId, currentUserId]);
+
+  const handleStopTyping = useCallback((data) => {
+    if (data.conversationId === conversationId) {
+      setTypingUsers((prev) => prev.filter((u) => u.userId !== data.userId));
+    }
+  }, [conversationId]);
+
+  const handleMessageRead = useCallback((data) => {
+    if (data.conversationId !== conversationId) return;
+    queryClient.setQueryData(['messages', conversationId], (oldData) => {
+      if (!oldData?.messages) return oldData;
+      const updated = oldData.messages.map((m) =>
+        m._id === data.messageId || m.status === 'delivered' || m.status === 'sent'
+          ? { ...m, status: 'read', isRead: true, readBy: [...(m.readBy || []), { userId: data.userId, readAt: new Date() }] }
+          : m
+      );
+      return { ...oldData, messages: updated };
+    });
+  }, [conversationId, queryClient]);
+
+  const handleMessageDelivered = useCallback((data) => {
+    if (data.conversationId !== conversationId) return;
+    queryClient.setQueryData(['messages', conversationId], (oldData) => {
+      if (!oldData?.messages) return oldData;
+      const updated = oldData.messages.map((m) =>
+        (m._id === data.messageId || (new Date(m.createdAt) <= new Date() && m.status === 'sent')) && m.status !== 'read'
+          ? { ...m, status: 'delivered' }
+          : m
+      );
+      return { ...oldData, messages: updated };
+    });
+  }, [conversationId, queryClient]);
+
+  useEffect(() => {
+    const c1 = onNewMessage(handleNewMessage);
+    const c2 = onTyping(handleTyping);
+    const c3 = onStopTyping(handleStopTyping);
+    const c4 = onMessageRead(handleMessageRead);
+    const c5 = onMessageDelivered(handleMessageDelivered);
+
+    return () => {
+      c1();
+      c2();
+      c3();
+      c4();
+      c5();
+    };
+  }, [conversationId, onNewMessage, onTyping, onStopTyping, onMessageRead, onMessageDelivered, handleNewMessage, handleTyping, handleStopTyping, handleMessageRead, handleMessageDelivered]);
+
   useEffect(() => {
     joinConversation(conversationId);
     return () => {
@@ -158,89 +229,6 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
     };
   }, [conversationId, joinConversation, leaveConversation]);
 
-  useEffect(() => {
-    const handleNewMessage = (data) => {
-      if (data.conversationId === conversationId) {
-        queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
-          if (!oldData) return oldData;
-          const exists = oldData.data?.messages?.some((m) => m._id === data.message._id);
-          if (exists) return oldData;
-          return {
-            ...oldData,
-            data: {
-              ...oldData.data,
-              messages: [...(oldData.data.messages || []), data.message],
-            },
-          };
-        });
-        
-        // Auto-deliver if not our own message
-        if (data.message.senderId !== currentUserId && data.message.senderId?._id !== currentUserId) {
-          markMessageAsDelivered(conversationId, data.message._id);
-        }
-      }
-    };
-
-    const handleTyping = (data) => {
-      if (data.conversationId === conversationId && data.userId !== currentUserId) {
-        setTypingUsers((prev) => {
-          if (prev.some((u) => u.userId === data.userId)) return prev;
-          return [...prev, { userId: data.userId, name: data.name || 'Someone' }];
-        });
-        setTimeout(() => {
-          setTypingUsers((prev) => prev.filter((u) => u.userId !== data.userId));
-        }, 3000);
-      }
-    };
-
-    const handleStopTyping = (data) => {
-      if (data.conversationId === conversationId) {
-        setTypingUsers((prev) => prev.filter((u) => u.userId !== data.userId));
-      }
-    };
-
-    const handleMessageRead = (data) => {
-      if (data.conversationId !== conversationId) return;
-      queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
-        if (!oldData?.data?.messages) return oldData;
-        const updated = oldData.data.messages.map((m) =>
-          m._id === data.messageId || m.status === 'delivered' || m.status === 'sent'
-            ? { ...m, status: 'read', isRead: true, readBy: [...(m.readBy || []), { userId: data.userId, readAt: new Date() }] }
-            : m
-        );
-        return { ...oldData, data: { ...oldData.data, messages: updated } };
-      });
-    };
-
-    const handleMessageDelivered = (data) => {
-      if (data.conversationId !== conversationId) return;
-      queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
-        if (!oldData?.data?.messages) return oldData;
-        const updated = oldData.data.messages.map((m) =>
-          (m._id === data.messageId || (new Date(m.createdAt) <= new Date() && m.status === 'sent')) && m.status !== 'read'
-            ? { ...m, status: 'delivered' }
-            : m
-        );
-        return { ...oldData, data: { ...oldData.data, messages: updated } };
-      });
-    };
-
-    onNewMessage(handleNewMessage);
-    onTyping(handleTyping);
-    onStopTyping(handleStopTyping);
-    onMessageRead(handleMessageRead);
-    onMessageDelivered(handleMessageDelivered);
-
-    return () => {
-      offNewMessage(handleNewMessage);
-      offTyping(handleTyping);
-      offStopTyping(handleStopTyping);
-      offMessageRead(handleMessageRead);
-      offMessageDelivered(handleMessageDelivered);
-    };
-  }, [conversationId, currentUserId, page, queryClient, onNewMessage, onTyping, onStopTyping, onMessageRead, onMessageDelivered, offNewMessage, offTyping, offStopTyping, offMessageRead, offMessageDelivered, markMessageAsDelivered]);
-
-  // Auto-mark messages as read when they become visible/loaded
   useEffect(() => {
     if (messages && messages.length > 0) {
       const unreadMessages = messages.filter(
@@ -255,19 +243,18 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
         const lastUnread = unreadMessages[unreadMessages.length - 1];
         markMessageAsRead(conversationId, lastUnread._id);
         
-        // Optimistically mark as read in local state
-        queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
-          if (!oldData?.data?.messages) return oldData;
-          const updated = oldData.data.messages.map((m) =>
+        queryClient.setQueryData(['messages', conversationId], (oldData) => {
+          if (!oldData?.messages) return oldData;
+          const updated = oldData.messages.map((m) =>
             unreadMessages.some(u => u._id === m._id) || (new Date(m.createdAt) <= new Date(lastUnread.createdAt))
               ? { ...m, status: 'read', isRead: true, readBy: [...(m.readBy || []), { userId: currentUserId, readAt: new Date() }] }
               : m
           );
-          return { ...oldData, data: { ...oldData.data, messages: updated } };
+          return { ...oldData, messages: updated };
         });
       }
     }
-  }, [messages, currentUserId, conversationId, markMessageAsRead, queryClient, page]);
+  }, [messages, currentUserId, conversationId, markMessageAsRead, queryClient]);
 
   const handleSend = useCallback((data) => {
     if (editingMessage) {
@@ -275,7 +262,7 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
     } else {
       sendMutation.mutate(data);
     }
-  }, [editingMessage, sendMutation, editMutation, conversationId]);
+  }, [editingMessage, sendMutation, editMutation]);
 
   const handleEdit = useCallback((message) => {
     setEditingMessage(message);
@@ -301,7 +288,6 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, isFetchingNextPage]);
 
   const handleScroll = useCallback(() => {

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { VolunteerProvider } from './context/VolunteerContext';
 import { NotificationsProvider } from './context/NotificationsContext';
+import { SocketProvider } from './context/SocketContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Layouts
@@ -117,118 +118,120 @@ function App() {
   return (
     <AuthProvider>
       <VolunteerProvider>
-        <BrowserRouter>
-          <AuthExpiredHandler />
-          <Routes>
-            {/* Public Routes */}
-            <Route element={<PublicLayout />}>
-              <Route index element={<Home />} />
-              <Route path="programs" element={<Programs />} />
-              <Route path="programs/:id" element={<ProgramDetail />} />
-              <Route path="leaderboard" element={<Leaderboard />} />
-              <Route path="about" element={<About />} />
-              <Route path="login" element={
-                <RedirectIfAuthenticated>
-                  <Login />
-                </RedirectIfAuthenticated>
-              } />
-              <Route path="register" element={
-                <RedirectIfAuthenticated>
-                  <Register />
-                </RedirectIfAuthenticated>
-              } />
-              <Route path="unauthorized" element={<Unauthorized />} />
-              <Route path="verify/:id" element={<VerifyCertificate />} />
-            </Route>
+        <SocketProvider>
+          <BrowserRouter>
+            <AuthExpiredHandler />
+            <Routes>
+              {/* Public Routes */}
+              <Route element={<PublicLayout />}>
+                <Route index element={<Home />} />
+                <Route path="programs" element={<Programs />} />
+                <Route path="programs/:id" element={<ProgramDetail />} />
+                <Route path="leaderboard" element={<Leaderboard />} />
+                <Route path="about" element={<About />} />
+                <Route path="login" element={
+                  <RedirectIfAuthenticated>
+                    <Login />
+                  </RedirectIfAuthenticated>
+                } />
+                <Route path="register" element={
+                  <RedirectIfAuthenticated>
+                    <Register />
+                  </RedirectIfAuthenticated>
+                } />
+                <Route path="unauthorized" element={<Unauthorized />} />
+                <Route path="verify/:id" element={<VerifyCertificate />} />
+              </Route>
 
-            {/* Protected Volunteer Routes */}
-            <Route element={
-              <ProtectedRoute allowedRoles={['VOLUNTEER', 'COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
-                <NotificationsProvider>
-                  <DashboardLayout />
-                </NotificationsProvider>
-              </ProtectedRoute>
-            }>
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="opportunities" element={<Programs />} />
-              <Route path="opportunities/:id" element={<ProgramDetail />} />
-              <Route path="programs/:id" element={<ProgramDetail />} />
-              <Route path="notifications" element={<NotificationCenter />} />
-              <Route path="announcements" element={<Announcements />} />
-              <Route path="announcements/:id" element={<AnnouncementDetails />} />
-              <Route path="certificates" element={<Certificates />} />
-              <Route path="certificates/:id" element={<CertificateDetails />} />
-              <Route path="profile/setup" element={<ProfileSetup />} />
-              <Route path="applications" element={<MyApplications />} />
-              <Route path="applications/:id" element={<ApplicationDetails />} />
-              <Route path="programs/:programId/apply" element={<ApplicationForm />} />
-              <Route path="my-programs" element={<MyPrograms />} />
-              <Route path="attendance" element={<AttendanceDashboard />} />
-              <Route path="attendance/check-in" element={<CheckIn />} />
-              <Route path="attendance/checkout" element={<CheckOut />} />
-              <Route path="attendance/history" element={<AttendanceHistory />} />
-              <Route path="attendance/hours" element={<VolunteerHours />} />
-              <Route path="messages" element={<Messages />} />
-              <Route path="support" element={<Support />} />
-              <Route path="matching/programs" element={<RecommendedPrograms />} />
-              <Route path="recommendations/saved" element={<SavedRecommendations />} />
-              <Route path="recommendations/history" element={<RecommendationHistory />} />
-            </Route>
+              {/* Protected Volunteer Routes */}
+              <Route element={
+                <ProtectedRoute allowedRoles={['VOLUNTEER', 'COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
+                  <NotificationsProvider>
+                    <DashboardLayout />
+                  </NotificationsProvider>
+                </ProtectedRoute>
+              }>
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="opportunities" element={<Programs />} />
+                <Route path="opportunities/:id" element={<ProgramDetail />} />
+                <Route path="programs/:id" element={<ProgramDetail />} />
+                <Route path="notifications" element={<NotificationCenter />} />
+                <Route path="announcements" element={<Announcements />} />
+                <Route path="announcements/:id" element={<AnnouncementDetails />} />
+                <Route path="certificates" element={<Certificates />} />
+                <Route path="certificates/:id" element={<CertificateDetails />} />
+                <Route path="profile/setup" element={<ProfileSetup />} />
+                <Route path="applications" element={<MyApplications />} />
+                <Route path="applications/:id" element={<ApplicationDetails />} />
+                <Route path="programs/:programId/apply" element={<ApplicationForm />} />
+                <Route path="my-programs" element={<MyPrograms />} />
+                <Route path="attendance" element={<AttendanceDashboard />} />
+                <Route path="attendance/check-in" element={<CheckIn />} />
+                <Route path="attendance/checkout" element={<CheckOut />} />
+                <Route path="attendance/history" element={<AttendanceHistory />} />
+                <Route path="attendance/hours" element={<VolunteerHours />} />
+                <Route path="messages" element={<Messages />} />
+                <Route path="support" element={<Support />} />
+                <Route path="matching/programs" element={<RecommendedPrograms />} />
+                <Route path="recommendations/saved" element={<SavedRecommendations />} />
+                <Route path="recommendations/history" element={<RecommendationHistory />} />
+              </Route>
 
-            {/* Protected Admin Routes */}
-            <Route element={
-              <ProtectedRoute allowedRoles={['COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
-                <NotificationsProvider>
-                  <DashboardLayout />
-                </NotificationsProvider>
-              </ProtectedRoute>
-            }>
-              <Route path="admin/dashboard" element={<AdminDashboard />} />
-              <Route path="admin/announcements" element={<AdminAnnouncementDashboard />} />
-              <Route path="admin/announcements/create" element={<AdminAnnouncementCreate />} />
-              <Route path="admin/analytics" element={<AdminAnalytics />} />
-              <Route path="admin/forecast" element={<AdminForecast />} />
-              <Route path="admin/reports" element={<Reports />} />
-              <Route path="admin/programs" element={<AdminPrograms />} />
-              <Route path="admin/applications" element={<AdminApplications />} />
-              <Route path="admin/attendance" element={<AdminAttendance />} />
-              <Route path="admin/certificates" element={<AdminCertificates />} />
-              <Route path="admin/messages" element={<Messages />} />
-              <Route path="admin/support" element={<Support />} />
-              <Route path="admin/contributions" element={<AdminReviewDashboard />} />
-              <Route path="matching/volunteers" element={<RecommendedVolunteers />} />
-            </Route>
+              {/* Protected Admin Routes */}
+              <Route element={
+                <ProtectedRoute allowedRoles={['COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
+                  <NotificationsProvider>
+                    <DashboardLayout />
+                  </NotificationsProvider>
+                </ProtectedRoute>
+              }>
+                <Route path="admin/dashboard" element={<AdminDashboard />} />
+                <Route path="admin/announcements" element={<AdminAnnouncementDashboard />} />
+                <Route path="admin/announcements/create" element={<AdminAnnouncementCreate />} />
+                <Route path="admin/analytics" element={<AdminAnalytics />} />
+                <Route path="admin/forecast" element={<AdminForecast />} />
+                <Route path="admin/reports" element={<Reports />} />
+                <Route path="admin/programs" element={<AdminPrograms />} />
+                <Route path="admin/applications" element={<AdminApplications />} />
+                <Route path="admin/attendance" element={<AdminAttendance />} />
+                <Route path="admin/certificates" element={<AdminCertificates />} />
+                <Route path="admin/messages" element={<Messages />} />
+                <Route path="admin/support" element={<Support />} />
+                <Route path="admin/contributions" element={<AdminReviewDashboard />} />
+                <Route path="matching/volunteers" element={<RecommendedVolunteers />} />
+              </Route>
 
-            {/* Protected Super Admin Routes */}
-            <Route element={
-              <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
-                <NotificationsProvider>
-                  <DashboardLayout />
-                </NotificationsProvider>
-              </ProtectedRoute>
-            }>
-              <Route path="super-admin/dashboard" element={<SuperAdminDashboard />} />
-            </Route>
+              {/* Protected Super Admin Routes */}
+              <Route element={
+                <ProtectedRoute allowedRoles={['SUPER_ADMIN']}>
+                  <NotificationsProvider>
+                    <DashboardLayout />
+                  </NotificationsProvider>
+                </ProtectedRoute>
+              }>
+                <Route path="super-admin/dashboard" element={<SuperAdminDashboard />} />
+              </Route>
 
-            {/* Protected Volunteer Analytics */}
-            <Route element={
-              <ProtectedRoute allowedRoles={['VOLUNTEER', 'COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
-                <NotificationsProvider>
-                  <DashboardLayout />
-                </NotificationsProvider>
-              </ProtectedRoute>
-            }>
-               <Route path="volunteer/analytics" element={<VolunteerAnalytics />} />
-               <Route path="contributions" element={<Contributions />} />
-               <Route path="contributions/new" element={<ContributionWizard />} />
-               <Route path="my-contributions" element={<MyContributions />} />
-               <Route path="contributions/:id" element={<ContributionDetailPage />} />
-            </Route>
+              {/* Protected Volunteer Analytics */}
+              <Route element={
+                <ProtectedRoute allowedRoles={['VOLUNTEER', 'COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
+                  <NotificationsProvider>
+                    <DashboardLayout />
+                  </NotificationsProvider>
+                </ProtectedRoute>
+              }>
+                 <Route path="volunteer/analytics" element={<VolunteerAnalytics />} />
+                 <Route path="contributions" element={<Contributions />} />
+                 <Route path="contributions/new" element={<ContributionWizard />} />
+                 <Route path="my-contributions" element={<MyContributions />} />
+                 <Route path="contributions/:id" element={<ContributionDetailPage />} />
+              </Route>
 
-            {/* Global 404 - placed last so it only matches when nothing else does */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+              {/* Global 404 - placed last so it only matches when nothing else does */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </SocketProvider>
       </VolunteerProvider>
     </AuthProvider>
   );

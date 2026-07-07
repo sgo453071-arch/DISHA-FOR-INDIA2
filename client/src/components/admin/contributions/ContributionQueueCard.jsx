@@ -1,7 +1,20 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Eye, Tag, FolderOpen } from 'lucide-react';
+import { Eye, Tag, FolderOpen, Clock, AlertTriangle, FileText, Calendar } from 'lucide-react';
 import ContributionStatusBadge from '../../contributions/ContributionStatusBadge';
+
+const getPriority = (contribution) => {
+  const daysPending = contribution.createdAt
+    ? Math.max(0, Math.ceil((Date.now() - new Date(contribution.createdAt).getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const status = (contribution.status || '').toUpperCase();
+  if (status === 'PENDING' && daysPending > 3) return { label: 'Urgent', color: 'var(--color-error)' };
+  if (status === 'UNDER_REVIEW') return { label: 'In Progress', color: 'var(--color-info)' };
+  if (status === 'PENDING' && daysPending > 1) return { label: 'High', color: 'var(--color-accent)' };
+  if (status === 'PENDING' && daysPending > 0) return { label: 'Pending', color: 'var(--color-accent)' };
+  if (status === 'NEEDS_CHANGES') return { label: 'Follow-up', color: 'var(--color-orange)' };
+  return { label: 'Normal', color: 'var(--color-body)' };
+};
 
 const ContributionQueueCard = ({ contribution, onClick }) => {
   const formatDate = (dateStr) => {
@@ -9,8 +22,24 @@ const ContributionQueueCard = ({ contribution, onClick }) => {
     return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  const volunteerName = contribution.submittedBy?.name || 'Unknown Volunteer';
+  const formatDeadline = (dateStr) => {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
+    if (diff < 0) return 'Overdue';
+    if (diff === 0) return 'Due Today';
+    if (diff === 1) return 'Due Tomorrow';
+    return `${diff} days left`;
+  };
+
+  const volunteer = contribution.submittedBy || {};
+  const volunteerName = volunteer.name || 'Unknown Volunteer';
   const volunteerInitials = (volunteerName || '').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  const filesCount = contribution.currentVersion?.files?.length || contribution.files?.length || 0;
+  const versionCount = contribution.currentVersion?.versionNumber || (contribution.versions?.length || 0);
+  const priority = getPriority(contribution);
+  const deadlineStr = formatDeadline(contribution.reviewDeadline);
 
   return (
     <motion.div
@@ -33,8 +62,11 @@ const ContributionQueueCard = ({ contribution, onClick }) => {
           <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-heading)', marginBottom: '0.5rem', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
             {contribution.title}
           </h3>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <ContributionStatusBadge status={contribution.status} />
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.6rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600, background: `${priority.color}15`, color: priority.color, border: `1px solid ${priority.color}40` }}>
+              <AlertTriangle size={12} /> {priority.label}
+            </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.6rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600, background: 'var(--color-bg)', color: 'var(--color-body)', border: '1px solid var(--color-border)' }}>
               <FolderOpen size={12} /> {contribution.category?.replace(/_/g, ' ')}
             </span>
@@ -46,9 +78,18 @@ const ContributionQueueCard = ({ contribution, onClick }) => {
         <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--color-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
           {volunteerInitials}
         </div>
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{volunteerName}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-body)' }}>Submitted {formatDate(contribution.createdAt)}</div>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-body)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+              <Calendar size={12} /> Submitted {formatDate(contribution.createdAt)}
+            </span>
+            {deadlineStr && (
+              <span style={{ fontSize: '0.75rem', color: deadlineStr === 'Overdue' ? 'var(--color-error)' : 'var(--color-body)', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Clock size={12} /> {deadlineStr}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -61,8 +102,17 @@ const ContributionQueueCard = ({ contribution, onClick }) => {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', borderTop: '1px solid var(--color-border)', fontSize: '0.8rem', color: 'var(--color-body)' }}>
-        <span>{contribution.currentVersion?.versionNumber || contribution.versions?.length || 1} version{(contribution.currentVersion?.versionNumber || contribution.versions?.length || 1) !== 1 ? 's' : ''}</span>
-        <span>{contribution.hoursWorked || 0} hrs</span>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+            <FileText size={12} /> {filesCount} file{filesCount !== 1 ? 's' : ''}
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+            Version {versionCount}
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+            {contribution.hoursWorked || 0} hrs
+          </span>
+        </div>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onClick?.(contribution); }}
