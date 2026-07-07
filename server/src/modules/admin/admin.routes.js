@@ -10,6 +10,8 @@ const { authenticate } = require('../../middlewares/auth.middleware');
 const { isAdmin } = require('../../middlewares/rbac.middleware');
 const applicationRoutes = require('./application.routes');
 const attendanceRoutes = require('./attendance.routes');
+const contributionRoutes = require('./contribution.routes');
+const contributionConfigRoutes = require('../contribution/contribution-config.routes');
 
 const router = express.Router();
 
@@ -34,5 +36,11 @@ router.use('/', applicationRoutes);
 
 // ─── Attendance Management ───────────────────────────────────────
 router.use('/', attendanceRoutes);
+
+// ─── Contribution Management ────────────────────────────────────
+router.use('/', contributionRoutes);
+
+// ─── Contribution Configuration ─────────────────────────────────
+router.use('/', contributionConfigRoutes);
 
 module.exports = router;

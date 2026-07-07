@@ -41,6 +41,26 @@ require('./modules/collaboration/collaboration.model');
 const matchingRoutes = require('./modules/matching/matching.routes');
 require('./modules/matching/recommendation.model');
 const forecastRoutes = require('./modules/forecast/forecast.routes');
+const contributionRoutes = require('./modules/contribution/contribution.routes');
+require('./modules/contribution/contribution.model');
+require('./modules/contribution/file.model');
+require('./modules/contribution/activity-timeline.model');
+require('./modules/contribution/portfolio.model');
+require('./modules/contribution/contribution-statistics.model');
+require('./modules/contribution/analytics-event.model');
+require('./modules/contribution/contribution-reward.model');
+require('./modules/contribution/contribution-category.model');
+require('./modules/contribution/contribution-type.model');
+require('./modules/contribution/coin-rule.model');
+require('./modules/contribution/badge-rule.model');
+require('./modules/contribution/review-template.model');
+require('./modules/contribution/file-type-config.model');
+require('./modules/contribution/contribution-tag.model');
+require('./modules/contribution/portfolio-config.model');
+require('./modules/contribution/featured-config.model');
+require('./modules/contribution/review-config.model');
+require('./modules/contribution/automation-config.model');
+const contributionConfigRoutes = require('./modules/contribution/contribution-config.routes');
 const { successResponse } = require('./utils/response');
 
 const app = express();
@@ -128,6 +148,8 @@ app.get('/', (req, res) => {
       announcements: '/api/v1/announcements',
       collaboration: '/api/v1/collaboration',
       matching: '/api/v1/matching',
+      contributions: '/api/v1/contributions',
+      'contribution-config': '/api/v1/contributions/config',
     },
   });
 });
@@ -157,6 +179,8 @@ app.use('/api/v1/announcements', announcementRoutes);
 app.use('/api/v1/collaboration', collaborationRoutes);
 app.use('/api/v1/matching', matchingRoutes);
 app.use('/api/v1/forecast', forecastRoutes);
+app.use('/api/v1/contributions', contributionRoutes);
+app.use('/api/v1/contributions/config', contributionConfigRoutes);
 
 // ─────────────────────────────────────────────
 // 11. Swagger API Documentation

@@ -1000,6 +1000,7 @@ Most endpoints require a **JWT Bearer Token**.
       './src/docs/announcement.docs.js',
       './src/docs/roles.docs.js',
       './src/docs/permission.docs.js',
+      './src/docs/contribution.docs.js',
     ],
 };
 

@@ -59,7 +59,7 @@ class AuthController {
     setAccessTokenCookie(res, accessToken);
     setRefreshTokenCookie(res, newRefreshToken);
 
-    return successResponse(res, 200, MESSAGES.TOKEN_REFRESH_SUCCESS);
+    return successResponse(res, 200, MESSAGES.TOKEN_REFRESH_SUCCESS, { token: accessToken });
   } catch (error) {
     return next(error);
   }

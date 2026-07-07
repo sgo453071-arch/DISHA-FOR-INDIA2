@@ -1,6 +1,7 @@
 const { seedPermissions } = require('./permission.seeder');
 const { seedRoles } = require('./role.seeder');
 const { seedOrganization } = require('./organization.seeder');
+const { seedContributionConfig } = require('./contribution-config.seeder');
 
 const runSeeders = async () => {
   try {
@@ -10,6 +11,7 @@ const runSeeders = async () => {
     await seedPermissions();
     await seedRoles();
     await seedOrganization();
+    await seedContributionConfig();
 
     // eslint-disable-next-line no-console
     console.log('Database seeding completed');
