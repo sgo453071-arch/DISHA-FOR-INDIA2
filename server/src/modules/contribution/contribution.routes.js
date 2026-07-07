@@ -28,4 +28,6 @@ router.get('/:id', isAdminOrVolunteer, validateGetContribution, contributionCont
 
 router.get('/:id/versions', isVolunteer, validateGetContribution, contributionController.getVersionHistory);
 
+router.get('/:id/reviews', isVolunteer, validateGetContribution, contributionController.getContributionReviews);
+
 module.exports = router;

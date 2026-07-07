@@ -161,9 +161,8 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
       editMutation.mutate({ messageId: editingMessage._id, content: data.content });
     } else {
       sendMutation.mutate(data);
-      socketSendMessage(conversationId, data);
     }
-  }, [editingMessage, sendMutation, editMutation, socketSendMessage, conversationId]);
+  }, [editingMessage, sendMutation, editMutation, conversationId]);
 
   const handleEdit = useCallback((message) => {
     setEditingMessage(message);

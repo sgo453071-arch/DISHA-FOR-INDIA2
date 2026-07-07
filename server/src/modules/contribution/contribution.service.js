@@ -253,6 +253,37 @@ class ContributionService {
     };
   }
 
+  async getContributionReviews(contributionId, userId) {
+    const contribution = await contributionRepository.findByContributionId(contributionId);
+
+    if (!contribution) {
+      throw new NotFoundError(MESSAGES.CONTRIBUTION_NOT_FOUND);
+    }
+
+    const ownerId = contribution.submittedBy._id || contribution.submittedBy;
+    if (ownerId.toString() !== userId.toString()) {
+      throw new NotFoundError(MESSAGES.CONTRIBUTION_NOT_FOUND);
+    }
+
+    const reviews = await contributionRepository.findReviewsByContribution(contribution._id);
+
+    return {
+      reviews: reviews.map((review) => ({
+        _id: review._id,
+        action: review.action,
+        coinsAwarded: review.coinsAwarded,
+        badgeAwarded: review.badgeAwarded,
+        reason: review.reason,
+        feedback: review.feedback,
+        reviewedBy: review.reviewedBy,
+        reviewedAt: review.reviewedAt,
+        createdAt: review.createdAt,
+        updatedAt: review.updatedAt,
+      })),
+      message: MESSAGES.CONTRIBUTIONS_FETCHED,
+    };
+  }
+
   async deleteDraft(contributionId, userId) {
     const contribution = await contributionRepository.findByContributionId(contributionId);
 

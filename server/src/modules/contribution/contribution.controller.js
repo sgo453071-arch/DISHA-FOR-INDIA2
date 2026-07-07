@@ -69,6 +69,15 @@ class ContributionController {
     }
   }
 
+  async getContributionReviews(req, res, next) {
+    try {
+      const result = await contributionService.getContributionReviews(req.params.id, req.user.id);
+      return successResponse(res, 200, result.message, { reviews: result.reviews });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
   async getAdminContributions(req, res, next) {
     try {
       const result = await contributionService.getAdminContributions(req.query);

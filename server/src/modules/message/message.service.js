@@ -3,7 +3,7 @@ const conversationRepository = require('../conversation/conversation.repository'
 const { MESSAGE_STATUS, MESSAGE_TYPES } = require('./message.constants');
 const NotFoundError = require('../../utils/errors/NotFoundError');
 const ValidationError = require('../../utils/errors/ValidationError');
-const { broadcastToConversation } = require('../../socket/socketServer');
+const { broadcastToConversation, broadcastToUser } = require('../../socket/socketServer');
 
 class MessageService {
   async sendMessage(senderId, conversationId, data) {
@@ -48,6 +48,15 @@ class MessageService {
         message,
         conversationId: conversationId.toString(),
       });
+      
+      if (conversation.participants && Array.isArray(conversation.participants)) {
+        conversation.participants.forEach((participantId) => {
+          broadcastToUser(participantId.toString(), 'new-message', {
+            message,
+            conversationId: conversationId.toString(),
+          });
+        });
+      }
     } catch (_error) {
       // Socket broadcast is non-blocking
     }
