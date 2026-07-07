@@ -1,6 +1,6 @@
 import React from 'react';
 import { FileText, Clock, Tag, FolderOpen } from 'lucide-react';
-import ContributionStatusBadge from '../../components/contributions/ContributionStatusBadge';
+import ContributionStatusBadge from '../../contributions/ContributionStatusBadge';
 
 const ContributionInfoCard = ({ contribution }) => {
   if (!contribution) return null;

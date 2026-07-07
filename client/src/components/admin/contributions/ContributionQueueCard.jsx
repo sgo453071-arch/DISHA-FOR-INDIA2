@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Eye, Tag, FolderOpen } from 'lucide-react';
-import ContributionStatusBadge from '../../components/contributions/ContributionStatusBadge';
+import ContributionStatusBadge from '../../contributions/ContributionStatusBadge';
 
 const ContributionQueueCard = ({ contribution, onClick }) => {
   const formatDate = (dateStr) => {
