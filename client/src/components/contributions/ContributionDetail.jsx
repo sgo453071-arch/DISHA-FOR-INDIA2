@@ -1,17 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { X, FileText, Clock, Tag, Coins, FolderOpen, ExternalLink, Edit, Trash2, Copy, Eye } from 'lucide-react';
+import { X, FolderOpen, Edit, Trash2 } from 'lucide-react';
 import ContributionStatusBadge from './ContributionStatusBadge';
 import ContributionTimeline from './ContributionTimeline';
 import ReviewHistory from './ReviewHistory';
 import VersionHistory from './VersionHistory';
 import { useContributionDetail, useVersionHistory, useContributionReviews, useDeleteDraft } from '../../services/contributionMyService';
-import { getCategoryName } from '../../services/contributionMyService';
 
 const ContributionDetail = ({ contributionId, onClose, onContinueEdit }) => {
   const { data: detail, isLoading: detailLoading } = useContributionDetail(contributionId);
-  const { data: versions, isLoading: versionsLoading } = useVersionHistory(contributionId);
-  const { data: reviews, isLoading: reviewsLoading } = useContributionReviews(contributionId);
+  const { data: versions } = useVersionHistory(contributionId);
+  const { data: reviews } = useContributionReviews(contributionId);
   const deleteMutation = useDeleteDraft();
 
   const handleDelete = async () => {

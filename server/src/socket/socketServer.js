@@ -101,12 +101,49 @@ const initializeSocket = (server) => {
       });
     });
 
-    socket.on('message-read', ({ conversationId, messageId }) => {
+    socket.on('message-read', async ({ conversationId, messageId }) => {
       socket.to(`conversation:${conversationId}`).emit('message-read', {
         userId: user._id.toString(),
         conversationId,
         messageId,
       });
+      
+      try {
+        const Message = require('../modules/message/message.model');
+        await Message.updateMany(
+          { 
+            conversationId, 
+            status: { $in: ['sent', 'delivered'] },
+            createdAt: { $lte: new Date() } 
+          },
+          { $set: { status: 'read' }, $addToSet: { readBy: { userId: user._id, readAt: new Date() } } }
+        );
+      } catch (err) {
+        console.error('Error updating message status to read:', err);
+      }
+    });
+
+    socket.on('message-delivered', async ({ conversationId, messageId }) => {
+      socket.to(`conversation:${conversationId}`).emit('message-delivered', {
+        userId: user._id.toString(),
+        conversationId,
+        messageId,
+      });
+      
+      try {
+        const Message = require('../modules/message/message.model');
+        await Message.updateMany(
+          { 
+            conversationId, 
+            status: 'sent',
+            // Update all previous messages in this conversation to delivered too
+            createdAt: { $lte: new Date() } 
+          },
+          { $set: { status: 'delivered' } }
+        );
+      } catch (err) {
+        console.error('Error updating message status to delivered:', err);
+      }
     });
 
     socket.on('disconnect', () => {

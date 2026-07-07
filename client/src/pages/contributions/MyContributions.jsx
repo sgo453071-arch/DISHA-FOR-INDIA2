@@ -1,8 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Plus, Search, Filter, FileText, Clock, Award, TrendingUp, Target } from 'lucide-react';
-import { useMyContributions, useDeleteDraft, getCategoryName, MOCK_CONTRIBUTIONS } from '../../services/contributionMyService';
+import { Plus, FileText, Clock, Award, TrendingUp, Target } from 'lucide-react';
+import { useMyContributions, useDeleteDraft, MOCK_CONTRIBUTIONS } from '../../services/contributionMyService';
 import ContributionStatCard from '../../components/contributions/ContributionStatCard';
 import ContributionTabs from '../../components/contributions/ContributionTabs';
 import ContributionSearch from '../../components/contributions/ContributionSearch';

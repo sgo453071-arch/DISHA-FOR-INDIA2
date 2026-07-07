@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Check, CheckCheck, Pin, PinOff, Edit3, Trash2, RefreshCcw } from 'lucide-react';
+import { Check, CheckCheck, Pin, PinOff, Edit3, Trash2, RefreshCcw, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MessageBubble = React.memo(({ message, isOwn, onPin, onUnpin, onDelete, onEdit, isPinned, onRetry }) => {
@@ -112,7 +112,7 @@ const MessageBubble = React.memo(({ message, isOwn, onPin, onUnpin, onDelete, on
         >
           <span style={{ fontSize: '0.65rem' }}>{formatTime(message.createdAt)}</span>
           {message.isEdited && <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>(edited)</span>}
-          {isOwn && !isFailed && <span style={{ fontSize: '0.65rem' }}>{message.status === 'read' ? <CheckCheck size={12} /> : <Check size={12} />}</span>}
+          {isOwn && !isFailed && <span style={{ fontSize: '0.65rem' }}>{message.status === 'sending' ? <Clock size={12} /> : message.status === 'read' ? <CheckCheck size={12} color="#60A5FA" /> : message.status === 'delivered' ? <CheckCheck size={12} /> : <Check size={12} />}</span>}
         </div>
       </div>
 

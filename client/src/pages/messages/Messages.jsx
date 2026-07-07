@@ -17,7 +17,7 @@ const Messages = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const queryClient = useQueryClient();
   const { user, loading } = useAuth();
-  const { onNewMessage, onMessageRead, onUserOnline, onUserOffline, offNewMessage, offMessageRead, offUserOnline, offUserOffline } = useSocket();
+  const { onNewMessage, onMessageRead, onUserOnline, onUserOffline, offNewMessage, offMessageRead, offUserOnline, offUserOffline, onMessageDelivered, offMessageDelivered, markMessageAsDelivered } = useSocket();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -34,12 +34,20 @@ const Messages = () => {
       setOnlineUserIds((prev) => prev.filter((id) => id !== data.userId));
     };
 
-    const handleNewMessage = () => {
+    const handleNewMessage = (data) => {
       queryClient.invalidateQueries(['messages']);
       queryClient.invalidateQueries(['conversations']);
+      
+      if (data.message.senderId !== user?._id && data.message.senderId?._id !== user?._id) {
+        markMessageAsDelivered(data.conversationId, data.message._id);
+      }
     };
 
     const handleMessageRead = () => {
+      queryClient.invalidateQueries(['messages']);
+    };
+
+    const handleMessageDelivered = () => {
       queryClient.invalidateQueries(['messages']);
     };
 
@@ -47,14 +55,16 @@ const Messages = () => {
     onUserOffline(handleUserOffline);
     onNewMessage(handleNewMessage);
     onMessageRead(handleMessageRead);
+    onMessageDelivered(handleMessageDelivered);
 
     return () => {
       offUserOnline(handleUserOnline);
       offUserOffline(handleUserOffline);
       offNewMessage(handleNewMessage);
       offMessageRead(handleMessageRead);
+      offMessageDelivered(handleMessageDelivered);
     };
-  }, [queryClient, onNewMessage, onMessageRead, onUserOnline, onUserOffline, offNewMessage, offMessageRead, offUserOnline, offUserOffline]);
+  }, [queryClient, onNewMessage, onMessageRead, onMessageDelivered, onUserOnline, onUserOffline, offNewMessage, offMessageRead, offMessageDelivered, offUserOnline, offUserOffline]);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['conversations'],

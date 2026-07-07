@@ -1,16 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Clock, Tag, Coins, FolderOpen, ExternalLink, Edit, Trash2, Copy, Eye, GitBranch } from 'lucide-react';
+import { Clock, Tag, Coins, FolderOpen, Edit, Trash2, Eye, GitBranch } from 'lucide-react';
 import ContributionStatusBadge from './ContributionStatusBadge';
-import { getCategoryName, getStatusColor } from '../../services/contributionMyService';
+import { getCategoryName } from '../../services/contributionMyService';
 
-const ContributionCard = ({ contribution, onViewDetails, onContinueEdit, onDelete, onDuplicate }) => {
+const ContributionCard = ({ contribution, onViewDetails, onContinueEdit, onDelete, _onDuplicate }) => {
   const formatDate = (dateStr) => {
     if (!dateStr) return 'N/A';
     return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  const statusColor = getStatusColor(contribution.status);
   const canEdit = contribution.status === 'draft' || contribution.status === 'needs_changes';
 
   return (

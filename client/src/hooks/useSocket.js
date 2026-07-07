@@ -154,6 +154,24 @@ export const useSocket = () => {
     }
   }, []);
 
+  const onMessageDelivered = useCallback((callback) => {
+    if (socketRef.current) {
+      socketRef.current.on('message-delivered', callback);
+    }
+  }, []);
+
+  const offMessageDelivered = useCallback((callback) => {
+    if (socketRef.current) {
+      socketRef.current.off('message-delivered', callback);
+    }
+  }, []);
+
+  const markMessageAsDelivered = useCallback((conversationId, messageId) => {
+    if (socketRef.current) {
+      socketRef.current.emit('message-delivered', { conversationId, messageId });
+    }
+  }, []);
+
   return {
     socket: socketRef.current,
     joinConversation,
@@ -162,16 +180,19 @@ export const useSocket = () => {
     sendTypingEvent,
     sendStopTypingEvent,
     markMessageAsRead,
+    markMessageAsDelivered,
     onNewMessage,
     onTyping,
     onStopTyping,
     onMessageRead,
+    onMessageDelivered,
     onUserOnline,
     onUserOffline,
     offNewMessage,
     offTyping,
     offStopTyping,
     offMessageRead,
+    offMessageDelivered,
     offUserOnline,
     offUserOffline,
   };

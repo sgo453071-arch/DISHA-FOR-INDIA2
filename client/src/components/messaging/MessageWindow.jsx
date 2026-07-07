@@ -33,6 +33,9 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
     offTyping,
     offStopTyping,
     offMessageRead,
+    onMessageDelivered,
+    offMessageDelivered,
+    markMessageAsDelivered,
   } = useSocket();
 
   const { data: conversationData, isLoading: conversationLoading, isError: conversationError, refetch: refetchConversation } = useQuery({
@@ -59,8 +62,68 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
 
   const sendMutation = useMutation({
     mutationFn: (data) => sendMessage(conversationId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['messages', conversationId]);
+    onMutate: async (data) => {
+      await queryClient.cancelQueries(['messages', conversationId]);
+      const previousMessages = queryClient.getQueryData(['messages', conversationId, page]);
+      const tempId = `temp-${Date.now()}`;
+      
+      const optimisticMessage = {
+        _id: tempId,
+        content: data.content,
+        attachments: data.attachments || [],
+        senderId: { _id: currentUserId },
+        createdAt: new Date().toISOString(),
+        status: 'sending',
+      };
+
+      queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          data: {
+            ...oldData.data,
+            messages: [...(oldData.data.messages || []), optimisticMessage],
+          },
+        };
+      });
+
+      return { previousMessages, tempId };
+    },
+    onError: (err, data, context) => {
+      queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
+        if (!oldData) return oldData;
+        const messages = oldData.data.messages.map((m) =>
+          m._id === context.tempId ? { ...m, status: 'failed' } : m
+        );
+        return { ...oldData, data: { ...oldData.data, messages } };
+      });
+    },
+    onSuccess: (res, variables, context) => {
+      const realMessage = res?.data?.message || res?.message;
+      if (!realMessage) {
+        queryClient.invalidateQueries(['messages', conversationId]);
+        return;
+      }
+      
+      queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
+        if (!oldData) return oldData;
+        let messages = oldData.data.messages.map((m) =>
+          m._id === context.tempId ? realMessage : m
+        );
+        
+        // Remove duplicate if socket arrived before onSuccess
+        const realExistsCount = messages.filter(m => m._id === realMessage._id).length;
+        if (realExistsCount > 1) {
+          // Remove the one that might be at the end, keep unique
+          messages = messages.filter((m, index, self) => 
+            index === self.findIndex((t) => (
+              t._id === m._id
+            ))
+          );
+        }
+        
+        return { ...oldData, data: { ...oldData.data, messages } };
+      });
       queryClient.invalidateQueries(['conversations']);
     },
   });
@@ -109,6 +172,11 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
             },
           };
         });
+        
+        // Auto-deliver if not our own message
+        if (data.message.senderId !== currentUserId && data.message.senderId?._id !== currentUserId) {
+          markMessageAsDelivered(conversationId, data.message._id);
+        }
       }
     };
 
@@ -135,8 +203,21 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
       queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
         if (!oldData?.data?.messages) return oldData;
         const updated = oldData.data.messages.map((m) =>
-          m._id === data.messageId
-            ? { ...m, isRead: true, readBy: [...(m.readBy || []), { userId: data.userId, readAt: new Date() }] }
+          m._id === data.messageId || m.status === 'delivered' || m.status === 'sent'
+            ? { ...m, status: 'read', isRead: true, readBy: [...(m.readBy || []), { userId: data.userId, readAt: new Date() }] }
+            : m
+        );
+        return { ...oldData, data: { ...oldData.data, messages: updated } };
+      });
+    };
+
+    const handleMessageDelivered = (data) => {
+      if (data.conversationId !== conversationId) return;
+      queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
+        if (!oldData?.data?.messages) return oldData;
+        const updated = oldData.data.messages.map((m) =>
+          (m._id === data.messageId || (new Date(m.createdAt) <= new Date() && m.status === 'sent')) && m.status !== 'read'
+            ? { ...m, status: 'delivered' }
             : m
         );
         return { ...oldData, data: { ...oldData.data, messages: updated } };
@@ -147,14 +228,45 @@ const MessageWindow = ({ conversationId, onBack, currentUserId }) => {
     onTyping(handleTyping);
     onStopTyping(handleStopTyping);
     onMessageRead(handleMessageRead);
+    onMessageDelivered(handleMessageDelivered);
 
     return () => {
       offNewMessage(handleNewMessage);
       offTyping(handleTyping);
       offStopTyping(handleStopTyping);
       offMessageRead(handleMessageRead);
+      offMessageDelivered(handleMessageDelivered);
     };
-  }, [conversationId, currentUserId, page, queryClient, onNewMessage, onTyping, onStopTyping, onMessageRead, offNewMessage, offTyping, offStopTyping, offMessageRead]);
+  }, [conversationId, currentUserId, page, queryClient, onNewMessage, onTyping, onStopTyping, onMessageRead, onMessageDelivered, offNewMessage, offTyping, offStopTyping, offMessageRead, offMessageDelivered, markMessageAsDelivered]);
+
+  // Auto-mark messages as read when they become visible/loaded
+  useEffect(() => {
+    if (messages && messages.length > 0) {
+      const unreadMessages = messages.filter(
+        (m) =>
+          (m.senderId !== currentUserId && m.senderId?._id !== currentUserId) &&
+          !m.readBy?.some((r) => r.userId === currentUserId) &&
+          m.status !== 'read' && 
+          m._id && !m._id.startsWith('temp-')
+      );
+
+      if (unreadMessages.length > 0) {
+        const lastUnread = unreadMessages[unreadMessages.length - 1];
+        markMessageAsRead(conversationId, lastUnread._id);
+        
+        // Optimistically mark as read in local state
+        queryClient.setQueryData(['messages', conversationId, page], (oldData) => {
+          if (!oldData?.data?.messages) return oldData;
+          const updated = oldData.data.messages.map((m) =>
+            unreadMessages.some(u => u._id === m._id) || (new Date(m.createdAt) <= new Date(lastUnread.createdAt))
+              ? { ...m, status: 'read', isRead: true, readBy: [...(m.readBy || []), { userId: currentUserId, readAt: new Date() }] }
+              : m
+          );
+          return { ...oldData, data: { ...oldData.data, messages: updated } };
+        });
+      }
+    }
+  }, [messages, currentUserId, conversationId, markMessageAsRead, queryClient, page]);
 
   const handleSend = useCallback((data) => {
     if (editingMessage) {
