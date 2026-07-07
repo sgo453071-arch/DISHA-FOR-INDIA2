@@ -1,15 +1,19 @@
-/* Logging service for client-side error reporting */
-import api from './api';
+import axios from 'axios';
 
-// In development we log to console; in production we attempt to POST to a backend logging endpoint.
+const loggingApi = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 export const logMalformedResponse = async (payload) => {
   try {
     if (process.env.NODE_ENV === 'development') {
       console.warn('Malformed API response logged:', payload);
       return;
     }
-    // Use relative path since api base already includes /api/v1
-    await api.post('log', {
+    await loggingApi.post('log', {
       type: 'malformed_response',
       payload,
       timestamp: new Date().toISOString(),
