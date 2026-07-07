@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, AlertCircle, RefreshCw } from 'lucide-react';
 import { getAnnouncements } from '../../services/announcementsService';
+import { useAuth } from '../../context/AuthContext';
 import AnnouncementCard from '../../components/announcements/AnnouncementCard';
 import AnnouncementBanner from '../../components/announcements/AnnouncementBanner';
 import AnnouncementFilters from '../../components/announcements/AnnouncementFilters';
@@ -14,6 +15,7 @@ import AnnouncementPagination from '../../components/announcements/AnnouncementP
 const PAGE_SIZE = 9;
 
 const Announcements = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');

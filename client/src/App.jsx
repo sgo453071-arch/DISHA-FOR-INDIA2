@@ -19,6 +19,7 @@ import Leaderboard from './pages/Leaderboard';
 import Certificates from './pages/certificates/Certificates';
 import CertificateDetails from './pages/certificates/CertificateDetails';
 import Announcements from './pages/announcements/Announcements';
+import AnnouncementDetails from './pages/announcements/AnnouncementDetails';
 import NotificationCenter from './pages/notifications/NotificationCenter';
 import ProfileSetup from './pages/ProfileSetup';
 import NotFound from './pages/NotFound';
@@ -154,6 +155,7 @@ function App() {
               <Route path="programs/:id" element={<ProgramDetail />} />
               <Route path="notifications" element={<NotificationCenter />} />
               <Route path="announcements" element={<Announcements />} />
+              <Route path="announcements/:id" element={<AnnouncementDetails />} />
               <Route path="certificates" element={<Certificates />} />
               <Route path="certificates/:id" element={<CertificateDetails />} />
               <Route path="profile/setup" element={<ProfileSetup />} />
