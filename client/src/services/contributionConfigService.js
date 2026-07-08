@@ -382,6 +382,12 @@ export const toggleAutomationConfig = async (id, isActive) => {
   throw new Error(res?.message || 'Failed to toggle automation config');
 };
 
+export const getConfigOverview = async () => {
+  const res = await api.get(`${BASE}/overview`);
+  if (res?.success) return res.data;
+  throw new Error(res?.message || 'Failed to load config overview');
+};
+
 export default {
   getCategories, createCategory, updateCategory, deleteCategory, restoreCategory, toggleCategory,
   getTypes, createType, updateType, deleteType, restoreType, toggleType,
