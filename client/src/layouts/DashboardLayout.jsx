@@ -3,7 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationsContext';
 import {
-  Shield, Home, Calendar, Award, Trophy, LogOut, Menu, X,
+  Shield, Home, Calendar, Award, LogOut, Menu, X,
   LayoutDashboard, Users, ClipboardList, BarChart2, UserCheck, FileText, MessageSquare, HelpCircle, Bell, Megaphone, LineChart, Settings, Store
 } from 'lucide-react';
 import NotificationBell from '../components/notifications/NotificationBell';
@@ -38,15 +38,21 @@ const DashboardLayout = () => {
   };
 
   const volunteerNavItems = [
-    { name: 'Dashboard',     path: '/dashboard',    icon: <Home size={18} /> },
-    { name: 'Marketplace',   path: '/marketplace',   icon: <Store size={18} /> },
-    { name: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },
-    { name: 'Announcements', path: '/announcements',  icon: <Megaphone size={18} /> },
-    { name: 'Opportunities', path: '/opportunities', icon: <Calendar size={18} /> },
+    { name: 'Dashboard',        path: '/dashboard',        icon: <Home size={18} /> },
+    { name: 'Marketplace',      path: '/marketplace',      icon: <Store size={18} /> },
+    { name: 'Announcements',    path: '/announcements',    icon: <Megaphone size={18} /> },
+    { name: 'Opportunities',    path: '/opportunities',    icon: <Calendar size={18} /> },
     { name: 'My Contributions', path: '/my-contributions', icon: <FileText size={18} /> },
-    { name: 'Certificates',  path: '/certificates',  icon: <Award size={18} /> },
-    { name: 'Messages',      path: '/messages',       icon: <MessageSquare size={18} /> },
-    { name: 'Support',       path: '/support',        icon: <HelpCircle size={18} /> },
+    { name: 'Certificates',     path: '/certificates',     icon: <Award size={18} /> },
+    { name: 'Messages',         path: '/messages',         icon: <MessageSquare size={18} /> },
+    { name: 'Support',          path: '/support',          icon: <HelpCircle size={18} /> },
+  ];
+
+  // Routes that exist but are not in the sidebar (accessible via other UI entry points).
+  // Kept here so the top-bar title resolves correctly when a volunteer navigates to them.
+  const volunteerHiddenRoutes = [
+    { name: 'Notifications', path: '/notifications' },
+    { name: 'My Programs',   path: '/my-programs' },
   ];
 
   const adminNavItems = [
@@ -247,7 +253,7 @@ const DashboardLayout = () => {
           </div>
 
           <h2 style={{ fontSize: '1.15rem', margin: 0 }}>
-            {navItems.find((item) => location.pathname.startsWith(item.path))?.name || (isAdmin ? 'Admin Panel' : 'Dashboard')}
+            {[...navItems, ...(isAdmin ? [] : volunteerHiddenRoutes)].find((item) => location.pathname.startsWith(item.path))?.name || (isAdmin ? 'Admin Panel' : 'Dashboard')}
           </h2>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
