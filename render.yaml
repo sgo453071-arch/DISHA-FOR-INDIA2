@@ -5,6 +5,12 @@ services:
     buildCommand: npm run build
     staticPublishPath: client/dist
     routes:
+      # 1. First, let actual static files pass through normally
+      - source: "/*.*"
+        destination: "/*.*"
+        type: pass-through
+
+      # 2. Then, route all client-side pages back to index.html
       - source: "/*"
         destination: /index.html
         type: rewrite
