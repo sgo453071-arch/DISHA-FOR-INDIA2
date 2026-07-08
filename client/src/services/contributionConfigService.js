@@ -393,18 +393,5 @@ export default {
   getFeaturedConfigs, createFeaturedConfig, updateFeaturedConfig, deleteFeaturedConfig, restoreFeaturedConfig, toggleFeaturedConfig,
   getReviewConfigs, createReviewConfig, updateReviewConfig, deleteReviewConfig, restoreReviewConfig, toggleReviewConfig,
   getAutomationConfigs, createAutomationConfig, updateAutomationConfig, deleteAutomationConfig, restoreAutomationConfig, toggleAutomationConfig,
-};
-
-export default {
-  getCategories, createCategory, updateCategory, deleteCategory, restoreCategory, toggleCategory,
-  getTypes, createType, updateType, deleteType, restoreType, toggleType,
-  getCoinRules, createCoinRule, updateCoinRule, deleteCoinRule, restoreCoinRule, toggleCoinRule,
-  getBadgeRules, createBadgeRule, updateBadgeRule, deleteBadgeRule, restoreBadgeRule, toggleBadgeRule,
-  getReviewTemplates, createReviewTemplate, updateReviewTemplate, deleteReviewTemplate, restoreReviewTemplate, toggleReviewTemplate,
-  getFileTypeConfigs, createFileTypeConfig, updateFileTypeConfig, deleteFileTypeConfig, restoreFileTypeConfig, toggleFileTypeConfig,
-  getPortfolioConfigs, createPortfolioConfig, updatePortfolioConfig, deletePortfolioConfig, restorePortfolioConfig, togglePortfolioConfig,
-  getFeaturedConfigs, createFeaturedConfig, updateFeaturedConfig, deleteFeaturedConfig, restoreFeaturedConfig, toggleFeaturedConfig,
-  getReviewConfigs, createReviewConfig, updateReviewConfig, deleteReviewConfig, restoreReviewConfig, toggleReviewConfig,
-  getAutomationConfigs, createAutomationConfig, updateAutomationConfig, deleteAutomationConfig, restoreAutomationConfig, toggleAutomationConfig,
   getConfigOverview,
 };

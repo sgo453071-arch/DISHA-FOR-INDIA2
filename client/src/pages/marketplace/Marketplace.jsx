@@ -5,16 +5,17 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import marketplaceService from '../../services/marketplaceService';
 import { getMyRewards } from '../../services/gamificationService';
-import MarketplaceHero from './MarketplaceHero';
-import WalletSummary from './WalletSummary';
-import RewardCategoryTabs from './RewardCategoryTabs';
-import RewardSearch from './RewardSearch';
-import RewardFilters from './RewardFilters';
-import RewardGrid from './RewardGrid';
-import RewardDetailDrawer from './RewardDetailDrawer';
-import RedemptionHistory from './RedemptionHistory';
-import EmptyState from './EmptyState';
-import SkeletonLoader from './SkeletonLoader';
+import MarketplaceHero from '../../components/marketplace/MarketplaceHero';
+import WalletSummary from '../../components/marketplace/WalletSummary';
+import RewardCategoryTabs from '../../components/marketplace/RewardCategoryTabs';
+import RewardSearch from '../../components/marketplace/RewardSearch';
+import RewardFilters from '../../components/marketplace/RewardFilters';
+import RewardGrid from '../../components/marketplace/RewardGrid';
+import RewardDetailDrawer from '../../components/marketplace/RewardDetailDrawer';
+import RedemptionHistory from '../../components/marketplace/RedemptionHistory';
+import EmptyState from '../../components/marketplace/EmptyState';
+import SkeletonLoader from '../../components/marketplace/SkeletonLoader';
+import RedeemModal from '../../components/marketplace/RedeemModal';
 
 const CATEGORIES = [
   'All',

@@ -73,6 +73,18 @@ export const getProgramById = async (id) => {
   };
 };
 
+export const getJoinedProgramById = async (id) => {
+  const res = await api.get(`/programs/me/${id}`);
+  const payload = unwrap(res);
+  return {
+    success: payload?.success ?? true,
+    data: {
+      program: payload?.data?.program || payload?.program || null,
+    },
+    successMessage: payload?.message || 'Program retrieved',
+  };
+};
+
 export const getMyPrograms = async () => {
   const res = await api.get('/programs/me');
   const payload = unwrap(res);
@@ -119,6 +131,7 @@ export default {
   updateProgram,
   deleteProgram,
   getJoinedPrograms,
+  getJoinedProgramById,
   getProgramById,
   getMyPrograms,
   publishProgram,

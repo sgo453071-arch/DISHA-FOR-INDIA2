@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { Shield } from 'lucide-react';
-import ConfigurationSidebar, { SIDEBAR_ITEMS } from '../components/admin/contributions/ConfigurationSidebar';
-import AdminOverview from '../components/admin/contributions/AdminOverview';
-import CategoryManager from '../components/admin/contributions/CategoryManager';
-import ContributionTypeManager from '../components/admin/contributions/ContributionTypeManager';
-import CoinRuleManager from '../components/admin/contributions/CoinRuleManager';
-import BadgeManager from '../components/admin/contributions/BadgeManager';
-import ReviewTemplateManager from '../components/admin/contributions/ReviewTemplateManager';
-import RewardCatalogManager from '../components/admin/contributions/RewardCatalogManager';
-import UploadSettingsManager from '../components/admin/contributions/UploadSettingsManager';
-import PortfolioSettings from '../components/admin/contributions/PortfolioSettings';
-import AutomationSettings from '../components/admin/contributions/AutomationSettings';
-import GeneralSettings from '../components/admin/contributions/GeneralSettings';
+import ConfigurationSidebar, { SIDEBAR_ITEMS } from '../../components/admin/contributions/ConfigurationSidebar';
+import AdminOverview from '../../components/admin/contributions/AdminOverview';
+import CategoryManager from '../../components/admin/contributions/CategoryManager';
+import ContributionTypeManager from '../../components/admin/contributions/ContributionTypeManager';
+import CoinRuleManager from '../../components/admin/contributions/CoinRuleManager';
+import BadgeManager from '../../components/admin/contributions/BadgeManager';
+import ReviewTemplateManager from '../../components/admin/contributions/ReviewTemplateManager';
+import RewardCatalogManager from '../../components/admin/contributions/RewardCatalogManager';
+import UploadSettingsManager from '../../components/admin/contributions/UploadSettingsManager';
+import PortfolioSettings from '../../components/admin/contributions/PortfolioSettings';
+import AutomationSettings from '../../components/admin/contributions/AutomationSettings';
+import GeneralSettings from '../../components/admin/contributions/GeneralSettings';
 
 const SECTION_COMPONENTS = {
   overview: AdminOverview,
