@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, MapPin, TrendingUp, ExternalLink } from 'lucide-react';
+import { Trophy, TrendingUp, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const LeaderboardCard = ({ rank, topVolunteers, stats }) => {

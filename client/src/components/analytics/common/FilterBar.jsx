@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, Filter, ChevronDown } from 'lucide-react';
+import { Calendar, ChevronDown } from 'lucide-react';
 
 const PERIODS = [
   { label: 'All Time', value: '' },

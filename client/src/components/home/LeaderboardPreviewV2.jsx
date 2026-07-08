@@ -87,11 +87,11 @@ const LeaderboardPreviewV2 = () => {
                   className="flex flex-col items-center group cursor-pointer"
                 >
                   <div className="relative mb-4 z-10 group-hover:-translate-y-2 transition-transform">
-                    {user.avatar ? (
-                      <img src={user.avatar} alt={user.name} className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white shadow-xl object-cover" />
+                    {user?.avatar ? (
+                      <img src={user?.avatar} alt={user?.name || 'User'} className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white shadow-xl object-cover" />
                     ) : (
                       <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white shadow-xl bg-dfi-soft flex items-center justify-center text-dfi-dark font-dfi-heading font-bold text-xl">
-                        {user.name ? user.name.charAt(0) : '?'}
+                        {user?.name ? user.name.charAt(0) : '?'}
                       </div>
                     )}
                     <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center">
@@ -105,7 +105,7 @@ const LeaderboardPreviewV2 = () => {
                   </div>
                   
                   <div className="text-center mt-4 w-24 md:w-32">
-                    <p className="font-dfi-heading font-bold text-dfi-dark text-sm line-clamp-1">{user.name || 'Anonymous'}</p>
+                    <p className="font-dfi-heading font-bold text-dfi-dark text-sm line-clamp-1">{user?.name || 'Anonymous'}</p>
                     <p className="font-dfi-body text-xs text-dfi-coral font-bold mt-0.5">{(user.points ?? 0)} pts</p>
                   </div>
                 </motion.div>
@@ -128,7 +128,7 @@ const LeaderboardPreviewV2 = () => {
                       {idx + 4}
                     </div>
                     <div className="flex-1">
-                      <p className="font-dfi-heading font-bold text-dfi-dark text-sm line-clamp-1">{user.name || 'Anonymous'}</p>
+                      <p className="font-dfi-heading font-bold text-dfi-dark text-sm line-clamp-1">{user?.name || 'Anonymous'}</p>
                       <p className="font-dfi-body text-xs text-dfi-gray flex items-center gap-1 mt-0.5">
                         <Star size={10} className="text-dfi-coral fill-dfi-coral" /> {(user.points ?? 0)} pts
                       </p>

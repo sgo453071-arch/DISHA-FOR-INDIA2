@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, CheckCheck, Trash2, Search, ChevronLeft, AlertCircle } from 'lucide-react';
+import { Bell, CheckCheck, ChevronLeft, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import NotificationCard from '../../components/notifications/NotificationCard';
 import NotificationSkeleton from '../../components/notifications/NotificationSkeleton';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 const RewardSearch = ({ value, onChange, placeholder = 'Search rewards...' }) => {
   return (

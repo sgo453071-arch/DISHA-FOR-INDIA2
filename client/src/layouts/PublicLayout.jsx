@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import {
-  Shield, LogOut, Menu, X, Heart, Mail,
-  Search, Bell, ChevronDown, User,
-  Link2, MessageCircle, PlayCircle as YtIcon, Code2,
-} from 'lucide-react';
+import { Shield, LogOut, Menu, X, Heart, Mail, Search, Bell, ChevronDown, User, Link2, MessageCircle, Code2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PublicLayout = () => {

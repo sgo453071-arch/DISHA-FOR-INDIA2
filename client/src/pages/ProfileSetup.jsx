@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Phone, BookOpen, GraduationCap, MapPin, Award, CheckCircle } from 'lucide-react';
+import { Phone, CheckCircle } from 'lucide-react';
 import api from '../services/api';
 import LanguagesInput from '../components/profile/LanguagesInput';
 import InterestsInput from '../components/profile/InterestsInput';
@@ -105,7 +105,7 @@ const ProfileSetup = () => {
                 required
               />
             </div>
-            
+
             <div className="form-group">
               <label className="form-label" htmlFor="graduationYear">Graduation Year</label>
               <input

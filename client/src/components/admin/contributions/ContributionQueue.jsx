@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { Clock } from 'lucide-react';
 import ContributionQueueCard from './ContributionQueueCard';
 import ContributionSkeleton from '../../contributions/ContributionSkeleton';
 import ContributionEmptyState from '../../contributions/ContributionEmptyState';

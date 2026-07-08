@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Clock, Award, Star, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Clock, Star, CheckCircle } from 'lucide-react';
 import { useVolunteer } from '../../context/VolunteerContext';
 import CheckOutButton from '../../components/volunteer/CheckOutButton';
 import HoursCounter from '../../components/volunteer/HoursCounter';
@@ -12,7 +12,7 @@ const CheckOut = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successData, setSuccessData] = useState(null);
-  
+
   const [notes, setNotes] = useState('');
 
   // Redirect if not checked in and no success data
@@ -52,7 +52,7 @@ const CheckOut = () => {
           >
             <CheckCircle size={40} />
           </motion.div>
-          
+
           <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Session Complete!</h1>
           <p style={{ color: 'var(--color-body)', marginBottom: '2.5rem' }}>Thank you for your valuable contribution today.</p>
 
@@ -79,7 +79,7 @@ const CheckOut = () => {
 
   return (
     <div className="page-container" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      
+
       <div style={{ width: '100%', maxWidth: '600px', marginBottom: '2rem' }}>
         <button 
           onClick={() => navigate('/attendance')} 

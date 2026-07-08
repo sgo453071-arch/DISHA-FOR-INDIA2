@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Filter, ChevronDown } from 'lucide-react';
+import { Search, X, Filter, ChevronDown, Tag, Calendar, AlertTriangle, Settings, Star, Users, Monitor, Minus, AlertCircle, Flag } from 'lucide-react';
 
 const AnnouncementFilters = ({
   search, onSearchChange, type, onTypeChange, priority, onPriorityChange, status, onStatusChange, targetAudience, onTargetAudienceChange, showAdminFilters = false, onClear,
@@ -39,19 +39,19 @@ const AnnouncementFilters = ({
   );
 
   const typeOptions = [
-    { value: 'general', label: 'General', icon: require('lucide-react').Tag },
-    { value: 'program', label: 'Program', icon: require('lucide-react').Calendar },
-    { value: 'emergency', label: 'Emergency', icon: require('lucide-react').AlertTriangle },
-    { value: 'maintenance', label: 'Maintenance', icon: require('lucide-react').Settings },
-    { value: 'event', label: 'Event', icon: require('lucide-react').Star },
-    { value: 'recruitment', label: 'Recruitment', icon: require('lucide-react').Users },
-    { value: 'system', label: 'System', icon: require('lucide-react').Monitor },
+    { value: 'general', label: 'General', icon: Tag },
+    { value: 'program', label: 'Program', icon: Calendar },
+    { value: 'emergency', label: 'Emergency', icon: AlertTriangle },
+    { value: 'maintenance', label: 'Maintenance', icon: Settings },
+    { value: 'event', label: 'Event', icon: Star },
+    { value: 'recruitment', label: 'Recruitment', icon: Users },
+    { value: 'system', label: 'System', icon: Monitor },
   ];
   const priorityOptions = [
-    { value: 'low', label: 'Low', icon: require('lucide-react').Minus },
-    { value: 'medium', label: 'Medium', icon: require('lucide-react').Minus },
-    { value: 'high', label: 'High', icon: require('lucide-react').AlertCircle },
-    { value: 'critical', label: 'Critical', icon: require('lucide-react').Flag },
+    { value: 'low', label: 'Low', icon: Minus },
+    { value: 'medium', label: 'Medium', icon: Minus },
+    { value: 'high', label: 'High', icon: AlertCircle },
+    { value: 'critical', label: 'Critical', icon: Flag },
   ];
   const statusOptions = [
     { value: 'draft', label: 'Draft' }, { value: 'scheduled', label: 'Scheduled' }, { value: 'published', label: 'Published' }, { value: 'expired', label: 'Expired' }, { value: 'archived', label: 'Archived' },

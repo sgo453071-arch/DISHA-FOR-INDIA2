@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FolderOpen, Coins, Award, MessageSquare, Star, Settings, Upload, Briefcase, Zap } from 'lucide-react';
+import { FolderOpen, Coins, Award, MessageSquare, Star, Settings } from 'lucide-react';
 import { getCategories, getCoinRules, getBadgeRules, getReviewTemplates, getFeaturedConfigs } from '../../../services/contributionConfigService';
 import DashboardSkeleton from '../../DashboardSkeleton';
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Download, ExternalLink, Image, Play, FileArchive, Eye, X } from 'lucide-react';
+import { FileText, Download, ExternalLink, Image, Play, FileArchive, Eye } from 'lucide-react';
 import ImageViewer from './ImageViewer';
 import PDFViewer from './PDFViewer';
 import VideoViewer from './VideoViewer';
