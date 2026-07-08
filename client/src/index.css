@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -9,21 +9,23 @@
    ──────────────────────────────────────────────────────── */
 :root {
   /* Typography */
-  --font-primary: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
 
   /* Colors - Premium Editorial Theme */
-  --color-primary: #D35400;
-  --color-primary-hover: #E67E22;
-  --color-secondary: #059669;
-  --color-secondary-hover: #10B981;
-  --color-accent: #D97706;
+  --color-primary: #0D47A1;
+  --color-primary-hover: #1565C0;
+  --color-secondary: #16A34A;
+  --color-secondary-hover: #15803D;
+  --color-accent: #F4B400;
   --color-accent-hover: #F59E0B;
 
-  --color-bg: #FDFBF7;
+  --color-bg: #FFFFFF;
+  --color-bg-secondary: #F8FAFC;
+  --color-bg-alt: #F5F7FB;
   --color-card: #FFFFFF;
   --color-heading: #111827;
-  --color-body: #374151;
+  --color-body: #111827;
   --color-border: rgba(0,0,0,0.06);
 
   /* Status Colors */
@@ -34,11 +36,11 @@
   --color-purple: #7C3AED;
 
   /* Gradients */
-  --gradient-primary: radial-gradient(1200px circle at 20% -10%, rgba(211,84,0,0.12), transparent 40%),
+  --gradient-primary: radial-gradient(1200px circle at 20% -10%, rgba(13,71,161,0.12), transparent 40%),
                      radial-gradient(1000px circle at 85% 10%, rgba(37,99,235,0.08), transparent 40%),
-                     linear-gradient(135deg, #D35400, #E67E22);
-  --gradient-hover: linear-gradient(135deg, #E67E22, #F59E0B);
-  --gradient-glow: 0 20px 40px -10px rgba(211, 84, 0, 0.25);
+                     linear-gradient(135deg, #0D47A1, #1565C0);
+  --gradient-hover: linear-gradient(135deg, #1565C0, #1E88E5);
+  --gradient-glow: 0 20px 40px -10px rgba(13, 71, 161, 0.25);
 
   /* Shadows - Premium Editorial */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
@@ -46,7 +48,7 @@
   --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 16px 40px -8px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 24px 56px -12px rgba(0, 0, 0, 0.12);
-  --shadow-glow: 0 20px 50px -10px rgba(211, 84, 0, 0.18);
+  --shadow-glow: 0 20px 50px -10px rgba(13, 71, 161, 0.18);
   --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.04);
 
   /* Borders & Radius */
@@ -74,25 +76,27 @@
 /* Dark Mode Overrides */
 body.dark-mode {
   --color-bg: #0B1220;
+  --color-bg-secondary: #1E293B;
+  --color-bg-alt: #0F172A;
   --color-card: #111827;
-  --color-primary: #F97316;
-  --color-primary-hover: #FB923C;
-  --color-secondary: #34D399;
-  --color-secondary-hover: #6EE7B7;
+  --color-primary: #3B82F6;
+  --color-primary-hover: #60A5FA;
+  --color-secondary: #22C55E;
+  --color-secondary-hover: #4ADE80;
   --color-heading: #F9FAFB;
   --color-body: #CBD5E1;
   --color-border: rgba(255, 255, 255, 0.08);
 
-  --gradient-primary: radial-gradient(1200px circle at 20% -10%, rgba(249,115,22,0.15), transparent 40%),
-                     radial-gradient(1000px circle at 85% 10%, rgba(59,130,246,0.1), transparent 40%),
-                     linear-gradient(135deg, #F97316, #FB923C);
-  --gradient-glow: 0 20px 40px -10px rgba(249, 115, 22, 0.2);
+  --gradient-primary: radial-gradient(1200px circle at 20% -10%, rgba(59,130,246,0.15), transparent 40%),
+                     radial-gradient(1000px circle at 85% 10%, rgba(37,99,235,0.1), transparent 40%),
+                     linear-gradient(135deg, #2563EB, #3B82F6);
+  --gradient-glow: 0 20px 40px -10px rgba(59, 130, 246, 0.2);
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
   --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.55);
   --shadow-lg: 0 16px 40px -8px rgba(0, 0, 0, 0.6);
   --shadow-xl: 0 24px 56px -12px rgba(0, 0, 0, 0.65);
-  --shadow-glow: 0 20px 50px -10px rgba(249, 115, 22, 0.12);
+  --shadow-glow: 0 20px 50px -10px rgba(59, 130, 246, 0.12);
 }
 
 /* ────────────────────────────────────────────────────────
@@ -114,8 +118,9 @@ body {
   font-family: var(--font-primary);
   background-color: var(--color-bg);
   color: var(--color-body);
-  line-height: 1.7;
+  line-height: 1.6;
   font-weight: 500;
+  font-size: 18px;
   min-height: 100vh;
   transition: background-color var(--duration-normal) var(--ease-premium), color var(--duration-normal) var(--ease-premium);
   overflow-x: hidden;
@@ -128,10 +133,10 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.25;
   letter-spacing: -0.04em;
 }
-h1 { font-size: clamp(2.2rem, 5vw, 3.25rem); }
-h2 { font-size: clamp(1.75rem, 3.5vw, 2.25rem); letter-spacing: -0.03em; }
-h3 { font-size: clamp(1.25rem, 2.5vw, 1.5rem); letter-spacing: -0.03em; }
-h4 { font-size: 1.25rem; }
+h1 { font-size: 64px; }
+h2 { font-size: 48px; letter-spacing: -0.03em; }
+h3 { font-size: 32px; letter-spacing: -0.03em; }
+h4 { font-size: 24px; }
 
 a {
   color: var(--color-primary);

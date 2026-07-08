@@ -7,12 +7,11 @@ import { SocketProvider } from './context/SocketContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Layouts
-import PublicLayout from './layouts/PublicLayout';
+import AuthLayout from './layouts/AuthLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 import DashboardErrorBoundary from './components/DashboardErrorBoundary';
 
 // Pages
-import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -27,7 +26,6 @@ import ProfileSetup from './pages/ProfileSetup';
 import NotFound from './pages/NotFound';
 import Unauthorized from './pages/Unauthorized';
 import VerifyCertificate from './pages/VerifyCertificate';
-import About from './pages/About';
 
 // Volunteer Pages
 import ApplicationForm from './pages/applications/ApplicationForm';
@@ -131,13 +129,9 @@ function App() {
               </div>
             }>
               <Routes>
-                {/* Public Routes */}
-              <Route element={<PublicLayout />}>
-                <Route index element={<Home />} />
-                <Route path="programs" element={<Programs />} />
-                <Route path="programs/:id" element={<ProgramDetail />} />
-                <Route path="leaderboard" element={<Leaderboard />} />
-                <Route path="about" element={<About />} />
+                {/* Auth & Utility Routes */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route element={<AuthLayout />}>
                 <Route path="login" element={
                   <RedirectIfAuthenticated>
                     <Login />
@@ -166,6 +160,7 @@ function App() {
                 <Route path="opportunities" element={<Programs />} />
                 <Route path="opportunities/:id" element={<ProgramDetail />} />
                 <Route path="programs/:id" element={<ProgramDetail />} />
+                <Route path="leaderboard" element={<Leaderboard />} />
                 <Route path="notifications" element={<NotificationCenter />} />
                 <Route path="announcements" element={<Announcements />} />
                 <Route path="announcements/:id" element={<AnnouncementDetails />} />

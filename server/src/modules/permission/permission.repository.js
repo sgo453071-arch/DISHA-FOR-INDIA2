@@ -1,40 +1,67 @@
-const Permission = require('./permission.model');
+const supabase = require('../../config/supabase');
+const { mapToMongoose } = require('../../utils/dbMapper');
 
 class PermissionRepository {
   async create(permissionData) {
-    return Permission.create(permissionData);
+    const { data, error } = await supabase
+      .from('permissions')
+      .insert([permissionData])
+      .select()
+      .single();
+    if (error) throw error;
+    return mapToMongoose(data);
   }
 
   async findByCode(code) {
-    return Permission.findOne({ code, isDeleted: false });
+    const { data, error } = await supabase
+      .from('permissions')
+      .select('*')
+      .eq('slug', code)
+      .single();
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116 is no rows returned
+    return mapToMongoose(data);
   }
 
   async findAll(query = {}) {
     const { page = 1, limit = 50, module, category } = query;
     const skip = (page - 1) * limit;
-    const filter = { isDeleted: false };
+
+    let request = supabase.from('permissions').select('*', { count: 'exact' });
 
     if (module) {
-      filter.module = module;
+      request = request.eq('module', module);
     }
     if (category) {
-      filter.category = category;
+      request = request.eq('category', category);
     }
 
-    const [permissions, total] = await Promise.all([
-      Permission.find(filter).skip(skip).limit(limit).lean(),
-      Permission.countDocuments(filter),
-    ]);
+    const { data, error, count } = await request
+      .range(skip, skip + limit - 1);
 
-    return { permissions, total, page, limit };
+    if (error) throw error;
+
+    return { permissions: mapToMongoose(data), total: count, page, limit };
   }
 
   async findById(id) {
-    return Permission.findOne({ _id: id, isDeleted: false });
+    const { data, error } = await supabase
+      .from('permissions')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error && error.code !== 'PGRST116') throw error;
+    return mapToMongoose(data);
   }
 
   async existsByCode(code) {
-    return Permission.findOne({ code });
+    const { data, error } = await supabase
+      .from('permissions')
+      .select('id')
+      .eq('slug', code)
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return mapToMongoose(data);
   }
 }
 

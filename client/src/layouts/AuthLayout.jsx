@@ -4,43 +4,39 @@ import { Shield } from 'lucide-react';
 
 const AuthLayout = () => {
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      backgroundColor: 'var(--color-bg)'
-    }}>
-      {/* Mini Header */}
-      <header style={{
-        height: 'var(--navbar-height)',
+    <div className="flex flex-col min-h-screen" style={{ fontFamily: 'var(--font-primary)', backgroundColor: 'var(--color-bg)' }}>
+      {/* Simple Header for Auth Pages */}
+      <header className="glass" style={{
+        height: '80px',
         display: 'flex',
         alignItems: 'center',
-        padding: '0 2rem'
+        padding: '0 2rem',
+        borderBottom: '1px solid var(--color-border)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
       }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '1.25rem', color: 'var(--color-primary)' }}>
-          <span style={{
-            display: 'flex',
-            padding: '0.4rem',
-            borderRadius: '8px',
-            background: 'var(--gradient-primary)',
-            color: '#ffffff'
-          }}>
-            <Shield size={20} />
-          </span>
-          DISHA FOR INDIA
-        </Link>
+        <div style={{ maxWidth: '1280px', width: '100%', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: 'var(--gradient-primary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', flexShrink: 0, boxShadow: 'var(--shadow-md)'
+            }}>
+              <Shield size={20} />
+            </div>
+            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.25rem', color: 'var(--color-heading)' }}>
+              DISHA
+            </span>
+          </Link>
+        </div>
       </header>
 
-      {/* Main Form Center Area */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '2rem 1.5rem'
-      }}>
+      {/* Main Content */}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 };
