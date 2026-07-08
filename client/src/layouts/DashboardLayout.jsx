@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationsContext';
-import { Shield, Home, Calendar, Award, LogOut, Menu, X, LayoutDashboard, Users, ClipboardList, BarChart2, UserCheck, FileText, MessageSquare, HelpCircle, Bell, Megaphone, LineChart, Settings, Store } from 'lucide-react';
+import {
+  Shield, Home, Calendar, Award, Trophy, LogOut, Menu, X,
+  LayoutDashboard, Users, ClipboardList, BarChart2, UserCheck, FileText, MessageSquare, HelpCircle, Bell, Megaphone, LineChart, Settings, Store
+} from 'lucide-react';
 import NotificationBell from '../components/notifications/NotificationBell';
 import NotificationDrawer from '../components/notifications/NotificationDrawer';
 
@@ -35,38 +38,44 @@ const DashboardLayout = () => {
   };
 
   const volunteerNavItems = [
-    { name: 'Dashboard',     path: '/dashboard',    icon: <Home size={18} /> },
-    { name: 'Marketplace',   path: '/marketplace',   icon: <Store size={18} /> },
-    { name: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },
-    { name: 'Announcements', path: '/announcements',  icon: <Megaphone size={18} /> },
+    { name: 'Dashboard', path: '/dashboard', icon: <Home size={18} /> },
+    { name: 'Marketplace', path: '/marketplace', icon: <Store size={18} /> },
+    { name: 'Announcements', path: '/announcements', icon: <Megaphone size={18} /> },
     { name: 'Opportunities', path: '/opportunities', icon: <Calendar size={18} /> },
     { name: 'My Contributions', path: '/my-contributions', icon: <FileText size={18} /> },
-    { name: 'Certificates',  path: '/certificates',  icon: <Award size={18} /> },
-    { name: 'Messages',      path: '/messages',       icon: <MessageSquare size={18} /> },
-    { name: 'Support',       path: '/support',        icon: <HelpCircle size={18} /> },
+    { name: 'Certificates', path: '/certificates', icon: <Award size={18} /> },
+    { name: 'Messages', path: '/messages', icon: <MessageSquare size={18} /> },
+    { name: 'Support', path: '/support', icon: <HelpCircle size={18} /> },
+  ];
+
+  // Routes that exist but are not in the sidebar (accessible via other UI entry points).
+  // Kept here so the top-bar title resolves correctly when a volunteer navigates to them.
+  const volunteerHiddenRoutes = [
+    { name: 'Notifications', path: '/notifications' },
+    { name: 'My Programs', path: '/my-programs' },
   ];
 
   const adminNavItems = [
-    { name: 'Dashboard',     path: '/admin/dashboard',    icon: <LayoutDashboard size={18} /> },
-    { name: 'Notifications', path: '/notifications',      icon: <Bell size={18} /> },
+    { name: 'Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={18} /> },
+    { name: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },
     { name: 'Announcements', path: '/admin/announcements', icon: <Megaphone size={18} /> },
-    { name: 'Messages',      path: '/admin/messages',     icon: <MessageSquare size={18} /> },
-    { name: 'Support',       path: '/admin/support',      icon: <HelpCircle size={18} /> },
-    { name: 'Programs',      path: '/admin/programs',     icon: <Calendar size={18} /> },
-    { name: 'Applications',  path: '/admin/applications', icon: <ClipboardList size={18} /> },
-    { name: 'Attendance',    path: '/admin/attendance',   icon: <UserCheck size={18} /> },
-    { name: 'Certificates',  path: '/admin/certificates',  icon: <Award size={18} /> },
-    { name: 'Analytics',     path: '/admin/analytics',    icon: <BarChart2 size={18} /> },
-    { name: 'Forecast',      path: '/admin/forecast',     icon: <LineChart size={18} /> },
-    { name: 'Reports',       path: '/admin/reports',      icon: <FileText size={18} /> },
-    { name: 'Volunteers',    path: '/admin/users',        icon: <Users size={18} /> },
+    { name: 'Messages', path: '/admin/messages', icon: <MessageSquare size={18} /> },
+    { name: 'Support', path: '/admin/support', icon: <HelpCircle size={18} /> },
+    { name: 'Programs', path: '/admin/programs', icon: <Calendar size={18} /> },
+    { name: 'Applications', path: '/admin/applications', icon: <ClipboardList size={18} /> },
+    { name: 'Attendance', path: '/admin/attendance', icon: <UserCheck size={18} /> },
+    { name: 'Certificates', path: '/admin/certificates', icon: <Award size={18} /> },
+    { name: 'Analytics', path: '/admin/analytics', icon: <BarChart2 size={18} /> },
+    { name: 'Forecast', path: '/admin/forecast', icon: <LineChart size={18} /> },
+    { name: 'Reports', path: '/admin/reports', icon: <FileText size={18} /> },
+    { name: 'Volunteers', path: '/admin/users', icon: <Users size={18} /> },
     { name: 'Contributions', path: '/admin/contributions', icon: <Settings size={18} /> },
   ];
 
   const navItems = isAdmin ? adminNavItems : volunteerNavItems;
 
-  const profileName   = user?.name || 'Volunteer';
-  const profileRole   = user?.role || 'VOLUNTEER';
+  const profileName = user?.name || 'Volunteer';
+  const profileRole = user?.role || 'VOLUNTEER';
   const profilePoints = user?.points ?? 0;
 
   const SidebarContent = () => (
@@ -248,7 +257,7 @@ const DashboardLayout = () => {
           </div>
 
           <h2 style={{ fontSize: '1.15rem', margin: 0 }}>
-            {navItems.find((item) => location.pathname.startsWith(item.path))?.name || (isAdmin ? 'Admin Panel' : 'Dashboard')}
+            {[...navItems, ...(isAdmin ? [] : volunteerHiddenRoutes)].find((item) => location.pathname.startsWith(item.path))?.name || (isAdmin ? 'Admin Panel' : 'Dashboard')}
           </h2>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -266,8 +275,8 @@ const DashboardLayout = () => {
           </div>
         </header>
 
-{/* Main Content Area */}
-         <main style={{ padding: '2rem 1.5rem', flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+        {/* Main Content Area */}
+        <main style={{ padding: '2rem 1.5rem', flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
           <Outlet />
         </main>
       </div>
