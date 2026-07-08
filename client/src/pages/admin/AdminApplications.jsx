@@ -1,242 +1,502 @@
-import React, { useState, useEffect } from 'react';
-import { Users, FileCheck, Search, Filter, Shield } from "lucide-react";
-import ConfirmModal from "../../components/admin/ConfirmModal";
-import { softDeleteUser } from "../../services/adminService";
+/**
+ * AdminApplications.jsx  —  Admin Application Management Page
+ *
+ * Features:
+ *  • Stats cards: Total / Pending / Approved / Rejected
+ *  • Search (name, email, program) + Status filter — live client-side
+ *  • Table with applicant avatar, program, date, status badge, actions
+ *  • Approve / Reject individual applications (new dedicated endpoints)
+ *  • Rejection reason modal
+ *  • Optimistic UI updates — no full page reload after action
+ *  • React Query for data + cache invalidation
+ */
 
+import React, { useState, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  getAdminApplicationStats,
-  getAdminApplications,
-  bulkUpdateApplications
-} from "../../services/applicationsService";
+  Shield, FileCheck, Users, CheckCircle2, XCircle,
+  Search, ChevronDown, X, Calendar, Eye,
+  Loader2, FolderOpen,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
+import {
+  getAdminApplications,
+  approveApplication,
+  rejectApplication,
+} from '../../services/applicationsService';
 
-import StatusBadge from "../../components/volunteer/StatusBadge";
-import Pagination from "../../components/volunteer/Pagination";
-import SkeletonLoader from "../../components/volunteer/SkeletonLoader";
+/* ─── status config ──────────────────────────────────────────────────────── */
 
-const AdminApplications = () => {
-  const [stats, setStats] = useState(null);
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState(null);
-  const [deleting, setDeleting] = useState(false);
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [statsRes, appsRes] = await Promise.all([
-          getAdminApplicationStats(),
-          getAdminApplications(),
-        ]);
-        if (statsRes.success) {
-          const raw = statsRes.data || {};
-          setStats({
-            pending: raw.pending || 0,
-            today: raw.applicationsThisMonth || 0,
-            newVolunteers: raw.total || 0,
-            total: raw.total || 0,
-            joined: raw.joined || 0,
-            withdrawn: raw.withdrawn || 0,
-            completed: raw.completed || 0,
-            cancelled: raw.cancelled || 0,
-          });
-        }
-        if (appsRes.success) {
-          setApplications(Array.isArray(appsRes.data?.applications) ? appsRes.data.applications : Array.isArray(appsRes.data) ? appsRes.data : []);
-        }
-      } catch (err) {
-        console.error(err);
-        toast.error('Failed to load applications');
-      } finally {
-        setLoading(false);
+const STATUS_CONFIG = {
+  applied:   { label: 'Pending',   bg: '#FEF3C7', color: '#92400E', dot: '#D97706' },
+  approved:  { label: 'Approved',  bg: '#DCFCE7', color: '#14532D', dot: '#16A34A' },
+  joined:    { label: 'Joined',    bg: '#DBEAFE', color: '#1E40AF', dot: '#2563EB' },
+  rejected:  { label: 'Rejected',  bg: '#FEE2E2', color: '#991B1B', dot: '#DC2626' },
+  withdrawn: { label: 'Withdrawn', bg: '#F1F5F9', color: '#334155', dot: '#64748B' },
+  cancelled: { label: 'Cancelled', bg: '#F1F5F9', color: '#334155', dot: '#94A3B8' },
+  completed: { label: 'Completed', bg: '#F3E8FF', color: '#5B21B6', dot: '#7C3AED' },
+};
+
+const STATUS_FILTER_OPTIONS = [
+  { value: '',          label: 'All Statuses' },
+  { value: 'applied',   label: 'Pending'     },
+  { value: 'approved',  label: 'Approved'    },
+  { value: 'joined',    label: 'Joined'      },
+  { value: 'rejected',  label: 'Rejected'    },
+  { value: 'withdrawn', label: 'Withdrawn'   },
+  { value: 'cancelled', label: 'Cancelled'   },
+];
+
+/* ─── sub-components ─────────────────────────────────────────────────────── */
+
+const StatusBadge = ({ status }) => {
+  const cfg = STATUS_CONFIG[status] || { label: status, bg: '#F1F5F9', color: '#334155', dot: '#64748B' };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+      padding: '0.25rem 0.7rem', borderRadius: 999,
+      background: cfg.bg, color: cfg.color,
+      fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap',
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.dot, flexShrink: 0 }} />
+      {cfg.label}
+    </span>
+  );
+};
+
+const StatCard = ({ icon: Icon, label, value, color, bg, loading }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    style={{
+      background: 'var(--color-card)', borderRadius: 14,
+      padding: '1.25rem 1.5rem', border: '1px solid var(--color-border)',
+      display: 'flex', alignItems: 'center', gap: '1rem',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+    }}
+  >
+    <div style={{ width: 44, height: 44, borderRadius: 12, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <Icon size={20} />
+    </div>
+    <div>
+      <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--color-body)', marginBottom: '0.2rem' }}>{label}</div>
+      {loading
+        ? <div className="skeleton" style={{ height: 28, width: 48, borderRadius: 6 }} />
+        : <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--color-heading)', lineHeight: 1 }}>{value}</div>
       }
-    };
-    fetchData();
-  }, []);
+    </div>
+  </motion.div>
+);
 
-  const handleStatusUpdate = async (id, status) => {
-    try {
-      const res = await bulkUpdateApplications([id], status);
-      if (res.success) {
-        toast.success(`Application ${status === 'joined' ? 'approved' : 'rejected'} successfully`);
-        setApplications(apps => apps.map(app => (app.id === id || app._id === id) ? { ...app, status } : app));
-        
-        // Refresh stats
-        const statsRes = await getAdminApplicationStats();
-        if (statsRes.success) {
-          const raw = statsRes.data || {};
-          setStats({
-            pending: raw.pending || 0,
-            today: raw.applicationsThisMonth || 0,
-            newVolunteers: raw.total || 0,
-            total: raw.total || 0,
-            joined: raw.joined || 0,
-            withdrawn: raw.withdrawn || 0,
-            completed: raw.completed || 0,
-            cancelled: raw.cancelled || 0,
-          });
-        }
-      }
-    } catch (err) {
-      toast.error('Failed to update application status');
-    }
+const SkeletonRow = () => (
+  <tr>
+    {[1, 2, 3, 4, 5].map((i) => (
+      <td key={i} style={{ padding: '1rem 1.25rem' }}>
+        <div className="skeleton" style={{ height: 16, borderRadius: 6, width: i === 1 ? '70%' : '50%' }} />
+      </td>
+    ))}
+  </tr>
+);
+
+/* ─── rejection reason modal ─────────────────────────────────────────────── */
+
+const RejectModal = ({ app, onConfirm, onClose }) => {
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    await onConfirm(app._id || app.id, reason);
+    setLoading(false);
   };
 
+  if (!app) return null;
+
   return (
-    <div className="page-container" style={{ padding: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <Shield size={20} className="text-primary" />
-            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Admin Panel</span>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(4px)' }} />
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        style={{
+          position: 'relative', background: 'var(--color-card)', borderRadius: 16,
+          padding: '1.75rem', width: '100%', maxWidth: 480,
+          boxShadow: 'var(--shadow-xl)', border: '1px solid var(--color-border)',
+        }}
+      >
+        <h3 style={{ margin: '0 0 0.5rem', fontWeight: 700, color: 'var(--color-heading)', fontSize: '1.1rem' }}>
+          Reject Application
+        </h3>
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-body)', margin: '0 0 1.25rem' }}>
+          Rejecting application from <strong>{app.user?.name || 'this volunteer'}</strong> for{' '}
+          <strong>{app.program?.title || 'this program'}</strong>.
+        </p>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label className="form-label">Reason <span style={{ color: 'var(--color-body)', fontWeight: 400 }}>(optional)</span></label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="form-control"
+              rows={3}
+              placeholder="e.g. Program capacity reached, qualifications mismatch…"
+              maxLength={500}
+            />
           </div>
-          <h1 style={{ fontSize: '2rem', margin: 0 }}>Application Management</h1>
-          <p style={{ color: 'var(--color-body)', marginTop: '0.5rem' }}>Review and manage volunteer applications across all programs.</p>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+            <button type="button" onClick={onClose} className="btn btn-secondary" disabled={loading}>
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} className="btn btn-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+              {loading ? <Loader2 size={15} style={{ animation: 'spin 0.8s linear infinite' }} /> : <XCircle size={15} />}
+              Reject Application
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
+/* ─── main component ─────────────────────────────────────────────────────── */
+
+const AdminApplications = () => {
+  const queryClient = useQueryClient();
+  const [search, setSearch]             = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [actioningId, setActioningId]   = useState(null);
+
+  /* ── data ───────────────────────────────────────────────────── */
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-applications'],
+    queryFn: async () => {
+      const res = await getAdminApplications({ limit: 200 });
+      return res?.data?.applications || res?.applications || [];
+    },
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+
+  const applications = data || [];
+
+  /* ── derived stats ──────────────────────────────────────────── */
+
+  const stats = useMemo(() => ({
+    total:    applications.length,
+    pending:  applications.filter((a) => a.status === 'applied').length,
+    approved: applications.filter((a) => a.status === 'approved' || a.status === 'joined').length,
+    rejected: applications.filter((a) => a.status === 'rejected').length,
+  }), [applications]);
+
+  /* ── client-side filtering ──────────────────────────────────── */
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return applications.filter((app) => {
+      const name     = (app.user?.name  || '').toLowerCase();
+      const email    = (app.user?.email || '').toLowerCase();
+      const program  = (app.program?.title || '').toLowerCase();
+      const matchSearch = !q || name.includes(q) || email.includes(q) || program.includes(q);
+      const matchStatus = !statusFilter || app.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [applications, search, statusFilter]);
+
+  /* ── actions ────────────────────────────────────────────────── */
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['admin-applications'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+  }, [queryClient]);
+
+  const handleApprove = useCallback(async (id) => {
+    setActioningId(id);
+    try {
+      await approveApplication(id);
+      toast.success('Application approved!');
+      // Optimistic update in cache
+      queryClient.setQueryData(['admin-applications'], (old = []) =>
+        old.map((a) => (a._id === id || a.id === id) ? { ...a, status: 'approved' } : a)
+      );
+      invalidate();
+    } catch (err) {
+      toast.error(err?.message || 'Failed to approve application.');
+    } finally {
+      setActioningId(null);
+    }
+  }, [queryClient, invalidate]);
+
+  const handleRejectConfirm = useCallback(async (id, reason) => {
+    setActioningId(id);
+    try {
+      await rejectApplication(id, reason);
+      toast.success('Application rejected.');
+      queryClient.setQueryData(['admin-applications'], (old = []) =>
+        old.map((a) => (a._id === id || a.id === id) ? { ...a, status: 'rejected' } : a)
+      );
+      invalidate();
+    } catch (err) {
+      toast.error(err?.message || 'Failed to reject application.');
+    } finally {
+      setActioningId(null);
+      setRejectTarget(null);
+    }
+  }, [queryClient, invalidate]);
+
+  /* ── render ──────────────────────────────────────────────────── */
+
+  return (
+    <div style={{ padding: '2rem', maxWidth: 1400, margin: '0 auto' }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: '1.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+          <Shield size={18} style={{ color: 'var(--color-primary)' }} />
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Admin Panel</span>
+        </div>
+        <h1 style={{ fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 800, color: 'var(--color-heading)', margin: 0 }}>
+          Application Management
+        </h1>
+        <p style={{ color: 'var(--color-body)', margin: '0.3rem 0 0', fontSize: '0.9rem' }}>
+          Review, approve, and reject volunteer applications across all programs.
+        </p>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '1rem', marginBottom: '1.75rem' }}>
+        <StatCard icon={Users}       label="Total Applications" value={stats.total}    color="#2563EB" bg="#DBEAFE" loading={isLoading} />
+        <StatCard icon={FileCheck}   label="Pending Review"     value={stats.pending}  color="#D97706" bg="#FEF3C7" loading={isLoading} />
+        <StatCard icon={CheckCircle2}label="Approved"           value={stats.approved} color="#16A34A" bg="#DCFCE7" loading={isLoading} />
+        <StatCard icon={XCircle}     label="Rejected"           value={stats.rejected} color="#DC2626" bg="#FEE2E2" loading={isLoading} />
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.25rem', alignItems: 'center' }}>
+        {/* Search */}
+        <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 200 }}>
+          <Search size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-body)', pointerEvents: 'none' }} />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, email, or program…"
+            className="form-control"
+            style={{ paddingLeft: '2.25rem', paddingRight: search ? '2.25rem' : '0.875rem' }}
+          />
+          {search && (
+            <button onClick={() => setSearch('')} style={{ position: 'absolute', right: '0.625rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-body)', display: 'flex' }}>
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Status filter */}
+        <div style={{ position: 'relative', flex: '0 0 auto' }}>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="form-control"
+            style={{ paddingRight: '2rem', minWidth: 160, appearance: 'none' }}
+          >
+            {STATUS_FILTER_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <ChevronDown size={14} style={{ position: 'absolute', right: '0.625rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--color-body)' }} />
+        </div>
+
+        {/* Result count */}
+        {!isLoading && (
+          <span style={{ fontSize: '0.82rem', color: 'var(--color-body)', marginLeft: 'auto', flexShrink: 0 }}>
+            {filtered.length} application{filtered.length !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+
+      {/* Table */}
+      <div style={{ background: 'var(--color-card)', borderRadius: 14, border: '1px solid var(--color-border)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ background: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
+                {['Applicant', 'Program', 'Applied On', 'Status', 'Actions'].map((h) => (
+                  <th key={h} style={{ padding: '0.875rem 1.25rem', fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-body)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading && [1, 2, 3, 4, 5].map((i) => <SkeletonRow key={i} />)}
+
+              {!isLoading && filtered.length === 0 && (
+                <tr>
+                  <td colSpan={5}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 2rem', textAlign: 'center' }}>
+                      <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--color-bg)', border: '2px dashed var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                        <FolderOpen size={28} style={{ color: 'var(--color-body)', opacity: 0.4 }} />
+                      </div>
+                      <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-heading)', margin: '0 0 0.4rem' }}>
+                        {search || statusFilter ? 'No applications match your filters' : 'No Applications Yet'}
+                      </h3>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--color-body)', margin: 0 }}>
+                        {search || statusFilter ? 'Try adjusting your search or filter.' : 'Applications will appear here once volunteers start applying.'}
+                      </p>
+                      {(search || statusFilter) && (
+                        <button onClick={() => { setSearch(''); setStatusFilter(''); }} className="btn btn-secondary" style={{ marginTop: '1rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem' }}>
+                          <X size={13} /> Clear Filters
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
+
+              <AnimatePresence>
+                {!isLoading && filtered.map((app, idx) => {
+                  const id       = app._id || app.id;
+                  const name     = app.user?.name  || 'Unknown Volunteer';
+                  const email    = app.user?.email || '';
+                  const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+                  const progName = app.program?.title || 'Unknown Program';
+                  const isActioning = actioningId === id;
+                  const isPending = app.status === 'applied';
+                  const isApproved = app.status === 'approved' || app.status === 'joined';
+                  const isRejected = app.status === 'rejected';
+
+                  return (
+                    <motion.tr
+                      key={id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ delay: idx * 0.02 }}
+                      style={{ borderBottom: '1px solid var(--color-border)' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-bg)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      {/* Applicant */}
+                      <td style={{ padding: '1rem 1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--gradient-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, flexShrink: 0 }}>
+                            {initials}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, color: 'var(--color-heading)', fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>
+                              {name}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--color-body)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>
+                              {email}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Program */}
+                      <td style={{ padding: '1rem 1.25rem', maxWidth: 220 }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--color-heading)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {progName}
+                        </div>
+                        {app.program?.category && (
+                          <div style={{ fontSize: '0.7rem', color: 'var(--color-body)', marginTop: '0.15rem' }}>
+                            {app.program.category}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Applied on */}
+                      <td style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.82rem', color: 'var(--color-body)' }}>
+                          <Calendar size={13} />
+                          {new Date(app.appliedAt || app.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td style={{ padding: '1rem 1.25rem' }}>
+                        <StatusBadge status={app.status} />
+                      </td>
+
+                      {/* Actions */}
+                      <td style={{ padding: '1rem 1.25rem' }}>
+                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                          {/* Approve */}
+                          {!isApproved && !isRejected && (
+                            <button
+                              onClick={() => handleApprove(id)}
+                              disabled={isActioning}
+                              title="Approve"
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                padding: '0.32rem 0.7rem', borderRadius: 7,
+                                background: '#DCFCE7', color: '#15803D',
+                                border: '1px solid #BBF7D0',
+                                cursor: isActioning ? 'not-allowed' : 'pointer',
+                                fontSize: '0.75rem', fontWeight: 700,
+                                opacity: isActioning ? 0.6 : 1,
+                              }}
+                            >
+                              {isActioning ? <Loader2 size={12} style={{ animation: 'spin 0.8s linear infinite' }} /> : <CheckCircle2 size={12} />}
+                              Approve
+                            </button>
+                          )}
+
+                          {/* Reject */}
+                          {!isRejected && (
+                            <button
+                              onClick={() => setRejectTarget(app)}
+                              disabled={isActioning}
+                              title="Reject"
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                padding: '0.32rem 0.7rem', borderRadius: 7,
+                                background: '#FEE2E2', color: '#DC2626',
+                                border: '1px solid #FECACA',
+                                cursor: isActioning ? 'not-allowed' : 'pointer',
+                                fontSize: '0.75rem', fontWeight: 700,
+                                opacity: isActioning ? 0.6 : 1,
+                              }}
+                            >
+                              <XCircle size={12} /> Reject
+                            </button>
+                          )}
+
+                          {/* Already-decided badges */}
+                          {isApproved && (
+                            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#16A34A', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <CheckCircle2 size={13} /> Approved
+                            </span>
+                          )}
+                          {isRejected && (
+                            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#DC2626', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <XCircle size={13} /> Rejected
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {loading ? <SkeletonLoader type="dashboard" /> : (
-        <>
-          {stats && (
-            <div className="grid grid-cols-4" style={{ marginBottom: '2rem' }}>
-              <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ padding: '0.75rem', backgroundColor: 'rgba(245, 158, 11, 0.1)', color: 'var(--color-accent)', borderRadius: '50%' }}><FileCheck size={24} /></div>
-                <div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.pending}</div><div style={{ fontSize: '0.85rem', color: 'var(--color-body)' }}>Pending Review</div></div>
-              </div>
-              <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ padding: '0.75rem', backgroundColor: 'rgba(37, 99, 235, 0.1)', color: 'var(--color-primary)', borderRadius: '50%' }}><Users size={24} /></div>
-                <div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.today}</div><div style={{ fontSize: '0.85rem', color: 'var(--color-body)' }}>New Today</div></div>
-              </div>
-              <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ padding: '0.75rem', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--color-success)', borderRadius: '50%' }}><Users size={24} /></div>
-                <div><div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.newVolunteers}</div><div style={{ fontSize: '0.85rem', color: 'var(--color-body)' }}>Total Volunteers</div></div>
-              </div>
-            </div>
-          )}
-
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Recent Applications</h3>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div style={{ position: 'relative' }}>
-                  <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-body)' }} />
-                  <input type="text" placeholder="Search applicants..." className="form-control" style={{ paddingLeft: '2.25rem', width: '250px' }} />
-                </div>
-                <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Filter size={16} /> Filter
-                </button>
-              </div>
-            </div>
-
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ backgroundColor: 'var(--color-bg)', borderBottom: '1px solid var(--color-border)' }}>
-                    <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-body)' }}>Applicant</th>
-                    <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-body)' }}>Program</th>
-                    <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-body)' }}>Date Applied</th>
-                    <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-body)' }}>Status</th>
-                    <th style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-body)' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {applications.length === 0 ? (
-                    <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-body)' }}>No applications found.</td></tr>
-                  ) : (
-                    applications.map((app) => {
-                      const applicantName = app.user?.name || app.applicantName || 'Unknown User';
-                      const applicantEmail = app.user?.email || app.applicantEmail || 'No email';
-                      const initials = (applicantName || '').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-                      
-                      return (
-                        <tr key={app.id || app._id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                          <td style={{ padding: '1rem 1.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                              <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--color-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700 }}>
-                                {initials}
-                              </div>
-                              <div>
-                                <div style={{ fontWeight: 600, color: 'var(--color-heading)' }}>{applicantName}</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--color-body)' }}>{applicantEmail}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem' }}>{app.program?.title || app.programTitle || 'Unknown Program'}</td>
-                          <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem', color: 'var(--color-body)' }}>
-                            {new Date(app.createdAt || app.appliedDate).toLocaleDateString()}
-                          </td>
-                          <td style={{ padding: '1rem 1.5rem' }}>
-                            <StatusBadge status={app.status} />
-                          </td>
-                          <td style={{ padding: '1rem 1.5rem' }}>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <button 
-                                className="btn btn-secondary" 
-                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
-                                onClick={() => handleStatusUpdate(app.id || app._id, 'joined')}
-                                disabled={app.status === 'joined'}
-                              >
-                                Approve
-                              </button>
-                              <button 
-                                className="btn btn-secondary" 
-                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', borderColor: 'var(--color-error)', color: 'var(--color-error)' }}
-                                onClick={() => handleStatusUpdate(app.id || app._id, 'cancelled')}
-                                disabled={app.status === 'cancelled'}
-                              >
-                                Reject
-                              </button>
-                              <button 
-                                className="btn btn-danger" 
-                                style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', marginLeft: '0.5rem' }}
-                                onClick={() => { setDeleteTargetId(app.id || app._id); setShowConfirm(true); }}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-                <ConfirmModal
-                  isOpen={showConfirm}
-                  title="Confirm Delete"
-                  message="Are you sure you want to permanently delete this user? This action cannot be undone."
-                  onCancel={() => setShowConfirm(false)}
-                  onConfirm={async () => {
-                    if (!deleteTargetId) return;
-                    setDeleting(true);
-                    try {
-                      const res = await softDeleteUser(deleteTargetId);
-if (res.success) {
-                         toast.success('User deleted successfully');
-                         // Refresh applications list
-                         const appsRes = await getAdminApplications();
-                         if (appsRes.success) {
-                           setApplications(Array.isArray(appsRes.data?.applications) ? appsRes.data.applications : Array.isArray(appsRes.data) ? appsRes.data : []);
-                         }
-                       }
-                    } catch (err) {
-                      toast.error(err.message || 'Error deleting user');
-                    } finally {
-                      setDeleting(false);
-                      setShowConfirm(false);
-                      setDeleteTargetId(null);
-                    }
-                  }}
-                />
-              </table>
-            </div>
-            <div style={{ padding: '1rem 1.5rem' }}>
-              <Pagination currentPage={1} totalPages={3} totalItems={24} onPageChange={() => {}} />
-            </div>
-          </div>
-        </>
-      )}
+      {/* Reject modal */}
+      <AnimatePresence>
+        {rejectTarget && (
+          <RejectModal
+            app={rejectTarget}
+            onConfirm={handleRejectConfirm}
+            onClose={() => setRejectTarget(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

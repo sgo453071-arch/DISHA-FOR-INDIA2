@@ -29,7 +29,7 @@ class ApplicationRepository {
       user: userId,
       program: programId,
       isDeleted: false,
-      status: { $in: [APPLICATION_STATUS.APPLIED, APPLICATION_STATUS.JOINED] },
+      status: { $in: [APPLICATION_STATUS.APPLIED, APPLICATION_STATUS.JOINED, APPLICATION_STATUS.APPROVED] },
     });
   }
 
@@ -225,6 +225,26 @@ class ApplicationRepository {
       },
       { new: true }
     );
+  }
+
+  async approve(id) {
+    return Application.findByIdAndUpdate(
+      id,
+      { status: APPLICATION_STATUS.APPROVED, joinedAt: new Date() },
+      { new: true, runValidators: true }
+    )
+      .populate('user', 'name email volunteerId')
+      .populate('program', 'title programId startDate endDate status category city mode');
+  }
+
+  async reject(id, reason) {
+    return Application.findByIdAndUpdate(
+      id,
+      { status: APPLICATION_STATUS.REJECTED, reviewNotes: reason || '' },
+      { new: true, runValidators: true }
+    )
+      .populate('user', 'name email volunteerId')
+      .populate('program', 'title programId startDate endDate status category city mode');
   }
 }
 

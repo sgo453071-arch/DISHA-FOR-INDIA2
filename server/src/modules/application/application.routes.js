@@ -46,6 +46,24 @@ router.post(
   applicationController.applyToProgram
 );
 
+// Admin/Coordinator: approve an application
+router.patch(
+  '/:id/approve',
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
+  validateGetApplication,
+  applicationController.approveApplication
+);
+
+// Admin/Coordinator: reject an application
+router.patch(
+  '/:id/reject',
+  authenticate,
+  authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN, ROLES.COORDINATOR),
+  validateGetApplication,
+  applicationController.rejectApplication
+);
+
 // Any authenticated user: withdraw their own application
 router.patch(
   '/:id/withdraw',

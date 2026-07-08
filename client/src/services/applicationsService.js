@@ -37,6 +37,18 @@ export const withdrawApplication = async (id) => {
   return res; // { success, data: { application } }
 };
 
+/** Admin: Approve a single application */
+export const approveApplication = async (id) => {
+  const res = await api.patch(`/applications/${id}/approve`);
+  return res;
+};
+
+/** Admin: Reject a single application with optional reason */
+export const rejectApplication = async (id, reason) => {
+  const res = await api.patch(`/applications/${id}/reject`, { reason });
+  return res;
+};
+
 /**
  * Fetch aggregated stats (pending / approved / rejected / waitlisted).
  */

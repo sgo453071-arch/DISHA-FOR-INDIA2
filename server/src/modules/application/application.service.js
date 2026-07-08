@@ -23,8 +23,8 @@ class ApplicationService {
       throw new NotFoundError('Program not found');
     }
 
-    if (program.status !== PROGRAM_STATUS.PUBLISHED) {
-      throw new ValidationError('Only published programs accept applications');
+    if (program.status !== PROGRAM_STATUS.PUBLISHED && program.status !== PROGRAM_STATUS.ONGOING) {
+      throw new ValidationError('This program is not currently accepting applications');
     }
 
     if (program.registrationDeadline && new Date() > new Date(program.registrationDeadline)) {
@@ -299,6 +299,43 @@ class ApplicationService {
 
   async getApplicationStatistics() {
     return applicationRepository.getStatistics();
+  }
+
+  async approveApplication(adminId, applicationId) {
+    const application = await applicationRepository.findById(applicationId);
+    if (!application) throw new NotFoundError('Application not found');
+    if (application.status === APPLICATION_STATUS.APPROVED || application.status === APPLICATION_STATUS.JOINED) {
+      throw new ValidationError('Application is already approved');
+    }
+    const updated = await applicationRepository.approve(applicationId);
+    try {
+      const program = application.program;
+      await notificationService.sendInAppNotification('buildApplicationApproved', {
+        recipientId: (application.user._id || application.user).toString(),
+        programName: program?.title || 'Program',
+        applicationId: applicationId.toString(),
+      });
+    } catch (_err) { /* non-blocking */ }
+    return { application: updated };
+  }
+
+  async rejectApplication(adminId, applicationId, reason) {
+    const application = await applicationRepository.findById(applicationId);
+    if (!application) throw new NotFoundError('Application not found');
+    if (application.status === APPLICATION_STATUS.REJECTED) {
+      throw new ValidationError('Application is already rejected');
+    }
+    const updated = await applicationRepository.reject(applicationId, reason);
+    try {
+      const program = application.program;
+      await notificationService.sendInAppNotification('buildApplicationRejected', {
+        recipientId: (application.user._id || application.user).toString(),
+        programName: program?.title || 'Program',
+        applicationId: applicationId.toString(),
+        reason: reason || 'Your application has been reviewed.',
+      });
+    } catch (_err) { /* non-blocking */ }
+    return { application: updated };
   }
 
   /**

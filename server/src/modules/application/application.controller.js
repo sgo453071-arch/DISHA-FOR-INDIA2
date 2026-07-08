@@ -115,6 +115,25 @@ class ApplicationController {
       return next(error);
     }
   };
+
+  approveApplication = async (req, res, next) => {
+    try {
+      const result = await applicationService.approveApplication(req.user.id, req.params.id);
+      return successResponse(res, 200, 'Application approved successfully', result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  rejectApplication = async (req, res, next) => {
+    try {
+      const { reason } = req.body;
+      const result = await applicationService.rejectApplication(req.user.id, req.params.id, reason);
+      return successResponse(res, 200, 'Application rejected', result);
+    } catch (error) {
+      return next(error);
+    }
+  };
 }
 
 module.exports = new ApplicationController();

@@ -79,6 +79,17 @@ applicationSchema.index({ user: 1 });
 applicationSchema.index({ program: 1 });
 applicationSchema.index({ status: 1 });
 applicationSchema.index({ appliedAt: -1 });
+// Prevent a volunteer from submitting more than one active application per program
+applicationSchema.index(
+  { user: 1, program: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      isDeleted: false,
+      status: { $in: ['applied', 'joined', 'approved'] },
+    },
+  }
+);
 
 applicationSchema.set('toJSON', {
   transform: function (doc, ret) {
