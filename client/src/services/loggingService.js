@@ -9,7 +9,7 @@ const loggingApi = axios.create({
 
 export const logMalformedResponse = async (payload) => {
   try {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.MODE === 'development') {
       console.warn('Malformed API response logged:', payload);
       return;
     }
