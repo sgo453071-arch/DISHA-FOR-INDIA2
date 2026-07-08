@@ -102,16 +102,17 @@ class ProgramService {
   }
 
   async getProgram(programId, userRole) {
+    const normalizedRole = (userRole || '').toLowerCase();
     const program = await programRepository.findById(
       programId,
-      userRole === 'admin' || userRole === 'superadmin'
+      normalizedRole === 'admin' || normalizedRole === 'superadmin'
     );
 
     if (!program) {
       throw new NotFoundError('Program not found');
     }
 
-    if (program.isDeleted && userRole !== 'admin' && userRole !== 'superadmin') {
+    if (program.isDeleted && normalizedRole !== 'admin' && normalizedRole !== 'superadmin') {
       throw new NotFoundError('Program not found');
     }
 
@@ -338,6 +339,8 @@ class ProgramService {
   }
 
   async listPrograms(queryParams, userRole) {
+    // Normalize role so 'ADMIN', 'admin', 'Admin' all work identically
+    const normalizedRole = (userRole || '').toLowerCase();
     const {
       page,
       limit,
@@ -385,7 +388,7 @@ class ProgramService {
       Object.assign(combinedQuery, searchQuery);
     }
 
-    if (userRole !== 'admin' && userRole !== 'superadmin') {
+    if (normalizedRole !== 'admin' && normalizedRole !== 'superadmin' && normalizedRole !== 'coordinator') {
       combinedQuery.status = PROGRAM_STATUS.PUBLISHED;
     }
 
