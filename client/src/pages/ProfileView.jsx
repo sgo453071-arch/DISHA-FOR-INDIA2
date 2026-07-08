@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { User, Phone, BookOpen, GraduationCap, MapPin, Award, CheckCircle } from 'lucide-react';
+import { Phone } from 'lucide-react';
 
 /**
  * Read‑only view of the user's full profile.

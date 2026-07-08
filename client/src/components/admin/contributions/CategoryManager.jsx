@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, ArrowUpDown, GripVertical } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getCategories, createCategory, updateCategory, deleteCategory, restoreCategory, toggleCategory } from '../../../services/contributionConfigService';
 import ConfigTable from './ConfigTable';

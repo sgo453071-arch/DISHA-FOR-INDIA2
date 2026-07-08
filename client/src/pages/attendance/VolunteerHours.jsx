@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Award, Target, Flame, Heart } from 'lucide-react';
+import { Download, Award, Target, Heart } from 'lucide-react';
 import { useVolunteer } from '../../context/VolunteerContext';
 import VolunteerHoursCard from '../../components/volunteer/VolunteerHoursCard';
 import HoursChart from '../../components/volunteer/HoursChart';
@@ -50,7 +50,7 @@ const VolunteerHours = () => {
       </div>
 
       <div className="grid grid-cols-3" style={{ gap: '2rem' }}>
-        
+
         {/* Breakdown */}
         <div className="card" style={{ gridColumn: 'span 2' }}>
           <h3 style={{ fontSize: '1.25rem', marginBottom: '1.5rem' }}>Hours by Program</h3>
@@ -85,14 +85,14 @@ const VolunteerHours = () => {
           <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Target size={20} className="text-accent" /> Next Milestone
           </h3>
-          
+
           <div style={{ textAlign: 'center', padding: '1.5rem', backgroundColor: 'var(--color-bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
             <div style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--color-heading)', marginBottom: '0.5rem' }}>
               100
             </div>
             <div style={{ color: 'var(--color-body)' }}>Bronze Volunteer Badge</div>
           </div>
-          
+
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
               <span style={{ color: 'var(--color-body)' }}>Progress</span>

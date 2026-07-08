@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, RefreshCw } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getCoinRules, createCoinRule, updateCoinRule, deleteCoinRule, restoreCoinRule, toggleCoinRule, getCategories } from '../../../services/contributionConfigService';
 import ConfigTable from './ConfigTable';

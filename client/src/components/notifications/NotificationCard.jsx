@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, Check, Trash2, ExternalLink } from 'lucide-react';
+import { Check, Trash2, ExternalLink } from 'lucide-react';
 
 const categoryStyles = {
   application: { bg: '#EFF6FF', color: '#2563EB', icon: '📋' },

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogIn, Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -24,7 +24,7 @@ const Login = () => {
     try {
       const response = await login(email, password);
       const userRole = response?.user?.role?.toUpperCase();
-      
+
       if (['ADMIN', 'SUPER_ADMIN', 'COORDINATOR'].includes(userRole)) {
         navigate('/admin/dashboard', { replace: true });
       } else {

@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Star, Flame, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 const RewardCard = React.memo(({ reward, onViewDetails, onRedeem, userCoins }) => {
   const canAfford = userCoins >= reward.coinCost;

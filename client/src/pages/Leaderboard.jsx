@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Award, Medal, ShieldAlert } from 'lucide-react';
+;
 import { getTopVolunteers, getMyRank } from '../services/gamificationService';
 import SkeletonLoader from '../components/volunteer/SkeletonLoader';
 

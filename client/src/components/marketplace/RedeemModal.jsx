@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertTriangle, CheckCircle, Coins, Minus, Plus } from 'lucide-react';
+import { X, AlertTriangle, Coins, Minus, Plus } from 'lucide-react';
 
 const RedeemModal = ({ open, onClose, reward, userCoins, onConfirm, loading = false }) => {
   const [quantity, setQuantity] = useState(1);

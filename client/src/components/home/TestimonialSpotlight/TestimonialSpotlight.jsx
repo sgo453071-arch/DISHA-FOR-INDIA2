@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+;
 import './TestimonialSpotlight.css';
 
 // Placeholder testimonial – replace with approved content before production.

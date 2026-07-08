@@ -55,7 +55,7 @@ const NotificationDrawer = React.memo(({
     }
   }, [open, handleKeyDown]);
 
-  const hasNotifications = useMemo(() => notifications.length > 0, [notifications.length]);
+  const hasNotifications = useMemo(() => notifications?.length > 0, [notifications?.length]);
 
   if (!open) return null;
 
@@ -186,7 +186,7 @@ const NotificationDrawer = React.memo(({
                 <NotificationEmptyState message="No notifications yet" description="You're all caught up!" />
               )}
 
-              {!loading && notifications.map((notification) => (
+              {!loading && notifications?.map((notification) => (
                 <NotificationCard
                   key={notification._id || notification.id}
                   notification={notification}
