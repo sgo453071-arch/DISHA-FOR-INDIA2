@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { VolunteerProvider } from './context/VolunteerContext';
@@ -124,8 +124,13 @@ function App() {
         <SocketProvider>
           <BrowserRouter>
             <AuthExpiredHandler />
-            <Routes>
-              {/* Public Routes */}
+            <Suspense fallback={
+              <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '40px', height: '40px', border: '3px solid var(--color-primary, #4a90e2)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              </div>
+            }>
+              <Routes>
+                {/* Public Routes */}
               <Route element={<PublicLayout />}>
                 <Route index element={<Home />} />
                 <Route path="programs" element={<Programs />} />
@@ -236,6 +241,7 @@ function App() {
               {/* Global 404 - placed last so it only matches when nothing else does */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+          </Suspense>
           </BrowserRouter>
         </SocketProvider>
       </VolunteerProvider>
