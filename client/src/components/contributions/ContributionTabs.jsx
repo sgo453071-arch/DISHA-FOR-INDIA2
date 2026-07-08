@@ -2,13 +2,16 @@ import React from 'react';
 
 const ContributionTabs = ({ tabs, activeTab, onTabChange, counts = {} }) => {
   return (
-    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '0.5rem' }} role="tablist" aria-label="Contribution filters">
       {tabs.map((tab) => {
         const count = counts[tab.id] || 0;
         const isActive = activeTab === tab.id;
         return (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={isActive}
+            aria-label={`${tab.label}${count > 0 ? `, ${count} items` : ''}${isActive ? ', selected' : ''}`}
             onClick={() => onTabChange(tab.id)}
             style={{
               padding: '0.5rem 1rem',
@@ -34,7 +37,7 @@ const ContributionTabs = ({ tabs, activeTab, onTabChange, counts = {} }) => {
                   minWidth: '20px',
                   height: '20px',
                   padding: '0 6px',
-                  borderRadius: '9999px',
+                  borderRadius: '999px',
                   background: isActive ? 'rgba(255,255,255,0.25)' : 'var(--color-bg)',
                   color: isActive ? '#fff' : 'var(--color-body)',
                   fontSize: '0.75rem',

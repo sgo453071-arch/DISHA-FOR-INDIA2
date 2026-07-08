@@ -94,7 +94,7 @@ const Contributions = () => {
           {statsLoading ? (
             <ContributionSkeleton type="stats" count={6} />
           ) : (
-            <div className="grid grid-cols-3" style={{ gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1rem' }}>
               {statCards.map((stat, i) => (
                 <motion.div
                   key={i}
@@ -131,7 +131,7 @@ const Contributions = () => {
           {categoriesLoading ? (
             <ContributionSkeleton type="category" count={10} />
           ) : (
-            <div className="grid grid-cols-3" style={{ gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1.5rem' }}>
               {(categories || []).map((category, i) => (
                 <motion.div
                   key={category.id}
@@ -173,7 +173,7 @@ const Contributions = () => {
             loading={contributionsLoading}
             emptyTitle="No contributions found"
             emptyDescription="Be the first to share your work and inspire others."
-            onStartContributing={handleStartContributing}
+            action={{ label: 'Start Contributing', onClick: handleStartContributing }}
           />
         </div>
       </section>
@@ -192,7 +192,7 @@ const Contributions = () => {
           {featuredLoading ? (
             <ContributionSkeleton type="featured" count={3} />
           ) : (
-            <div className="grid grid-cols-3" style={{ gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1.5rem' }}>
               {(featured || []).map((item, i) => (
                 <motion.div
                   key={item._id || i}

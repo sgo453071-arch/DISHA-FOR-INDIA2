@@ -18,7 +18,7 @@ const ExternalLinksForm = ({ values, onChange, errors = {} }) => {
       {linkFields.map(({ key, label, placeholder, Icon }) => (
         <div key={key} className="form-group" style={{ marginBottom: 0 }}>
           <label className="form-label" htmlFor={key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Icon size={16} style={{ color: 'var(--color-body)' }} />
+            <Icon size={16} style={{ color: 'var(--color-primary)' }} />
             {label}
           </label>
           <input

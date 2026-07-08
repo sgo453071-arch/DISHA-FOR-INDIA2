@@ -22,7 +22,7 @@ const ContributionDetail = ({ contributionId, onClose, onContinueEdit }) => {
 
   if (detailLoading) {
     return (
-      <div style={{ padding: '2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+      <div style={{ padding: 'clamp(2rem, 5vw, 4rem)', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
         <div className="spinner" />
       </div>
     );
@@ -30,8 +30,9 @@ const ContributionDetail = ({ contributionId, onClose, onContinueEdit }) => {
 
   if (!detail) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <p>Contribution not found.</p>
+      <div style={{ padding: 'clamp(2rem, 5vw, 4rem)', textAlign: 'center' }}>
+        <p style={{ fontSize: '1rem', color: 'var(--color-body)', marginBottom: '1rem' }}>Contribution not found.</p>
+        <button onClick={onClose} className="btn btn-secondary">Go Back</button>
       </div>
     );
   }
@@ -62,7 +63,7 @@ const ContributionDetail = ({ contributionId, onClose, onContinueEdit }) => {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1rem' }}>
         <div style={{ padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-card)' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--color-body)', marginBottom: '0.25rem' }}>Hours Worked</div>
           <div style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-heading)' }}>{detail.hoursWorked || 0} hrs</div>
@@ -107,7 +108,7 @@ const ContributionDetail = ({ contributionId, onClose, onContinueEdit }) => {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '2rem' }}>
         <VersionHistory versions={versions} />
         <ReviewHistory reviews={reviews} />
       </div>

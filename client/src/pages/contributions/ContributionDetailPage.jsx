@@ -9,7 +9,7 @@ const ContributionDetailPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="page-container" style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
+    <div className="page-container" style={{ padding: 'clamp(1rem, 3vw, 2rem)', maxWidth: '1000px', margin: '0 auto' }}>
       <motion.button
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -24,7 +24,7 @@ const ContributionDetailPage = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="card"
-        style={{ padding: '2rem' }}
+        style={{ padding: 'clamp(1rem, 3vw, 2rem)' }}
       >
         {id ? (
           <ContributionDetail

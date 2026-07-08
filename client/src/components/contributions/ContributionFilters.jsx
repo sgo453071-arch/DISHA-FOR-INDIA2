@@ -6,11 +6,14 @@ const ContributionFilters = ({ filters, onChange }) => {
     onChange({ ...filters, [key]: value });
   };
 
+  const hasActiveFilters = filters.category || filters.sortBy !== 'createdAt';
+
   return (
     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
       <select
         value={filters.category || ''}
         onChange={(e) => handleChange('category', e.target.value)}
+        aria-label="Filter by category"
         className="form-control"
         style={{ minWidth: '160px' }}
       >
@@ -23,6 +26,7 @@ const ContributionFilters = ({ filters, onChange }) => {
       <select
         value={filters.sortBy || 'createdAt'}
         onChange={(e) => handleChange('sortBy', e.target.value)}
+        aria-label="Sort contributions"
         className="form-control"
         style={{ minWidth: '160px' }}
       >
@@ -33,10 +37,11 @@ const ContributionFilters = ({ filters, onChange }) => {
         <option value="-updatedAt">Most Recently Updated</option>
       </select>
 
-      {(filters.category || filters.sortBy !== 'createdAt') && (
+      {hasActiveFilters && (
         <button
           type="button"
           onClick={() => onChange({ category: '', sortBy: 'createdAt' })}
+          aria-label="Clear all filters"
           style={{
             background: 'none',
             border: 'none',

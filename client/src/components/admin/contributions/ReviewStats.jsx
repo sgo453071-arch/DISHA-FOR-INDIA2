@@ -13,7 +13,7 @@ const ReviewStats = ({ stats = {} }) => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
       {items.map((item) => (
         <div
           key={item.label}

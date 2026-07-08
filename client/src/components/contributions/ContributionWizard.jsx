@@ -58,7 +58,7 @@ const ContributionWizard = () => {
   });
   const [stepErrors, setStepErrors] = useState({});
 
-  const { handleSubmit } = useForm({
+  useForm({
     resolver: zodResolver(fullContributionSchema),
     defaultValues: formData,
   });
@@ -210,14 +210,14 @@ const ContributionWizard = () => {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-primary)' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: 'clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 1.5rem)' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           style={{
             background: 'white',
             borderRadius: 'var(--radius-xl)',
-            padding: '2rem',
+            padding: 'clamp(1rem, 3vw, 2rem)',
             boxShadow: 'var(--shadow-sm)',
             border: '1px solid var(--color-border)',
           }}
@@ -233,7 +233,7 @@ const ContributionWizard = () => {
 
           <WizardStepper currentStep={currentStep} completedSteps={completedSteps} />
 
-          <form onSubmit={handleSubmit(() => {})}>
+          <form onSubmit={(e) => e.preventDefault()} aria-live="polite">
             <AnimatePresence mode="wait">
               {currentStep === 1 && (
                 <ContributionInfoStep

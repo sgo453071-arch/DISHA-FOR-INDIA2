@@ -1,0 +1,78 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Trophy, MapPin, TrendingUp, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const LeaderboardCard = ({ rank, topVolunteers, stats }) => {
+  const currentRank = rank || stats?.rank || null;
+  const topCategory = stats?.topCategory || 'Community Service';
+  const countryRank = stats?.countryRank || currentRank;
+  const cityRank = stats?.cityRank || currentRank;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      style={{ background: 'white', borderRadius: 20, padding: '2rem', border: '1px solid #F0EDE8', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', marginBottom: '2rem' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: '#FEF3C7', color: '#D97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Trophy size={20} />
+          </div>
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--color-heading)' }}>Leaderboard Summary</h3>
+        </div>
+        <Link to="/leaderboard" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-primary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          Open Leaderboard <ExternalLink size={13} />
+        </Link>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+        <div style={{ background: '#FFFBEB', borderRadius: 12, padding: '1rem', textAlign: 'center', border: '1px solid #FDE68A' }}>
+          <div style={{ fontSize: '0.7rem', color: '#92400E', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Current Rank</div>
+          <div style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', fontWeight: 800, color: '#B45309', lineHeight: 1.1 }}>
+            {currentRank ? `#${currentRank}` : '--'}
+          </div>
+        </div>
+        <div style={{ background: '#F0FDF4', borderRadius: 12, padding: '1rem', textAlign: 'center', border: '1px solid #BBF7D0' }}>
+          <div style={{ fontSize: '0.7rem', color: '#166534', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>City Rank</div>
+          <div style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', fontWeight: 800, color: '#059669', lineHeight: 1.1 }}>
+            {cityRank ? `#${cityRank}` : '--'}
+          </div>
+        </div>
+        <div style={{ background: '#EFF6FF', borderRadius: 12, padding: '1rem', textAlign: 'center', border: '1px solid #BFDBFE' }}>
+          <div style={{ fontSize: '0.7rem', color: '#1E40AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Country Rank</div>
+          <div style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', fontWeight: 800, color: '#2563eb', lineHeight: 1.1 }}>
+            {countryRank ? `#${countryRank}` : '--'}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', background: '#FAFAF8', borderRadius: 10, border: '1px solid #F0EDE8', marginBottom: '1rem' }}>
+        <TrendingUp size={16} color="#7c3aed" />
+        <span style={{ fontSize: '0.85rem', color: 'var(--color-heading)', fontWeight: 600 }}>Top Category: </span>
+        <span style={{ fontSize: '0.85rem', color: 'var(--color-body)' }}>{topCategory}</span>
+      </div>
+
+      {topVolunteers && topVolunteers.length > 0 && (
+        <div>
+          <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-heading)', margin: '0 0 0.75rem 0' }}>Top Volunteers</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {topVolunteers.slice(0, 5).map((vol, idx) => (
+              <div key={vol.userId || vol._id || idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0', borderBottom: idx < Math.min(topVolunteers.length, 5) - 1 ? '1px solid var(--color-border)' : 'none' }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: idx === 0 ? '#FEF3C7' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, color: idx === 0 ? '#D97706' : 'var(--color-body)' }}>
+                  {idx + 1}
+                </div>
+                <div style={{ flex: 1, fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-heading)' }}>{vol.name || 'Anonymous'}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--color-body)' }}>{vol.totalHours || vol.coins || vol.points || 0} pts</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+export default LeaderboardCard;

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import ApproveForm from './ApproveForm';
 import RejectForm from './RejectForm';
 import NeedsChangesForm from './NeedsChangesForm';
@@ -23,8 +24,9 @@ const ReviewPanel = ({ contribution, onClose }) => {
       await reviewMutation.mutateAsync({ id: contribution._id, payload });
       setActiveAction(null);
       onClose?.();
+      toast.success('Review action completed');
     } catch (err) {
-      console.error(err);
+      toast.error(err?.message || 'Failed to complete review action');
     }
   };
 
@@ -32,8 +34,9 @@ const ReviewPanel = ({ contribution, onClose }) => {
     try {
       await featureMutation.mutateAsync(contribution._id);
       onClose?.();
+      toast.success(contribution.isFeatured ? 'Removed from featured' : 'Added to featured');
     } catch (err) {
-      console.error(err);
+      toast.error(err?.message || 'Failed to update featured status');
     }
   };
 
@@ -42,8 +45,9 @@ const ReviewPanel = ({ contribution, onClose }) => {
       await archiveMutation.mutateAsync(contribution._id);
       setShowArchiveModal(false);
       onClose?.();
+      toast.success('Contribution archived');
     } catch (err) {
-      console.error(err);
+      toast.error(err?.message || 'Failed to archive contribution');
     }
   };
 

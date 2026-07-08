@@ -1,0 +1,104 @@
+const rewardCatalogService = require('./rewardCatalog.service');
+const { MESSAGES } = require('./reward.constants');
+const { successResponse, errorResponse } = require('../../utils/response');
+const rewardService = require('./reward.service');
+const rewardRedemptionService = require('./rewardRedemption.service');
+const { generateRedemptionId } = require('./rewardRedemption.utils');
+
+class RewardCatalogController {
+  getCatalog = async (req, res, next) => {
+    try {
+      const filters = {
+        category: req.query.category,
+        status: req.query.status,
+        isFeatured: req.query.isFeatured === 'true' ? true : req.query.isFeatured === 'false' ? false : undefined,
+        search: req.query.search,
+        minCoins: req.query.minCoins ? Number(req.query.minCoins) : undefined,
+        maxCoins: req.query.maxCoins ? Number(req.query.maxCoins) : undefined,
+        inStock: req.query.inStock === 'true',
+      };
+      const options = {
+        page: Number(req.query.page) || 1,
+        limit: Number(req.query.limit) || 20,
+        sort: req.query.sort || '-createdAt',
+      };
+      const result = await rewardCatalogService.getCatalog(filters, options);
+      return successResponse(res, 200, MESSAGES.REWARD_FETCHED, result);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  getRewardDetail = async (req, res, next) => {
+    try {
+      const reward = await rewardCatalogService.getRewardById(req.params.id);
+      return successResponse(res, 200, MESSAGES.REWARD_FETCHED, reward);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  getFeaturedRewards = async (req, res, next) => {
+    try {
+      const limit = Number(req.query.limit) || 10;
+      const rewards = await rewardCatalogService.getFeaturedRewards(limit);
+      return successResponse(res, 200, MESSAGES.REWARD_FETCHED, rewards);
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  redeemReward = async (req, res, next) => {
+    try {
+      const userId = req.user.id;
+      const rewardId = req.params.id;
+      const { quantity = 1 } = req.body;
+
+      const reward = await rewardCatalogService.redeemReward(userId, rewardId, quantity);
+      const totalCoinsRequired = reward.coinCost * quantity;
+
+      const userReward = await rewardService.getMyReward(userId);
+      if (!userReward || (userReward.currentCoins || 0) < totalCoinsRequired) {
+        return errorResponse(res, 400, 'Insufficient coins to redeem this reward', [
+          { field: 'coins', message: 'You do not have enough coins' },
+        ]);
+      }
+
+      const redemptionId = generateRedemptionId();
+      const redemption = await rewardRedemptionService.createRedemption({
+        user: userId,
+        reward: rewardId,
+        redemptionId,
+        rewardSnapshot: {
+          name: reward.name,
+          coinCost: reward.coinCost,
+          category: reward.category,
+          image: reward.image,
+        },
+        quantity,
+        totalCoinsDeducted: totalCoinsRequired,
+        status: 'pending',
+      });
+
+      await rewardService.redeemReward(userId, {
+        coins: totalCoinsRequired,
+        points: 0,
+      });
+
+      const rewardTransactionService = require('../reward-transaction/rewardTransaction.service');
+      await rewardTransactionService.createTransaction(userId, {
+        type: 'redeemed',
+        reason: `Redeemed ${reward.name} (x${quantity})`,
+        coins: -totalCoinsRequired,
+        points: 0,
+        impact: 0,
+      });
+
+      return successResponse(res, 200, 'Reward redeemed successfully', { redemption, reward });
+    } catch (error) {
+      return next(error);
+    }
+  };
+}
+
+module.exports = new RewardCatalogController();

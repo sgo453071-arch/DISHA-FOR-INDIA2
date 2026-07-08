@@ -56,6 +56,10 @@ const ContributionQueueCard = ({ contribution, onClick }) => {
         cursor: 'pointer',
       }}
       onClick={() => onClick?.(contribution)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(contribution); } }}
+      tabIndex={0}
+      role="button"
+      aria-label={`Review contribution: ${contribution.title}`}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
         <div style={{ flex: 1, minWidth: 0 }}>

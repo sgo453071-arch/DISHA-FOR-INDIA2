@@ -1,0 +1,185 @@
+const mongoose = require('mongoose');
+const RewardCatalog = require('./rewardCatalog.model');
+
+const sampleRewards = [
+  {
+    name: 'Disha Official T-Shirt',
+    description: 'Premium cotton Disha for India branded t-shirt. Show your volunteer pride with this comfortable, high-quality tee available in sizes S to XXL.',
+    category: 'Disha Merchandise',
+    coinCost: 500,
+    image: '',
+    stock: 100,
+    popularity: 120,
+    isFeatured: true,
+    eligibility: 'All active volunteers',
+    termsAndConditions: 'One per volunteer while stocks last. Size subject to availability.',
+    estimatedDelivery: '2-3 weeks',
+    status: 'active',
+    tags: ['merchandise', 'clothing', 'featured'],
+  },
+  {
+    name: 'Volunteer Recognition Certificate',
+    description: 'A beautifully designed framed certificate recognizing your volunteer service. Perfect for your portfolio, CV, or wall of fame.',
+    category: 'Certificates',
+    coinCost: 300,
+    image: '',
+    stock: 200,
+    popularity: 95,
+    isFeatured: true,
+    eligibility: 'Minimum 50 hours of volunteer service',
+    termsAndConditions: 'Digital and physical copy included. Delivery within India only.',
+    estimatedDelivery: '1-2 weeks',
+    status: 'active',
+    tags: ['certificate', 'recognition'],
+  },
+  {
+    name: 'TalentGrow Learning Coupon - 25% Off',
+    description: 'Get 25% off any course on the TalentGrow platform. Upskill yourself with courses in technology, business, design, and more.',
+    category: 'TalentGrow Coupons',
+    coinCost: 750,
+    image: '',
+    stock: 50,
+    popularity: 88,
+    isFeatured: false,
+    eligibility: 'All volunteers',
+    termsAndConditions: 'Valid for 3 months from issuance. Cannot be combined with other offers.',
+    estimatedDelivery: 'Instant (digital)',
+    status: 'active',
+    tags: ['coupon', 'learning', 'upskilling'],
+  },
+  {
+    name: 'Online Course Access - Python for Beginners',
+    description: 'Full access to a 6-week self-paced Python programming course. Includes video lectures, coding exercises, and a completion certificate.',
+    category: 'Learning Resources',
+    coinCost: 1200,
+    image: '',
+    stock: 30,
+    popularity: 76,
+    isFeatured: true,
+    eligibility: 'All volunteers with basic computer knowledge',
+    termsAndConditions: 'Access valid for 6 months. Non-transferable.',
+    estimatedDelivery: 'Instant (digital)',
+    status: 'active',
+    tags: ['course', 'python', 'programming'],
+  },
+  {
+    name: 'DFI Branded Water Bottle',
+    description: 'Stay hydrated while volunteering! High-quality stainless steel water bottle with Disha for India branding. 750ml capacity.',
+    category: 'Disha Merchandise',
+    coinCost: 400,
+    image: '',
+    stock: 75,
+    popularity: 65,
+    isFeatured: false,
+    eligibility: 'All active volunteers',
+    termsAndConditions: 'One per volunteer while stocks last. Available in blue and white.',
+    estimatedDelivery: '2-3 weeks',
+    status: 'active',
+    tags: ['merchandise', 'bottle', 'hydration'],
+  },
+  {
+    name: 'Scholarship Application Fee Waiver',
+    description: 'Get a full waiver on application fees for participating in Disha Foundation partner scholarship programs across India.',
+    category: 'Scholarships',
+    coinCost: 2000,
+    image: '',
+    stock: 20,
+    popularity: 92,
+    isFeatured: true,
+    eligibility: 'Volunteers with 100+ hours of service',
+    termsAndConditions: 'Applicable only to partner institutions. Must apply within 6 months of redemption.',
+    estimatedDelivery: 'Instant (digital code)',
+    status: 'active',
+    tags: ['scholarship', 'education', 'waiver'],
+  },
+  {
+    name: 'Amazon Gift Voucher - Rs. 500',
+    description: 'Rs. 500 Amazon gift voucher delivered to your email. Use it for anything you need!',
+    category: 'Partner Benefits',
+    coinCost: 600,
+    image: '',
+    stock: 40,
+    popularity: 150,
+    isFeatured: true,
+    eligibility: 'All active volunteers',
+    termsAndConditions: 'Valid for 12 months from issuance. Non-transferable and non-refundable.',
+    estimatedDelivery: 'Instant (email)',
+    status: 'active',
+    tags: ['gift', 'voucher', 'amazon'],
+  },
+  {
+    name: 'Limited Edition Disha Hoodie',
+    description: 'Premium fleece hoodie with exclusive Disha for India design. Warm, comfortable, and perfect for volunteer events.',
+    category: 'Limited Time Rewards',
+    coinCost: 1500,
+    image: '',
+    stock: 25,
+    popularity: 110,
+    isFeatured: true,
+    eligibility: 'Volunteers with 200+ hours of service',
+    termsAndConditions: 'Limited edition. One per volunteer while stocks last. Available in sizes M to XXL.',
+    estimatedDelivery: '2-3 weeks',
+    status: 'active',
+    tags: ['limited', 'hoodie', 'merchandise', 'premium'],
+  },
+  {
+    name: 'Professional Resume Review',
+    description: 'Get your resume reviewed by a panel of industry professionals from our partner organizations. Includes a detailed feedback report.',
+    category: 'Partner Benefits',
+    coinCost: 800,
+    image: '',
+    stock: 15,
+    popularity: 70,
+    isFeatured: false,
+    eligibility: 'All volunteers',
+    termsAndConditions: 'Feedback delivered within 5 business days via email.',
+    estimatedDelivery: 'Instant (schedule within 7 days)',
+    status: 'active',
+    tags: ['resume', 'career', 'review'],
+  },
+  {
+    name: 'E-Book: The Art of Volunteering',
+    description: 'A comprehensive e-book on effective volunteering strategies, community engagement, and making lasting social impact.',
+    category: 'Digital Rewards',
+    coinCost: 250,
+    image: '',
+    stock: 999,
+    popularity: 55,
+    isFeatured: false,
+    eligibility: 'All volunteers',
+    termsAndConditions: 'PDF format. Non-transferable.',
+    estimatedDelivery: 'Instant (digital download)',
+    status: 'active',
+    tags: ['ebook', 'digital', 'learning'],
+  },
+];
+
+const seedRewards = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/disha-for-india');
+    console.log('Connected to MongoDB');
+
+    const existingCount = await RewardCatalog.countDocuments();
+    console.log(`Existing rewards in catalog: ${existingCount}`);
+
+    for (const reward of sampleRewards) {
+      const existing = await RewardCatalog.findOne({ name: reward.name });
+      if (!existing) {
+        await RewardCatalog.create(reward);
+        console.log(`Created reward: ${reward.name}`);
+      } else {
+        console.log(`Reward already exists: ${reward.name}`);
+      }
+    }
+
+    const finalCount = await RewardCatalog.countDocuments();
+    console.log(`Total rewards in catalog: ${finalCount}`);
+    console.log('Seeding complete!');
+    process.exit(0);
+  } catch (error) {
+    console.error('Seeding error:', error);
+    process.exit(1);
+  }
+};
+
+seedRewards();

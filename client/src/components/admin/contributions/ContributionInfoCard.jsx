@@ -38,7 +38,7 @@ const ContributionInfoCard = ({ contribution }) => {
               <span key={skill} style={{ padding: '0.35rem 0.75rem', borderRadius: '9999px', background: 'rgba(211, 84, 0, 0.10)', color: 'var(--color-primary)', fontSize: '0.82rem', fontWeight: 600 }}>{skill}</span>
             ))}
             {contribution.tags?.map((tag) => (
-              <span key={tag} style={{ padding: '0.35rem 0.75rem', borderRadius: '9999pill', background: 'rgba(5, 150, 105, 0.10)', color: 'var(--color-secondary)', fontSize: '0.82rem', fontWeight: 600 }}>{tag}</span>
+              <span key={tag} style={{ padding: '0.35rem 0.75rem', borderRadius: '9999px', background: 'rgba(5, 150, 105, 0.10)', color: 'var(--color-secondary)', fontSize: '0.82rem', fontWeight: 600 }}>{tag}</span>
             ))}
           </div>
         )}

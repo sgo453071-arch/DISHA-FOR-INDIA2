@@ -156,6 +156,15 @@ button, input, select, textarea {
   background: none;
 }
 
+button:focus-visible, [role="button"]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+a:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 button {
   cursor: pointer;
 }

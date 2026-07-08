@@ -84,7 +84,7 @@ const ContributionFilesStep = ({ data, onChange, errors = {} }) => {
             border: `2px dashed ${isDragActive ? 'var(--color-primary)' : 'var(--color-border)'}`,
             backgroundColor: isDragActive ? 'rgba(37, 99, 235, 0.05)' : 'var(--color-card)',
             borderRadius: 'var(--radius-md)',
-            padding: '2.5rem 1.5rem',
+            padding: 'clamp(1.5rem, 4vw, 2.5rem) clamp(1rem, 3vw, 1.5rem)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -94,8 +94,19 @@ const ContributionFilesStep = ({ data, onChange, errors = {} }) => {
             textAlign: 'center',
             opacity: files.length >= MAX_FILES ? 0.6 : 1,
           }}
+          role="button"
+          tabIndex={files.length >= MAX_FILES ? -1 : 0}
+          aria-label="Upload files by clicking or dragging"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              if (files.length < MAX_FILES) {
+                document.getElementById('file-upload-input')?.click();
+              }
+            }
+          }}
         >
-          <input {...getInputProps()} />
+          <input {...getInputProps()} id="file-upload-input" />
           <div
             style={{
               width: '64px',

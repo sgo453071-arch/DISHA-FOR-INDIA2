@@ -55,13 +55,16 @@ import AdminAnnouncementDashboard from './pages/admin/AdminAnnouncementDashboard
 import AdminCertificates from './pages/admin/AdminCertificates';
 import AdminAnnouncementCreate from './pages/admin/AdminAnnouncementCreate';
 import AdminReviewDashboard from './pages/admin/AdminReviewDashboard';
+import ContributionAdminConsole from './pages/admin/ContributionAdminConsole';
 
 // Volunteer Pages
 import VolunteerAnalytics from './pages/volunteer/VolunteerAnalytics';
+import VolunteerImpactCenter from './pages/volunteer/VolunteerImpactCenter';
 import Contributions from './pages/contributions/Contributions';
 import ContributionWizard from './components/contributions/ContributionWizard';
 import MyContributions from './pages/contributions/MyContributions';
 import ContributionDetailPage from './pages/contributions/ContributionDetailPage';
+import Marketplace from './pages/marketplace/Marketplace';
 
 // Matching Pages
 import RecommendedPrograms from './pages/matching/RecommendedPrograms';
@@ -198,6 +201,7 @@ function App() {
                 <Route path="admin/messages" element={<Messages />} />
                 <Route path="admin/support" element={<Support />} />
                 <Route path="admin/contributions" element={<AdminReviewDashboard />} />
+                <Route path="admin/contributions/config" element={<ContributionAdminConsole />} />
                 <Route path="matching/volunteers" element={<RecommendedVolunteers />} />
               </Route>
 
@@ -221,10 +225,12 @@ function App() {
                 </ProtectedRoute>
               }>
                  <Route path="volunteer/analytics" element={<VolunteerAnalytics />} />
-                 <Route path="contributions" element={<Contributions />} />
-                 <Route path="contributions/new" element={<ContributionWizard />} />
-                 <Route path="my-contributions" element={<MyContributions />} />
-                 <Route path="contributions/:id" element={<ContributionDetailPage />} />
+                 <Route path="volunteer/impact-center" element={<VolunteerImpactCenter />} />
+                  <Route path="contributions" element={<Contributions />} />
+                  <Route path="contributions/new" element={<ContributionWizard />} />
+                  <Route path="my-contributions" element={<MyContributions />} />
+                  <Route path="contributions/:id" element={<ContributionDetailPage />} />
+                 <Route path="marketplace" element={<Marketplace />} />
               </Route>
 
               {/* Global 404 - placed last so it only matches when nothing else does */}

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationsContext';
 import {
   Shield, Home, Calendar, Award, Trophy, LogOut, Menu, X,
-  LayoutDashboard, Users, ClipboardList, BarChart2, UserCheck, FileText, MessageSquare, HelpCircle, Bell, Megaphone, LineChart
+  LayoutDashboard, Users, ClipboardList, BarChart2, UserCheck, FileText, MessageSquare, HelpCircle, Bell, Megaphone, LineChart, Settings, Store
 } from 'lucide-react';
 import NotificationBell from '../components/notifications/NotificationBell';
 import NotificationDrawer from '../components/notifications/NotificationDrawer';
@@ -39,6 +39,7 @@ const DashboardLayout = () => {
 
   const volunteerNavItems = [
     { name: 'Dashboard',     path: '/dashboard',    icon: <Home size={18} /> },
+    { name: 'Marketplace',   path: '/marketplace',   icon: <Store size={18} /> },
     { name: 'Notifications', path: '/notifications', icon: <Bell size={18} /> },
     { name: 'Announcements', path: '/announcements',  icon: <Megaphone size={18} /> },
     { name: 'Opportunities', path: '/opportunities', icon: <Calendar size={18} /> },
@@ -62,6 +63,7 @@ const DashboardLayout = () => {
     { name: 'Forecast',      path: '/admin/forecast',     icon: <LineChart size={18} /> },
     { name: 'Reports',       path: '/admin/reports',      icon: <FileText size={18} /> },
     { name: 'Volunteers',    path: '/admin/users',        icon: <Users size={18} /> },
+    { name: 'Contributions', path: '/admin/contributions', icon: <Settings size={18} /> },
   ];
 
   const navItems = isAdmin ? adminNavItems : volunteerNavItems;

@@ -30,8 +30,11 @@ const AdminContributionDetail = ({ contributionId, onBack, hideReviewPanel = fal
 
   if (error || !data?.contribution) {
     return (
-      <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--color-error)' }}>
-        <p>Failed to load contribution details.</p>
+      <div style={{ textAlign: 'center', padding: 'clamp(2rem, 5vw, 4rem)', color: 'var(--color-error)' }}>
+        <p style={{ fontSize: '1rem', marginBottom: '1rem' }}>Failed to load contribution details.</p>
+        <button onClick={() => window.location.reload()} className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          Retry
+        </button>
       </div>
     );
   }
@@ -54,7 +57,7 @@ const AdminContributionDetail = ({ contributionId, onBack, hideReviewPanel = fal
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.5rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <VolunteerInfoCard volunteer={contribution.submittedBy} />
           <ContributionInfoCard contribution={contribution} />

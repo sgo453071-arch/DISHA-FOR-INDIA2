@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, FileText, Clock, Award, TrendingUp, Target } from 'lucide-react';
+import { Plus, FileText, Clock, Award, TrendingUp, Target, AlertCircle } from 'lucide-react';
 import { useMyContributions, useDeleteDraft, MOCK_CONTRIBUTIONS } from '../../services/contributionMyService';
 import ContributionStatCard from '../../components/contributions/ContributionStatCard';
 import ContributionTabs from '../../components/contributions/ContributionTabs';
@@ -92,7 +92,7 @@ const MyContributions = () => {
         </button>
       </div>
 
-      <div className="grid grid-cols-4" style={{ marginBottom: '2rem', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', marginBottom: '2rem', gap: '1.5rem' }}>
         <ContributionStatCard label="Total" value={stats.total} icon={FileText} color="primary" />
         <ContributionStatCard label="Drafts" value={stats.drafts} icon={Clock} color="slate" />
         <ContributionStatCard label="Pending" value={stats.pending} icon={TrendingUp} color="accent" />
@@ -111,8 +111,12 @@ const MyContributions = () => {
       </div>
 
       {error && (
-        <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-error)', borderRadius: 'var(--radius-md)', marginBottom: '2rem' }}>
-          {error.message || 'Failed to load contributions'}
+        <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-error)', borderRadius: 'var(--radius-md)', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <AlertCircle size={18} />
+          <span style={{ flex: 1 }}>{error.message || 'Failed to load contributions'}</span>
+          <button onClick={() => window.location.reload()} className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+            Retry
+          </button>
         </div>
       )}
 

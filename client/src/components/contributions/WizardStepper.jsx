@@ -9,7 +9,7 @@ const steps = [
 
 const WizardStepper = ({ currentStep, completedSteps }) => {
   return (
-    <div style={{ width: '100%', marginBottom: '2rem' }}>
+    <div style={{ width: '100%', marginBottom: '2rem' }} role="navigation" aria-label="Contribution wizard steps">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
         <div
           aria-hidden="true"
@@ -53,6 +53,7 @@ const WizardStepper = ({ currentStep, completedSteps }) => {
                 zIndex: 1,
                 flex: 1,
               }}
+              aria-current={isCurrent ? 'step' : undefined}
             >
               <div
                 style={{

@@ -174,6 +174,7 @@ const ContributionInfoStep = ({ data, onChange, errors = {} }) => {
           onChange={(e) => { if (e.target.value) toggleSkill(e.target.value); }}
           className="form-control"
           style={{ fontSize: '0.85rem' }}
+          aria-label="Add a skill"
         >
           <option value="">Add a skill...</option>
           {SKILLS_OPTIONS.filter((s) => !selectedSkills.includes(s)).map((skill) => (
@@ -219,6 +220,7 @@ const ContributionInfoStep = ({ data, onChange, errors = {} }) => {
           onChange={(e) => { if (e.target.value) toggleTag(e.target.value); }}
           className="form-control"
           style={{ fontSize: '0.85rem' }}
+          aria-label="Add a tag"
         >
           <option value="">Add a tag...</option>
           {TAGS_OPTIONS.filter((t) => !selectedTags.includes(t)).map((tag) => (

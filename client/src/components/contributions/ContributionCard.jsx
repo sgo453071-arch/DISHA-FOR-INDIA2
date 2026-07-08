@@ -28,6 +28,10 @@ const ContributionCard = ({ contribution, onViewDetails, onContinueEdit, onDelet
         cursor: 'pointer',
       }}
       onClick={() => onViewDetails?.(contribution)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewDetails?.(contribution); } }}
+      tabIndex={0}
+      role="button"
+      aria-label={`View details for ${contribution.title}`}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
         <div style={{ flex: 1, minWidth: 0 }}>

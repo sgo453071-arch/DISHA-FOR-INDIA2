@@ -4,7 +4,7 @@ import ContributionCard from './ContributionCard';
 import ContributionEmptyState from './ContributionEmptyState';
 import ContributionSkeleton from './ContributionSkeleton';
 
-const ContributionList = ({ contributions, loading, emptyTitle, emptyDescription, onStartContributing }) => {
+const ContributionList = ({ contributions, loading, emptyTitle, emptyDescription, action }) => {
   if (loading) {
     return <ContributionSkeleton type="card" count={6} />;
   }
@@ -14,13 +14,13 @@ const ContributionList = ({ contributions, loading, emptyTitle, emptyDescription
       <ContributionEmptyState
         title={emptyTitle}
         description={emptyDescription}
-        onStartContributing={onStartContributing}
+        action={action}
       />
     );
   }
 
   return (
-    <div className="grid grid-cols-3" style={{ gap: '1.5rem' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.5rem' }}>
       {contributions.map((contrib, index) => (
         <motion.div
           key={contrib._id || contrib.id || index}

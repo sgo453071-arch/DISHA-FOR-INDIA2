@@ -28,6 +28,12 @@ const ContributionStatsCard = ({ icon, value, label, color = 'primary', suffix =
     return map[color] || map.primary;
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+    }
+  };
+
   return (
     <motion.div
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
@@ -41,6 +47,7 @@ const ContributionStatsCard = ({ icon, value, label, color = 'primary', suffix =
       tabIndex={0}
       role="group"
       aria-label={`${label}: ${value}${suffix}`}
+      onKeyDown={handleKeyDown}
     >
       <div style={{
         padding: '0.75rem',
