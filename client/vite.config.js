@@ -15,19 +15,5 @@ export default defineConfig({
         secure: false,
       },
     },
-    configureServer(server) {
-      // SPA fallback: any non-API, non-static GET should return index.html.
-      // Without this, refreshing a client-side route like /dashboard or
-      // /admin/dashboard returns Vite's 404 page ("Cannot GET /dashboard").
-      server.middlewares.use((req, res, next) => {
-        if (req.method !== 'GET') return next();
-        if (req.url.includes('.')) return next(); // static assets
-
-        const indexPath = path.resolve(process.cwd(), 'dist/index.html')
-        if (!fs.existsSync(indexPath)) return next()
-
-        res.sendFile(indexPath)
-      })
-    },
   },
 });
