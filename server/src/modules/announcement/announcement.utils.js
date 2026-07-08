@@ -24,6 +24,9 @@ function announcementFormatter(announcement) {
     createdBy: formatted.createdBy,
     updatedBy: formatted.updatedBy,
     attachments: formatted.attachments,
+    isPinned: formatted.isPinned || false,
+    readBy: formatted.readBy || [],
+    actionButton: formatted.actionButton || null,
     status: formatted.status,
     isDeleted: formatted.isDeleted,
     deletedAt: formatted.deletedAt,
@@ -36,7 +39,22 @@ function announcementFormatter(announcement) {
   return result;
 }
 
+/**
+ * announcementFormatterForUser
+ * Same as announcementFormatter but adds a per-user `isRead` boolean.
+ * The raw `readBy` array is omitted from the response (no need to expose all user IDs).
+ */
+function announcementFormatterForUser(announcement, userId) {
+  const base = announcementFormatter(announcement);
+  if (!base) return null;
+  const readByIds = (base.readBy || []).map((id) => id.toString());
+  base.isRead = userId ? readByIds.includes(userId.toString()) : false;
+  delete base.readBy; // don't expose the full ID list to the client
+  return base;
+}
+
 module.exports = {
   generateAnnouncementId,
   announcementFormatter,
+  announcementFormatterForUser,
 };

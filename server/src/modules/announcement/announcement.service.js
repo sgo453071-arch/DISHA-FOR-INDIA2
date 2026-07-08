@@ -3,6 +3,7 @@ const User = require('../user/user.model');
 const {
   generateAnnouncementId,
   announcementFormatter,
+  announcementFormatterForUser,
 } = require('./announcement.utils');
 const { TARGET_AUDIENCE, STATUS, MESSAGES, DEFAULTS } = require('./announcement.constants');
 const NotFoundError = require('../../utils/errors/NotFoundError');
@@ -63,16 +64,19 @@ class AnnouncementService {
       search,
     } = query;
 
-    let effectiveTargetAudience = targetAudience;
-
     const user = await User.findById(currentUserId).select('role');
+    const isAdmin = user && ['admin', 'super_admin', 'coordinator'].includes(user.role?.toLowerCase());
 
+    let effectiveTargetAudience = targetAudience;
     if (!targetAudience) {
-      if (user && user.role === 'admin') {
-        effectiveTargetAudience = undefined;
-      } else {
-        effectiveTargetAudience = TARGET_AUDIENCE.ALL_USERS;
-      }
+      effectiveTargetAudience = isAdmin ? undefined : TARGET_AUDIENCE.ALL_USERS;
+    }
+
+    // Volunteers only see published, non-expired announcements
+    // Admins can filter by status explicitly; if not specified see everything
+    let effectiveStatus = status;
+    if (!isAdmin && !status) {
+      effectiveStatus = STATUS.PUBLISHED;
     }
 
     const result = await announcementRepository.findActiveAnnouncements({
@@ -83,7 +87,7 @@ class AnnouncementService {
       type,
       priority,
       targetAudience: effectiveTargetAudience,
-      status,
+      status: effectiveStatus,
       search,
     });
 
@@ -91,20 +95,26 @@ class AnnouncementService {
     const pageNum = Number(page) || 1;
     const limitNum = Number(limit) || 10;
 
+    // For volunteers, filter out expired items in-process (belt-and-suspenders)
+    const now = new Date();
+    const filtered = isAdmin
+      ? announcements
+      : announcements.filter((a) => !a.expiresAt || a.expiresAt > now);
+
     return {
-      announcements: announcements.map(announcementFormatter),
-      total,
+      announcements: filtered.map((a) => announcementFormatterForUser(a, currentUserId)),
+      total: isAdmin ? total : filtered.length,
       message: MESSAGES.ANNOUNCEMENTS_FETCHED,
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total,
-        totalPages: Math.ceil(total / limitNum),
+        total: isAdmin ? total : filtered.length,
+        totalPages: Math.ceil((isAdmin ? total : filtered.length) / limitNum),
       },
     };
   }
 
-  async getAnnouncement(announcementId) {
+  async getAnnouncement(announcementId, currentUserId) {
     const announcement = await announcementRepository.findByIdentifier(announcementId);
 
     if (!announcement) {
@@ -112,7 +122,7 @@ class AnnouncementService {
     }
 
     return {
-      announcement: announcementFormatter(announcement),
+      announcement: announcementFormatterForUser(announcement, currentUserId),
       message: MESSAGES.ANNOUNCEMENT_FETCHED,
     };
   }
@@ -238,6 +248,36 @@ class AnnouncementService {
       ...options,
       search: searchQuery.trim(),
     });
+  }
+
+  async markRead(announcementId, userId) {
+    const announcement = await announcementRepository.findByIdentifier(announcementId);
+    if (!announcement) throw new NotFoundError(MESSAGES.ANNOUNCEMENT_NOT_FOUND);
+    const updated = await announcementRepository.markReadByUser(announcement._id, userId);
+    return {
+      announcement: announcementFormatterForUser(updated, userId),
+      message: 'Announcement marked as read',
+    };
+  }
+
+  async pinAnnouncement(announcementId) {
+    const announcement = await announcementRepository.findByIdentifier(announcementId);
+    if (!announcement) throw new NotFoundError(MESSAGES.ANNOUNCEMENT_NOT_FOUND);
+    const updated = await announcementRepository.pinAnnouncement(announcement._id);
+    return {
+      announcement: announcementFormatter(updated),
+      message: 'Announcement pinned',
+    };
+  }
+
+  async unpinAnnouncement(announcementId) {
+    const announcement = await announcementRepository.findByIdentifier(announcementId);
+    if (!announcement) throw new NotFoundError(MESSAGES.ANNOUNCEMENT_NOT_FOUND);
+    const updated = await announcementRepository.unpinAnnouncement(announcement._id);
+    return {
+      announcement: announcementFormatter(updated),
+      message: 'Announcement unpinned',
+    };
   }
 }
 

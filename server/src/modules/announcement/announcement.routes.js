@@ -28,4 +28,11 @@ router.patch('/:id/publish', isAdmin, validateStatusTransition, announcementCont
 
 router.patch('/:id/archive', isAdmin, validateStatusTransition, announcementController.archiveAnnouncement);
 
+// Mark an announcement as read by the authenticated volunteer
+router.patch('/:id/read', validateGetAnnouncement, announcementController.markRead);
+
+// Pin / unpin (admin only — only one announcement can be pinned at a time)
+router.patch('/:id/pin', isAdmin, validateGetAnnouncement, announcementController.pinAnnouncement);
+router.patch('/:id/unpin', isAdmin, validateGetAnnouncement, announcementController.unpinAnnouncement);
+
 module.exports = router;

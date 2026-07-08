@@ -87,6 +87,26 @@ const announcementSchema = new mongoose.Schema(
       ],
       default: [],
     },
+    // ── New fields ──────────────────────────────────────────────────
+    isPinned: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    // Tracks which users have read this announcement (per-volunteer read state)
+    readBy: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: 'User',
+      default: [],
+    },
+    // Optional call-to-action button displayed on the announcement card / detail
+    actionButton: {
+      type: {
+        label: { type: String, trim: true },
+        url: { type: String, trim: true },
+      },
+      default: null,
+    },
     status: {
       type: String,
       enum: Object.values(STATUS),
@@ -122,6 +142,7 @@ announcementSchema.index({ targetAudience: 1, status: 1 });
 announcementSchema.index({ createdBy: 1, createdAt: -1 });
 announcementSchema.index({ scheduledAt: 1 }, { sparse: true });
 announcementSchema.index({ expiresAt: 1 }, { sparse: true });
+announcementSchema.index({ isPinned: 1, status: 1 });
 
 announcementSchema.set('toJSON', {
   transform: function (doc, ret) {

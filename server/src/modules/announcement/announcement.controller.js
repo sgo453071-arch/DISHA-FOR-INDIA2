@@ -42,7 +42,7 @@ class AnnouncementController {
 
   getAnnouncement = async (req, res, next) => {
     try {
-      const result = await announcementService.getAnnouncement(req.params.id);
+      const result = await announcementService.getAnnouncement(req.params.id, req.user.id);
       return successResponse(res, 200, result.message, result);
     } catch (error) {
       return next(error);
@@ -83,6 +83,39 @@ class AnnouncementController {
   archiveAnnouncement = async (req, res, next) => {
     try {
       const result = await announcementService.archiveAnnouncement(req.params.id);
+      return successResponse(res, 200, result.message, {
+        announcement: result.announcement,
+      });
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  markRead = async (req, res, next) => {
+    try {
+      const result = await announcementService.markRead(req.params.id, req.user.id);
+      return successResponse(res, 200, result.message, {
+        announcement: result.announcement,
+      });
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  pinAnnouncement = async (req, res, next) => {
+    try {
+      const result = await announcementService.pinAnnouncement(req.params.id);
+      return successResponse(res, 200, result.message, {
+        announcement: result.announcement,
+      });
+    } catch (error) {
+      return next(error);
+    }
+  };
+
+  unpinAnnouncement = async (req, res, next) => {
+    try {
+      const result = await announcementService.unpinAnnouncement(req.params.id);
       return successResponse(res, 200, result.message, {
         announcement: result.announcement,
       });
