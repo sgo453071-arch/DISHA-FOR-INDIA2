@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Eye, Download, Share2, Trash2, ShieldCheck, ShieldX, RefreshCw, FileText, Award, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
+import { Search, Plus, Eye, Share2, Trash2, ShieldCheck, ShieldX, RefreshCw, FileText, Award, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   searchCertificates,

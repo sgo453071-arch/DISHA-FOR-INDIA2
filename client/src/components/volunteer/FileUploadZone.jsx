@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { safeSlice } from '../../utils/safeSlice';
-import { UploadCloud, File, X, CheckCircle, Image as ImageIcon } from 'lucide-react';
+import { UploadCloud, File, X, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FileUploadZone = ({ onFilesSelected, maxFiles = 5, acceptedTypes = '.pdf,.doc,.docx,.jpg,.png', label = 'Upload Documents' }) => {
@@ -22,7 +22,7 @@ const FileUploadZone = ({ onFilesSelected, maxFiles = 5, acceptedTypes = '.pdf,.
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFiles(Array.from(e.dataTransfer.files));
     }
@@ -63,7 +63,7 @@ const FileUploadZone = ({ onFilesSelected, maxFiles = 5, acceptedTypes = '.pdf,.
   return (
     <div style={{ width: '100%', marginBottom: '1.25rem' }}>
       <label className="form-label">{label}</label>
-      
+
       {/* Drop Zone */}
       <div 
         onDragEnter={handleDrag} 

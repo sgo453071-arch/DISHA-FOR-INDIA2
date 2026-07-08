@@ -1,10 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import {
-  Heart, Trophy, GraduationCap, Users,
-  Briefcase, BookOpen, Rocket, Leaf,
-  Quote, ArrowRight, Mail
-} from 'lucide-react';
+import { Heart, GraduationCap, Users, Briefcase, BookOpen, Rocket, Leaf, Quote, ArrowRight, Mail } from 'lucide-react';
 import './FounderSpotlight.css';
 
 /* ---------- DATA (easy to swap with real content) ---------- */

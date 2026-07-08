@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { X, Star, Flame, Clock, ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
+import { X, Star, Flame, ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import marketplaceService from '../../services/marketplaceService';

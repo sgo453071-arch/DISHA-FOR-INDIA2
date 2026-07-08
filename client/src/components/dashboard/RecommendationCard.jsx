@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, X, MessageSquare, ThumbsUp } from 'lucide-react';
+import { Check, X, ThumbsUp } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import {
   saveRecommendation,

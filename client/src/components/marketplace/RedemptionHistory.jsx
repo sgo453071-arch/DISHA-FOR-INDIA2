@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { History, Package, Calendar, Coins, BadgeCheck, Clock, X } from 'lucide-react';
+import { History, Package, Calendar, Coins, BadgeCheck } from 'lucide-react';
 import marketplaceService from '../../services/marketplaceService';
 import EmptyState from '../marketplace/EmptyState';
 

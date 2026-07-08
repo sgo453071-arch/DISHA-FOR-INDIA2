@@ -1,20 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  FileText,
-  Download,
-  Calendar,
-  Users,
-  Award,
-  Target,
-  Clock,
-  Gift,
-  Building2,
-  TrendingUp,
-  History,
-  Eye,
-  Loader2,
-} from 'lucide-react';
+import { FileText, Download, Calendar, Users, Award, Target, Clock, Gift, Building2, TrendingUp, History, Eye, Loader2 } from 'lucide-react';
 import {
   generateReport,
   getReportHistory,

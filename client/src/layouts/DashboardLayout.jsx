@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationsContext';
-import {
-  Shield, Home, Calendar, Award, Trophy, LogOut, Menu, X,
-  LayoutDashboard, Users, ClipboardList, BarChart2, UserCheck, FileText, MessageSquare, HelpCircle, Bell, Megaphone, LineChart, Settings, Store
-} from 'lucide-react';
+import { Shield, Home, Calendar, Award, LogOut, Menu, X, LayoutDashboard, Users, ClipboardList, BarChart2, UserCheck, FileText, MessageSquare, HelpCircle, Bell, Megaphone, LineChart, Settings, Store } from 'lucide-react';
 import NotificationBell from '../components/notifications/NotificationBell';
 import NotificationDrawer from '../components/notifications/NotificationDrawer';
 
@@ -216,6 +213,10 @@ const DashboardLayout = () => {
         bottom: 0,
         left: 0,
         zIndex: 90,
+        height: '100vh',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        scrollBehavior: 'smooth',
       }} className="desktop-sidebar">
         <SidebarContent />
       </aside>
@@ -286,6 +287,9 @@ const DashboardLayout = () => {
             display: 'flex',
             flexDirection: 'column',
             boxShadow: 'var(--shadow-xl)',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            scrollBehavior: 'smooth',
           }} className="animate-slide-up">
             <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '1rem 1.5rem' }}>
               <button onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--color-heading)' }}>

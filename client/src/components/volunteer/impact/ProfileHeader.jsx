@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Flame, MapPin, Calendar, Award, TrendingUp, ChevronRight } from 'lucide-react';
+import { Trophy, MapPin, Calendar, Award, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const ProfileHeader = ({ user, level, rank, stats }) => {

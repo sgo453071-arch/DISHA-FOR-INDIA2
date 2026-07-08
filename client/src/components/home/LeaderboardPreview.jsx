@@ -90,11 +90,11 @@ const LeaderboardPreview = () => {
                   className="flex flex-col items-center group cursor-pointer"
                 >
                   <div className="relative mb-4 z-10 group-hover:-translate-y-2 transition-transform">
-                    {user.avatar ? (
-                      <img src={user.avatar} alt={user.name} className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white shadow-lg object-cover" />
+                    {user?.avatar ? (
+                      <img src={user?.avatar} alt={user?.name || 'User'} className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white shadow-lg object-cover" />
                     ) : (
                       <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white shadow-lg bg-gray-100 flex items-center justify-center text-heading font-bold text-xl">
-                        {user.name ? user.name.charAt(0) : '?'}
+                        {user?.name ? user.name.charAt(0) : '?'}
                       </div>
                     )}
                     <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center">
@@ -110,7 +110,7 @@ const LeaderboardPreview = () => {
                   </div>
                   
                   <div className="text-center mt-4 w-24 md:w-32">
-                    <p className="font-bold text-heading text-sm line-clamp-1">{user.name || 'Anonymous'}</p>
+                    <p className="font-bold text-heading text-sm line-clamp-1">{user?.name || 'Anonymous'}</p>
                     <p className="text-xs text-primary font-bold">{(user.points ?? 0)} pts</p>
                   </div>
                 </motion.div>
@@ -134,7 +134,7 @@ const LeaderboardPreview = () => {
                       {idx + 4}
                     </div>
                     <div className="flex-1">
-                      <p className="font-bold text-heading text-sm line-clamp-1">{user.name || 'Anonymous'}</p>
+                      <p className="font-bold text-heading text-sm line-clamp-1">{user?.name || 'Anonymous'}</p>
                       <p className="text-xs text-body flex items-center gap-1">
                         <Star size={10} className="text-accent fill-accent" /> {(user.points ?? 0)} pts
                       </p>
