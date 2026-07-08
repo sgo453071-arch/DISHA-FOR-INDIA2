@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useMemo, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Users, Calendar, Clock, Activity, TrendingUp, Target } from 'lucide-react';
 import { getAdminDashboard, getLeaderboard } from '../../services/analyticsService';
 import { getNotifications } from '../../services/notificationsService';
@@ -10,9 +10,38 @@ import NotificationWidget from '../../components/NotificationWidget';
 import RecentAnnouncementsWidget from '../../components/announcements/RecentAnnouncementsWidget';
 import RecommendationsWidget from '../../components/dashboard/RecommendationsWidget';
 import { useAuth } from '../../context/AuthContext';
+import useSocket from '../../hooks/useSocket';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { on } = useSocket();
+
+  // ── Socket subscriptions ─────────────────────────────────────────────────
+  // Any program lifecycle event triggers an immediate refetch of all dashboard
+  // queries so stat cards never show stale counts.
+  useEffect(() => {
+    const invalidateDashboard = () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-programs-summary'] });
+    };
+
+    const unsubCreated   = on('program-created',        invalidateDashboard);
+    const unsubPublished = on('program-published',       invalidateDashboard);
+    const unsubUpdated   = on('program-updated',         invalidateDashboard);
+    const unsubDeleted   = on('program-deleted',         invalidateDashboard);
+    const unsubArchived  = on('program-archived',        invalidateDashboard);
+    const unsubStatus    = on('program-status-updated',  invalidateDashboard);
+
+    return () => {
+      unsubCreated();
+      unsubPublished();
+      unsubUpdated();
+      unsubDeleted();
+      unsubArchived();
+      unsubStatus();
+    };
+  }, [on, queryClient]);
 
   const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useQuery({
     queryKey: ['admin-dashboard'],
@@ -21,21 +50,20 @@ const AdminDashboard = () => {
       if (res?.success) return res.data?.admin;
       throw new Error(res?.message || 'Failed to load dashboard');
     },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 60 * 1000,        // 1 min — was 5 min
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,  // refetch when admin returns to tab
     enabled: !!user,
   });
 
   const { data: programsData } = useQuery({
     queryKey: ['admin-programs-summary'],
     queryFn: async () => {
-      const res = await getAllPrograms();
-      if (res?.success) return res.data?.programs || [];
-      return [];
+      const res = await getAllPrograms({ limit: 100 });
+      return res?.programs || [];
     },
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: true,
     enabled: !!user,
   });
 
@@ -58,24 +86,33 @@ const AdminDashboard = () => {
       if (res?.success) return res.data?.notifications || [];
       return [];
     },
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,        // 30 s — was 2 min
+    refetchInterval: 60 * 1000,  // poll every 60 s for new admin notifications
+    refetchOnWindowFocus: true,
     enabled: !!user,
   });
 
   const stats = useMemo(() => {
     if (!dashboardData) return null;
-    const activePrograms = (programsData || []).filter(p => ['published', 'ongoing', 'registration_closed'].includes(p.status));
+    // Use backend-aggregated counts as primary source of truth; fall back to
+    // client-side list counts only when the analytics endpoint hasn't loaded yet.
+    const clientActive = (programsData || []).filter(
+      (p) => ['published', 'ongoing', 'registration_closed'].includes(p.status)
+    ).length;
     return {
-      totalVolunteers: dashboardData?.users?.totalVolunteers || 0,
-      activeVolunteers: dashboardData?.users?.activeVolunteers || 0,
-      activePrograms: activePrograms.length,
-      totalHours: dashboardData?.attendance?.totalAttendance || 0,
-      newThisMonth: dashboardData?.users?.newVolunteersThisMonth || 0,
-      pendingApps: dashboardData?.applications?.pending || 0,
-      certificates: dashboardData?.certificates?.generated || 0,
-      coinsDistributed: dashboardData?.rewards?.coinsDistributed || 0,
-      organizations: dashboardData?.organizations?.totalOrganizations || 0,
+      totalVolunteers:   dashboardData?.users?.totalVolunteers        || 0,
+      activeVolunteers:  dashboardData?.users?.activeVolunteers       || 0,
+      // Prefer backend program stats; fall back to client list
+      totalPrograms:     dashboardData?.programs?.totalPrograms       || (programsData || []).length,
+      activePrograms:    dashboardData?.programs?.activePrograms      ?? clientActive,
+      draftPrograms:     dashboardData?.programs?.draftPrograms       || 0,
+      completedPrograms: dashboardData?.programs?.completedPrograms   || 0,
+      totalHours:        dashboardData?.attendance?.totalAttendance   || 0,
+      newThisMonth:      dashboardData?.users?.newVolunteersThisMonth || 0,
+      pendingApps:       dashboardData?.applications?.pending         || 0,
+      certificates:      dashboardData?.certificates?.generated       || 0,
+      coinsDistributed:  dashboardData?.rewards?.coinsDistributed     || 0,
+      organizations:     dashboardData?.organizations?.totalOrganizations || 0,
     };
   }, [dashboardData, programsData]);
 
@@ -107,10 +144,18 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-4" style={{ marginBottom: '2rem', gap: '1.5rem' }}>
-        <StatCard Icon={Users} value={stats?.totalVolunteers || 0} label="Total Volunteers" color="#2563eb" />
-        <StatCard Icon={Calendar} value={stats?.activePrograms || 0} label="Active Programs" color="#059669" />
-        <StatCard Icon={Clock} value={stats?.totalHours || 0} label="Hours Volunteered" color="#d97706" />
-        <StatCard Icon={TrendingUp} value={stats?.newThisMonth || 0} label="Signups This Month" color="#8B5CF6" />
+        <StatCard Icon={Users}       value={stats?.totalVolunteers  || 0} label="Total Volunteers"    color="#2563eb" />
+        <StatCard Icon={Calendar}    value={stats?.activePrograms   || 0} label="Active Programs"     color="#059669" />
+        <StatCard Icon={Clock}       value={stats?.totalHours       || 0} label="Hours Volunteered"   color="#d97706" />
+        <StatCard Icon={TrendingUp}  value={stats?.newThisMonth     || 0} label="Signups This Month"  color="#8B5CF6" />
+      </div>
+
+      {/* Secondary stats row */}
+      <div className="grid grid-cols-4" style={{ marginBottom: '2rem', gap: '1.5rem' }}>
+        <StatCard Icon={Calendar}    value={stats?.totalPrograms    || 0} label="Total Programs"      color="#0284c7" />
+        <StatCard Icon={Calendar}    value={stats?.draftPrograms    || 0} label="Draft Programs"      color="#d97706" />
+        <StatCard Icon={Calendar}    value={stats?.completedPrograms|| 0} label="Completed Programs"  color="#7c3aed" />
+        <StatCard Icon={TrendingUp}  value={stats?.pendingApps      || 0} label="Pending Applications"color="#dc2626" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem' }}>

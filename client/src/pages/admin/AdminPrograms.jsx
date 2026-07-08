@@ -231,7 +231,10 @@ const AdminPrograms = () => {
 
   const handleModalSuccess = useCallback(() => {
     setIsModalOpen(false);
+    // Invalidate both the programs list AND the dashboard summary so stat cards update
     queryClient.invalidateQueries({ queryKey: ['admin-programs'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-programs-summary'] });
   }, [queryClient]);
 
   const handleDelete = useCallback(async (prog) => {
@@ -242,6 +245,8 @@ const AdminPrograms = () => {
       await deleteProgram(id);
       toast.success('Program deleted.');
       queryClient.invalidateQueries({ queryKey: ['admin-programs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-programs-summary'] });
     } catch (err) {
       toast.error(err?.message || 'Failed to delete program.');
     } finally {
@@ -256,6 +261,8 @@ const AdminPrograms = () => {
       await publishProgram(id);
       toast.success(`"${prog.title}" published!`);
       queryClient.invalidateQueries({ queryKey: ['admin-programs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-programs-summary'] });
     } catch (err) {
       toast.error(err?.message || 'Failed to publish program.');
     } finally {

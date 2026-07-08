@@ -1,30 +1,60 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Search, MapPin, Calendar, Users, Filter, BookOpen, Leaf, Heart, Globe, Shield, Zap, Grid3X3 } from 'lucide-react';
+/**
+ * Programs.jsx  —  Volunteer Opportunities Page
+ *
+ * Data flow:
+ *  • React Query fetches `GET /programs` (backend auto-filters to status=published
+ *    for non-admin roles, so volunteers only ever see published programs).
+ *  • staleTime: 60 s — fresh data on every visit without hammering the API.
+ *  • refetchOnWindowFocus: true — snaps back to current data when volunteer
+ *    switches tabs and returns.
+ *  • Socket events keep the cache in sync without a full re-fetch:
+ *      program-published  → insert into cache (if not already there)
+ *      program-updated    → patch the matching entry in cache
+ *      program-deleted    → remove from cache
+ *      program-archived   → remove from cache (no longer visible to volunteers)
+ *      program-status-updated → patch or remove depending on new status
+ *      reconnect          → invalidate query (refetch from server)
+ *
+ * Filtering is 100 % client-side so it's instant with no extra round trips.
+ */
+
+import React, { useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Search, MapPin, Calendar, Users, Filter,
+  BookOpen, Leaf, Heart, Globe, Shield, Zap, Grid3X3,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { getPrograms } from '../services/programsService';
 import useSocket from '../hooks/useSocket';
 
+/* ─── config ──────────────────────────────────────────────────────────────── */
+
 const CATEGORY_META = {
-  Education:       { icon: BookOpen,   color: '#3b82f6' },
-  Environment:     { icon: Leaf,       color: '#22c55e' },
-  Health:          { icon: Heart,      color: '#ef4444' },
-  Community:       { icon: Users,      color: '#a855f7' },
-  'Animal Welfare':{ icon: Shield,     color: '#f59e0b' },
-  'Disaster Relief':{ icon: Zap,       color: '#f97316' },
-  Other:           { icon: Globe,      color: '#6b7280' },
+  Education:        { icon: BookOpen, color: '#3b82f6' },
+  Environment:      { icon: Leaf,     color: '#22c55e' },
+  Health:           { icon: Heart,    color: '#ef4444' },
+  Community:        { icon: Users,    color: '#a855f7' },
+  'Animal Welfare': { icon: Shield,   color: '#f59e0b' },
+  'Disaster Relief':{ icon: Zap,      color: '#f97316' },
+  Other:            { icon: Globe,    color: '#6b7280' },
 };
 
 const STATUS_LABEL = {
-  published:           { label: 'Open',      color: '#22c55e' },
+  published:           { label: 'Open',        color: '#22c55e' },
   registration_closed: { label: 'Reg. Closed', color: '#f97316' },
-  ongoing:             { label: 'Ongoing',   color: '#3b82f6' },
+  ongoing:             { label: 'Ongoing',     color: '#3b82f6' },
 };
 
+// Statuses that should be visible to volunteers
+const VOLUNTEER_VISIBLE = new Set(['published', 'registration_closed', 'ongoing']);
+
+/* ─── program card ────────────────────────────────────────────────────────── */
+
 const ProgramCard = ({ program }) => {
-  const {
-    title, shortDescription, description, category, city, state,
-    mode, startDate, endDate, maxVolunteers, status, _id
-  } = program;
+  const { title, shortDescription, description, category, city, state,
+    mode, startDate, endDate, maxVolunteers, status, _id } = program;
 
   const location = [city, state].filter(Boolean).join(', ');
   const meta = CATEGORY_META[category] || CATEGORY_META.Other;
@@ -33,13 +63,21 @@ const ProgramCard = ({ program }) => {
   const displayDesc = shortDescription || description || 'No description available.';
 
   return (
-    <div className="card" style={{
-      display: 'flex', flexDirection: 'column', gap: 0,
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      overflow: 'hidden', padding: 0,
-    }}
-    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = 'var(--shadow-xl)'; }}
-    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = ''; }}
+    <div
+      className="card"
+      style={{
+        display: 'flex', flexDirection: 'column', gap: 0,
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        overflow: 'hidden', padding: 0,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = 'var(--shadow-xl)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '';
+      }}
     >
       <div style={{ height: '4px', backgroundColor: meta.color, width: '100%' }} />
 
@@ -71,16 +109,17 @@ const ProgramCard = ({ program }) => {
           {title || 'Untitled Program'}
         </h4>
 
-        <p style={{ fontSize: '0.875rem', color: 'var(--color-body)', margin: 0, lineHeight: 1.6, flex: 1,
-          display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <p style={{
+          fontSize: '0.875rem', color: 'var(--color-body)', margin: 0, lineHeight: 1.6, flex: 1,
+          display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        }}>
           {displayDesc}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.5rem' }}>
           {location && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--color-body)' }}>
-              <MapPin size={13} />
-              {location}
+              <MapPin size={13} /> {location}
             </span>
           )}
           {startDate && (
@@ -92,8 +131,7 @@ const ProgramCard = ({ program }) => {
           )}
           {maxVolunteers && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--color-body)' }}>
-              <Users size={13} />
-              Up to {maxVolunteers.toLocaleString()} volunteers
+              <Users size={13} /> Up to {maxVolunteers.toLocaleString()} volunteers
             </span>
           )}
         </div>
@@ -112,92 +150,145 @@ const ProgramCard = ({ program }) => {
   );
 };
 
+/* ─── skeleton cards ──────────────────────────────────────────────────────── */
+
+const SkeletonCard = () => (
+  <div className="card" style={{ height: '320px', overflow: 'hidden', padding: 0 }}>
+    <div className="skeleton" style={{ height: '4px', width: '100%' }} />
+    <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+      <div className="skeleton" style={{ height: 28, width: '40%', borderRadius: 999 }} />
+      <div className="skeleton" style={{ height: 20, width: '25%', borderRadius: 4 }} />
+      <div className="skeleton" style={{ height: 24, width: '80%', borderRadius: 4 }} />
+      <div className="skeleton" style={{ height: 14, width: '100%', borderRadius: 4 }} />
+      <div className="skeleton" style={{ height: 14, width: '100%', borderRadius: 4 }} />
+      <div className="skeleton" style={{ height: 14, width: '60%', borderRadius: 4 }} />
+    </div>
+  </div>
+);
+
+/* ─── main component ──────────────────────────────────────────────────────── */
+
 const Programs = () => {
-  const [programs, setPrograms] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedMode, setSelectedMode] = useState('all');
+  const queryClient = useQueryClient();
   const { on, isConnected } = useSocket();
 
-  const fetchPrograms = useCallback(async () => {
-    try {
+  const [search, setSearch]                   = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedMode, setSelectedMode]         = useState('all');
+
+  /* ── data fetch via React Query ───────────────────────────────── */
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['volunteer-programs'],
+    queryFn: async () => {
       const res = await getPrograms();
-      const list = res.programs || [];
-      setPrograms(list);
-    } catch (err) {
-      console.error('Failed to fetch programs', err);
-      setPrograms([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      // Backend already filters to status=published for volunteers;
+      // apply an extra client-side guard just in case.
+      return (res.programs || []).filter((p) => VOLUNTEER_VISIBLE.has(p.status));
+    },
+    staleTime: 60 * 1000,       // re-use cached data for 1 min
+    refetchOnWindowFocus: true, // refresh whenever volunteer switches back to tab
+  });
+
+  const programs = data || [];
+
+  /* ── socket: precise cache updates (no extra HTTP round-trip) ─── */
 
   useEffect(() => {
-    fetchPrograms();
-  }, [fetchPrograms]);
-
-  useEffect(() => {
-    const handleProgramCreated = (data) => {
-      const program = data?.program;
-      if (!program || program.status !== 'published') return;
-      setPrograms((prev) => {
-        if (prev.some((p) => p._id === program._id)) return prev;
-        return [program, ...prev];
-      });
-    };
-
-    const handleProgramPublished = (data) => {
-      const program = data?.program;
-      if (!program) return;
-      setPrograms((prev) => {
-        if (prev.some((p) => p._id === program._id)) {
-          return prev.map((p) => p._id === program._id ? program : p);
+    // A new program was published — insert into list if not already there
+    const unsubPublished = on('program-published', ({ program }) => {
+      if (!program || !VOLUNTEER_VISIBLE.has(program.status)) return;
+      queryClient.setQueryData(['volunteer-programs'], (old = []) => {
+        if (old.some((p) => p._id === program._id)) {
+          return old.map((p) => (p._id === program._id ? program : p));
         }
-        return [program, ...prev];
+        return [program, ...old];
       });
-    };
+    });
 
-    const handleProgramUpdated = (data) => {
-      const program = data?.program;
+    // A program was updated — patch in place
+    const unsubUpdated = on('program-updated', ({ program }) => {
       if (!program) return;
-      setPrograms((prev) => prev.map((p) => (p._id === program._id ? program : p)));
-    };
+      queryClient.setQueryData(['volunteer-programs'], (old = []) => {
+        if (!VOLUNTEER_VISIBLE.has(program.status)) {
+          // Programme dropped out of volunteer-visible statuses → remove it
+          return old.filter((p) => p._id !== program._id);
+        }
+        if (old.some((p) => p._id === program._id)) {
+          return old.map((p) => (p._id === program._id ? program : p));
+        }
+        return [program, ...old]; // newly visible
+      });
+    });
 
-    const handleReconnect = () => {
-      fetchPrograms();
-    };
+    // A program was hard-deleted — remove from list
+    const unsubDeleted = on('program-deleted', ({ programId }) => {
+      if (!programId) return;
+      queryClient.setQueryData(['volunteer-programs'], (old = []) =>
+        old.filter((p) => p._id !== programId && p.programId !== programId)
+      );
+    });
 
-    const unsubCreated = on('program-created', handleProgramCreated);
-    const unsubPublished = on('program-published', handleProgramPublished);
-    const unsubUpdated = on('program-updated', handleProgramUpdated);
-    const unsubReconnect = on('reconnect', handleReconnect);
+    // A program was archived — remove from volunteer list
+    const unsubArchived = on('program-archived', ({ program }) => {
+      if (!program) return;
+      queryClient.setQueryData(['volunteer-programs'], (old = []) =>
+        old.filter((p) => p._id !== program._id)
+      );
+    });
+
+    // Status changed — patch or remove
+    const unsubStatus = on('program-status-updated', ({ program }) => {
+      if (!program) return;
+      queryClient.setQueryData(['volunteer-programs'], (old = []) => {
+        if (!VOLUNTEER_VISIBLE.has(program.status)) {
+          return old.filter((p) => p._id !== program._id);
+        }
+        if (old.some((p) => p._id === program._id)) {
+          return old.map((p) => (p._id === program._id ? program : p));
+        }
+        return old;
+      });
+    });
+
+    // Socket reconnected — do a full refetch to catch anything missed
+    const unsubReconnect = on('reconnect', () => {
+      queryClient.invalidateQueries({ queryKey: ['volunteer-programs'] });
+    });
 
     return () => {
-      unsubCreated();
       unsubPublished();
       unsubUpdated();
+      unsubDeleted();
+      unsubArchived();
+      unsubStatus();
       unsubReconnect();
     };
-  }, [on, fetchPrograms]);
+  }, [on, queryClient]);
+
+  /* ── client-side filtering ────────────────────────────────────── */
 
   const categories = useMemo(() => ['All', ...Object.keys(CATEGORY_META)], []);
 
   const filtered = useMemo(() => {
+    const q = search.toLowerCase();
     return programs.filter((p) => {
-      const matchSearch = !search ||
-        p.title?.toLowerCase().includes(search.toLowerCase()) ||
-        p.description?.toLowerCase().includes(search.toLowerCase()) ||
-        p.category?.toLowerCase().includes(search.toLowerCase()) ||
-        p.city?.toLowerCase().includes(search.toLowerCase());
-      const matchCat = selectedCategory === 'All' || p.category === selectedCategory;
+      const matchSearch = !q
+        || p.title?.toLowerCase().includes(q)
+        || p.description?.toLowerCase().includes(q)
+        || p.category?.toLowerCase().includes(q)
+        || p.city?.toLowerCase().includes(q);
+      const matchCat  = selectedCategory === 'All' || p.category === selectedCategory;
       const matchMode = selectedMode === 'all' || p.mode === selectedMode;
       return matchSearch && matchCat && matchMode;
     });
   }, [programs, search, selectedCategory, selectedMode]);
 
+  /* ── render ───────────────────────────────────────────────────── */
+
   return (
     <div style={{ padding: '0.5rem 0 3rem' }}>
+      {/* Header */}
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-heading)' }}>
           Browse Opportunities
@@ -205,13 +296,12 @@ const Programs = () => {
         <p style={{ color: 'var(--color-body)', fontSize: '1rem' }}>
           Discover social campaigns, teaching initiatives, and ecological programs you can join.
           {isConnected && (
-            <span style={{ fontSize: '0.8rem', color: '#22c55e', marginLeft: '0.5rem' }}>
-              ● Live
-            </span>
+            <span style={{ fontSize: '0.8rem', color: '#22c55e', marginLeft: '0.5rem' }}>● Live</span>
           )}
         </p>
       </div>
 
+      {/* Search + mode filter */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem',
         padding: '1.25rem', backgroundColor: 'var(--color-card)',
@@ -228,8 +318,7 @@ const Programs = () => {
             style={{ paddingLeft: '2.25rem' }}
           />
         </div>
-
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Filter size={15} style={{ color: 'var(--color-body)' }} />
           <select
             value={selectedMode}
@@ -245,6 +334,7 @@ const Programs = () => {
         </div>
       </div>
 
+      {/* Category pills */}
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.75rem' }}>
         {categories.map((cat) => {
           const meta = CATEGORY_META[cat];
@@ -273,17 +363,17 @@ const Programs = () => {
         })}
       </div>
 
-      {!loading && (
+      {/* Result count */}
+      {!isLoading && (
         <p style={{ color: 'var(--color-body)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
           Showing <strong>{filtered.length}</strong> of <strong>{programs.length}</strong> programs
         </p>
       )}
 
-      {loading ? (
+      {/* Grid */}
+      {isLoading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-          {[1,2,3,4,5,6].map((i) => (
-            <div key={i} className="card" style={{ height: '320px', animation: 'pulse 1.5s ease-in-out infinite', backgroundColor: 'var(--color-border)' }} />
-          ))}
+          {[1, 2, 3, 4, 5, 6].map((i) => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
@@ -306,8 +396,8 @@ const Programs = () => {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-          {filtered.map((program) => (
-            <ProgramCard key={program._id} program={program} />
+          {filtered.map((prog) => (
+            <ProgramCard key={prog._id} program={prog} />
           ))}
         </div>
       )}

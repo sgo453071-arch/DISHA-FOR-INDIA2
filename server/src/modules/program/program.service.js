@@ -176,6 +176,25 @@ class ProgramService {
     const serialized = serializeProgram(updatedProgram);
 
     try {
+      // Notify enrolled volunteers about the update
+      if (updatedProgram.status === 'published' || updatedProgram.status === 'ongoing') {
+        const applicationRepository = require('../application/application.repository');
+        const applicationsResult = await applicationRepository.findByProgram(
+          programId,
+          { status: { $in: ['joined', 'approved'] } },
+          { page: 1, limit: 1000 }
+        );
+        const applicantIds = (applicationsResult.applications || []).map(
+          (app) => (app.user?._id || app.user).toString()
+        );
+        for (const recipientId of applicantIds) {
+          await notificationService.sendInAppNotification('buildProgramUpdated', {
+            recipientId,
+            programName: updatedProgram.title,
+            programId: updatedProgram._id.toString(),
+          });
+        }
+      }
       broadcastToAll('program-updated', { program: serialized, updatedBy: userId.toString() });
     } catch (_socketError) {
       // Socket broadcast failure is non-blocking
@@ -194,6 +213,23 @@ class ProgramService {
     await programRepository.softDelete(programId, userId);
 
     try {
+      // Notify enrolled volunteers that the program was removed
+      const applicationRepository = require('../application/application.repository');
+      const applicationsResult = await applicationRepository.findByProgram(
+        programId,
+        { status: { $in: ['joined', 'approved', 'applied', 'pending', 'under_review'] } },
+        { page: 1, limit: 1000 }
+      );
+      const applicantIds = (applicationsResult.applications || []).map(
+        (app) => (app.user?._id || app.user).toString()
+      );
+      for (const recipientId of applicantIds) {
+        await notificationService.sendInAppNotification('buildProgramCancelled', {
+          recipientId,
+          programName: program.title,
+          programId: program._id.toString(),
+        });
+      }
       broadcastToAll('program-deleted', { programId: programId.toString(), deletedBy: userId.toString() });
     } catch (_socketError) {
       // Socket broadcast failure is non-blocking
@@ -284,8 +320,10 @@ class ProgramService {
 
     try {
       const User = require('../user/user.model');
+      // Include all non-suspended volunteers (pending + active) so newly registered
+      // volunteers who haven't been activated yet still receive the notification.
       const volunteers = await User.find(
-        { role: 'volunteer', isDeleted: false, status: 'active' },
+        { role: 'volunteer', isDeleted: false, status: { $in: ['active', 'pending'] } },
         '_id'
       ).lean();
 
@@ -324,11 +362,28 @@ class ProgramService {
     const serialized = serializeProgram(archivedProgram);
 
     try {
-      await notificationService.sendInAppNotification('buildProgramCancelled', {
-        recipientId: program.createdBy.toString(),
-        programName: program.title,
-        programId: program._id.toString(),
-      });
+      // Notify all applicants who were approved/joined, not just the creator
+      const applicationRepository = require('../application/application.repository');
+      const applicationsResult = await applicationRepository.findByProgram(
+        programId,
+        { status: { $in: ['joined', 'approved'] } },
+        { page: 1, limit: 1000 }
+      );
+      const applicantIds = (applicationsResult.applications || []).map(
+        (app) => (app.user?._id || app.user).toString()
+      );
+
+      // Always notify the creator too (if not already in applicants list)
+      const creatorId = program.createdBy.toString();
+      const recipientIds = [...new Set([...applicantIds, creatorId])];
+
+      for (const recipientId of recipientIds) {
+        await notificationService.sendInAppNotification('buildProgramCancelled', {
+          recipientId,
+          programName: program.title,
+          programId: program._id.toString(),
+        });
+      }
 
       broadcastToAll('program-archived', { program: serialized, archivedBy: userId.toString() });
     } catch (_error) {
