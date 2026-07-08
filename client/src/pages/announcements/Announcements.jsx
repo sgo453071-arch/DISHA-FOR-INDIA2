@@ -1,46 +1,193 @@
-import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+/**
+ * Announcements.jsx  —  Volunteer Communication Center
+ *
+ * Layout:
+ *   1. Page header  (title + subtitle)
+ *   2. Pinned hero card (only when one announcement is pinned)
+ *   3. Category pill filter row  (no search bar, no complex filters)
+ *   4. Card grid  (expired items hidden, markRead fires on card click)
+ *   5. Friendly empty state
+ *   6. Pagination
+ */
+
+import React, { useState, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, AlertCircle, RefreshCw } from 'lucide-react';
-import { getAnnouncements } from '../../services/announcementsService';
+import { Megaphone, Pin, RefreshCw, AlertCircle, ExternalLink } from 'lucide-react';
+
+import {
+  getAnnouncements,
+  markAnnouncementRead,
+} from '../../services/announcementsService';
 import { useAuth } from '../../context/AuthContext';
-import AnnouncementCard from '../../components/announcements/AnnouncementCard';
-import AnnouncementBanner from '../../components/announcements/AnnouncementBanner';
-import AnnouncementFilters from '../../components/announcements/AnnouncementFilters';
-import AnnouncementSkeleton from '../../components/announcements/AnnouncementSkeleton';
+import AnnouncementCard      from '../../components/announcements/AnnouncementCard';
+import AnnouncementSkeleton  from '../../components/announcements/AnnouncementSkeleton';
 import AnnouncementEmptyState from '../../components/announcements/AnnouncementEmptyState';
 import AnnouncementPagination from '../../components/announcements/AnnouncementPagination';
 
 const PAGE_SIZE = 9;
 
+/* ─── category pill row ──────────────────────────────────────────────────── */
+
+const CATEGORIES = [
+  { value: '',            label: 'All' },
+  { value: 'general',     label: '📢  General' },
+  { value: 'program',     label: '📅  Programs' },
+  { value: 'event',       label: '🎉  Events' },
+  { value: 'recruitment', label: '🤝  Opportunities' },
+  { value: 'system',      label: '⚙️  Platform' },
+  { value: 'emergency',   label: '🚨  Emergency' },
+];
+
+const CategoryPills = ({ active, onChange }) => (
+  <div
+    role="group"
+    aria-label="Filter announcements by category"
+    style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.75rem' }}
+  >
+    {CATEGORIES.map((cat) => {
+      const on = active === cat.value;
+      return (
+        <button
+          key={cat.value}
+          onClick={() => onChange(cat.value)}
+          aria-pressed={on}
+          style={{
+            padding: '0.4rem 1rem', borderRadius: 999,
+            border: `1.5px solid ${on ? 'var(--color-primary)' : 'var(--color-border)'}`,
+            background: on ? 'var(--color-primary)' : 'var(--color-card)',
+            color: on ? '#fff' : 'var(--color-body)',
+            fontSize: '0.8rem', fontWeight: on ? 700 : 500,
+            cursor: 'pointer', transition: 'all 0.18s',
+          }}
+          onMouseEnter={(e) => {
+            if (!on) {
+              e.currentTarget.style.borderColor = 'var(--color-primary)';
+              e.currentTarget.style.color = 'var(--color-primary)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!on) {
+              e.currentTarget.style.borderColor = 'var(--color-border)';
+              e.currentTarget.style.color = 'var(--color-body)';
+            }
+          }}
+        >
+          {cat.label}
+        </button>
+      );
+    })}
+  </div>
+);
+
+/* ─── pinned hero ────────────────────────────────────────────────────────── */
+
+const PinnedHero = ({ announcement, onRead, navigate }) => {
+  if (!announcement) return null;
+  const id = announcement._id || announcement.announcementId;
+  const isEmergency = announcement.type === 'emergency';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{
+        position: 'relative',
+        padding: '1.5rem 1.75rem',
+        borderRadius: 16,
+        background: isEmergency
+          ? 'linear-gradient(135deg, #7f1d1d, #dc2626)'
+          : 'linear-gradient(135deg, #1e3a8a, #2563eb)',
+        color: '#fff',
+        marginBottom: '2rem',
+        boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
+        overflow: 'hidden',
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem',
+      }}
+      onClick={() => {
+        if (!announcement.isRead) onRead(id);
+        navigate(`/announcements/${id}`);
+      }}
+    >
+      {/* Decorative bubble */}
+      <div aria-hidden="true" style={{ position: 'absolute', right: '-3rem', top: '-3rem', width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.07)' }} />
+
+      {/* Pinned label */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>
+        <Pin size={12} aria-hidden="true" />
+        📌 PINNED
+      </div>
+
+      <h2 style={{ fontSize: 'clamp(1.05rem, 2.5vw, 1.45rem)', fontWeight: 800, margin: 0, lineHeight: 1.35 }}>
+        {announcement.title}
+      </h2>
+
+      <p style={{
+        margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.88)', lineHeight: 1.65,
+        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+      }}>
+        {announcement.message}
+      </p>
+
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        {announcement.actionButton?.label && announcement.actionButton?.url && (
+          <a
+            href={announcement.actionButton.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0.5rem 1.1rem', borderRadius: 8,
+              background: 'rgba(255,255,255,0.18)', color: '#fff',
+              fontWeight: 700, fontSize: '0.82rem',
+              textDecoration: 'none', border: '1px solid rgba(255,255,255,0.3)',
+              transition: 'background 0.18s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.28)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.18)'; }}
+          >
+            {announcement.actionButton.label} <ExternalLink size={13} aria-hidden="true" />
+          </a>
+        )}
+        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>
+          Tap to read full announcement →
+        </span>
+      </div>
+    </motion.div>
+  );
+};
+
+/* ─── main page ──────────────────────────────────────────────────────────── */
+
 const Announcements = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const [type, setType] = useState('');
-  const [priority, setPriority] = useState('');
-  const [targetAudience, setTargetAudience] = useState('');
-  const [error, setError] = useState(null);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const queryClient = useQueryClient();
+
+  const [page, setPage]   = useState(1);
+  const [type, setType]   = useState('');
 
   const params = useMemo(() => {
-    const p = { page, limit: PAGE_SIZE, sortBy: 'createdAt', order: 'desc' };
-    if (search) p.search = search;
+    const p = { page, limit: PAGE_SIZE, sortBy: 'createdAt', order: 'desc', status: 'published' };
     if (type) p.type = type;
-    if (priority) p.priority = priority;
-    if (targetAudience) p.targetAudience = targetAudience;
     return p;
-  }, [page, search, type, priority, targetAudience]);
+  }, [page, type]);
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, error } = useQuery({
     queryKey: ['announcements', params],
     queryFn: async () => {
-      setError(null);
       const res = await getAnnouncements(params);
       if (res.success) {
-        return { announcements: res.data?.announcements || [], total: res.data?.pagination?.total || 0, page: res.data?.pagination?.page || 1, totalPages: res.data?.pagination?.totalPages || 1 };
+        return {
+          announcements: res.data?.announcements || [],
+          total:      res.data?.pagination?.total      || 0,
+          totalPages: res.data?.pagination?.totalPages || 1,
+        };
       }
       throw new Error(res.message || 'Failed to load announcements');
     },
@@ -49,70 +196,140 @@ const Announcements = () => {
     enabled: !!user,
   });
 
-  const announcements = data?.announcements || [];
-  const total = data?.total || 0;
-  const totalPages = data?.totalPages || 1;
+  // Strip expired items client-side (belt-and-suspenders)
+  const now     = useMemo(() => Date.now(), []);
+  const rawList = data?.announcements || [];
+  const visible = useMemo(
+    () => rawList.filter((a) => !a.expiresAt || new Date(a.expiresAt) > now),
+    [rawList, now]
+  );
 
-  const topAnnouncement = useMemo(() => {
-    if (bannerDismissed || announcements.length === 0) return null;
-    return announcements.find((a) => a.priority === 'critical' || a.status === 'published') || announcements[0];
-  }, [announcements, bannerDismissed]);
+  // Pinned item surfaces as hero; rest go into the grid
+  const pinnedItem = useMemo(() => visible.find((a) => a.isPinned) || null, [visible]);
+  const gridItems  = useMemo(
+    () => visible.filter((a) => !a.isPinned),
+    [visible, pinnedItem]
+  );
 
-  const listAnnouncements = useMemo(() => {
-    if (!topAnnouncement || bannerDismissed) return announcements;
-    return announcements.filter((a) => (a._id || a.announcementId) !== (topAnnouncement._id || topAnnouncement.announcementId));
-  }, [announcements, topAnnouncement, bannerDismissed]);
+  // Optimistically mark a card as read in the cache
+  const handleMarkRead = useCallback(async (id) => {
+    try {
+      await markAnnouncementRead(id);
+      queryClient.setQueryData(['announcements', params], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          announcements: old.announcements.map((a) =>
+            (a._id === id || a.announcementId === id) ? { ...a, isRead: true } : a
+          ),
+        };
+      });
+    } catch {
+      // non-critical — fail silently
+    }
+  }, [queryClient, params]);
+
+  const handleCategoryChange = useCallback((val) => {
+    setType(val);
+    setPage(1);
+  }, []);
 
   return (
-    <div style={{ padding: 'clamp(1rem, 3vw, 2rem)', maxWidth: 1240, margin: '0 auto', minHeight: '100vh' }}>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <Link to="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', marginBottom: '0.5rem' }}>
+    <div style={{ padding: 'clamp(1rem, 3vw, 2rem)', maxWidth: 1200, margin: '0 auto', minHeight: '100vh' }}>
+
+      {/* ── Header ───────────────────────────────────────────────── */}
+      <div style={{ marginBottom: '1.75rem' }}>
+        <Link
+          to="/dashboard"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none', marginBottom: '0.5rem' }}
+        >
           ← Dashboard
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
-          <Info size={26} style={{ color: 'var(--color-primary)', flexShrink: 0 }} aria-hidden="true" />
-          <h1 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 800, color: 'var(--color-heading)', margin: 0 }}>Announcements</h1>
+
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+              <Megaphone size={24} style={{ color: 'var(--color-primary)' }} aria-hidden="true" />
+              <h1 style={{ fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 800, color: 'var(--color-heading)', margin: 0 }}>
+                Announcements
+              </h1>
+            </div>
+            <p style={{ color: 'var(--color-body)', margin: '0.3rem 0 0', fontSize: '0.9rem' }}>
+              Official updates and notices from Disha for India.
+            </p>
+          </div>
+
+          {isFetching && !isLoading && (
+            <span style={{ fontSize: '0.78rem', color: 'var(--color-body)', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }} aria-live="polite">
+              <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" />
+              Refreshing…
+            </span>
+          )}
         </div>
-        <p style={{ color: 'var(--color-body)', margin: 0, fontSize: '0.95rem' }}>Stay informed with the latest updates, events, and important notices.</p>
       </div>
 
-      <AnnouncementFilters search={search} onSearchChange={setSearch} type={type} onTypeChange={setType} priority={priority} onPriorityChange={setPriority} targetAudience={targetAudience} onTargetAudienceChange={setTargetAudience} showAdminFilters={false} onClear={() => { setSearch(''); setType(''); setPriority(''); setTargetAudience(''); }} />
+      {/* ── Error ────────────────────────────────────────────────── */}
+      {error && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.875rem 1.25rem', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, color: 'var(--color-error)', marginBottom: '1.5rem', fontSize: '0.875rem' }} role="alert">
+          <AlertCircle size={16} aria-hidden="true" /> {error.message}
+        </div>
+      )}
 
+      {/* ── Pinned hero ───────────────────────────────────────────── */}
       <AnimatePresence>
-        {!bannerDismissed && topAnnouncement && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <AnnouncementBanner announcement={topAnnouncement} onClose={() => setBannerDismissed(true)} />
-          </motion.div>
+        {pinnedItem && (
+          <PinnedHero
+            key={pinnedItem._id || pinnedItem.announcementId}
+            announcement={pinnedItem}
+            onRead={handleMarkRead}
+            navigate={navigate}
+          />
         )}
       </AnimatePresence>
 
-      {error && (
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', padding: '1rem 1.25rem', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 'var(--radius-md)', color: 'var(--color-error)', marginBottom: '1.5rem' }} role="alert">
-          <AlertCircle size={18} aria-hidden="true" /> {error}
-        </motion.div>
-      )}
+      {/* ── Category pills ────────────────────────────────────────── */}
+      <CategoryPills active={type} onChange={handleCategoryChange} />
 
-      {isFetching && !isLoading && (
-        <div style={{ marginBottom: '1rem', fontSize: '0.85rem', color: 'var(--color-body)', display: 'flex', alignItems: 'center', gap: '0.4rem' }} aria-live="polite">
-          <RefreshCw size={13} style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" /> Refreshing...
-        </div>
-      )}
-
+      {/* ── Content ───────────────────────────────────────────────── */}
       {isLoading ? (
-        <AnnouncementSkeleton count={PAGE_SIZE} />
-      ) : announcements.length === 0 && !error ? (
-        <AnnouncementEmptyState title="No announcements found" description="Try adjusting your filters or check back later for updates." />
+        <AnnouncementSkeleton count={6} />
+      ) : gridItems.length === 0 && !pinnedItem ? (
+        <AnnouncementEmptyState
+          title="No announcements at the moment"
+          description="Check back soon for new updates, events, and important notices from Disha for India."
+        />
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-            {listAnnouncements.map((announcement) => (
-              <AnnouncementCard key={announcement._id || announcement.announcementId} announcement={announcement} onClick={() => navigate(`/announcements/${announcement._id || announcement.announcementId}`)} />
-            ))}
-          </div>
+          {gridItems.length > 0 && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))',
+              gap: '1.25rem',
+            }}>
+              {gridItems.map((ann) => (
+                <AnnouncementCard
+                  key={ann._id || ann.announcementId}
+                  announcement={ann}
+                  onMarkRead={handleMarkRead}
+                  onClick={() => {
+                    if (!ann.isRead) handleMarkRead(ann._id || ann.announcementId);
+                    navigate(`/announcements/${ann._id || ann.announcementId}`);
+                  }}
+                  showActions={false}
+                />
+              ))}
+            </div>
+          )}
 
-          {totalPages > 1 && (
-            <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'var(--color-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
-              <AnnouncementPagination currentPage={page} totalPages={totalPages} totalItems={total} itemsPerPage={PAGE_SIZE} onPageChange={(newPage) => { setPage(newPage); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+          {(data?.totalPages || 1) > 1 && (
+            <div style={{ marginTop: '2.5rem', padding: '1.25rem', background: 'var(--color-card)', borderRadius: 12, border: '1px solid var(--color-border)' }}>
+              <AnnouncementPagination
+                currentPage={page}
+                totalPages={data?.totalPages || 1}
+                totalItems={data?.total || 0}
+                itemsPerPage={PAGE_SIZE}
+                onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              />
             </div>
           )}
         </>

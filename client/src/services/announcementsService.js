@@ -27,3 +27,18 @@ export const publishAnnouncement = async (id) => {
 export const archiveAnnouncement = async (id) => {
   return api.patch(`/announcements/${id}/archive`);
 };
+
+/** Mark an announcement as read by the current volunteer */
+export const markAnnouncementRead = async (id) => {
+  return api.patch(`/announcements/${id}/read`);
+};
+
+/** Pin an announcement — admin only, only one can be pinned at a time */
+export const pinAnnouncement = async (id) => {
+  return api.patch(`/announcements/${id}/pin`);
+};
+
+/** Unpin a previously pinned announcement — admin only */
+export const unpinAnnouncement = async (id) => {
+  return api.patch(`/announcements/${id}/unpin`);
+};
