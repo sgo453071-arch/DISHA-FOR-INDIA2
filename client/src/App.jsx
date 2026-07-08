@@ -9,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 // Layouts
 import PublicLayout from './layouts/PublicLayout';
 import DashboardLayout from './layouts/DashboardLayout';
+import DashboardErrorBoundary from './components/DashboardErrorBoundary';
 
 // Pages
 import Home from './pages/Home';
@@ -155,7 +156,9 @@ function App() {
               <Route element={
                 <ProtectedRoute allowedRoles={['VOLUNTEER', 'COORDINATOR', 'ADMIN', 'SUPER_ADMIN']}>
                   <NotificationsProvider>
-                    <DashboardLayout />
+                    <DashboardErrorBoundary>
+                      <DashboardLayout />
+                    </DashboardErrorBoundary>
                   </NotificationsProvider>
                 </ProtectedRoute>
               }>
