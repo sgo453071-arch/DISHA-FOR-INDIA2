@@ -10,17 +10,32 @@ const { runSeeders } = require('../database/seeders');
  */
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    const connStr = process.env.DATABASE_URL || process.env.SUPABASE_URL || process.env.MONGODB_URI;
+    const conn = await mongoose.connect(connStr);
+    
+    let dbTypeLog = 'MongoDB';
+    if (process.env.DATABASE_URL) {
+      dbTypeLog = 'Supabase (PostgreSQL)';
+    } else if (process.env.SUPABASE_URL) {
+      dbTypeLog = 'Supabase (HTTP Client)';
+    }
+
     // eslint-disable-next-line no-console
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`${dbTypeLog} Connected: ${mongoose.connection.host}`);
 
     // Run seeders after successful connection
     if (process.env.NODE_ENV !== 'production' || process.env.RUN_SEEDERS === 'true') {
       await runSeeders();
     }
   } catch (error) {
+    let dbTypeLog = 'MongoDB';
+    if (process.env.DATABASE_URL) {
+      dbTypeLog = 'Supabase (PostgreSQL)';
+    } else if (process.env.SUPABASE_URL) {
+      dbTypeLog = 'Supabase (HTTP Client)';
+    }
     // eslint-disable-next-line no-console
-    console.error(`Error connecting to MongoDB: ${error.message}`);
+    console.error(`Error connecting to ${dbTypeLog}: ${error.message}`);
     process.exit(1);
   }
 };

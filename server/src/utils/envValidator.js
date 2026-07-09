@@ -5,7 +5,6 @@
 const REQUIRED_ENV_VARS = [
   'PORT',
   'NODE_ENV',
-  'MONGODB_URI',
   'JWT_SECRET',
   'JWT_EXPIRE',
   'JWT_REFRESH_SECRET',
@@ -15,6 +14,15 @@ const REQUIRED_ENV_VARS = [
 
 const validateEnv = () => {
   const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+
+  // Validate that at least one DB connection is available: DATABASE_URL, MONGODB_URI, or both SUPABASE keys
+  const hasPostgres = !!process.env.DATABASE_URL;
+  const hasSupabase = !!(process.env.SUPABASE_URL && process.env.SUPABASE_KEY);
+  const hasMongo = !!process.env.MONGODB_URI;
+
+  if (!hasPostgres && !hasSupabase && !hasMongo) {
+    missing.push('DATABASE_URL (or SUPABASE_URL & SUPABASE_KEY, or MONGODB_URI)');
+  }
 
   if (missing.length > 0) {
     // eslint-disable-next-line no-console

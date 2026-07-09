@@ -156,8 +156,9 @@ const sampleRewards = [
 
 const seedRewards = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/disha-for-india');
-    console.log('Connected to MongoDB');
+    const connStr = process.env.DATABASE_URL || process.env.SUPABASE_URL || process.env.MONGODB_URI || 'mongodb://localhost:27017/disha-for-india';
+    await mongoose.connect(connStr);
+    console.log('Connected to Database');
 
     const existingCount = await RewardCatalog.countDocuments();
     console.log(`Existing rewards in catalog: ${existingCount}`);

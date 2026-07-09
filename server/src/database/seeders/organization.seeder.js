@@ -14,15 +14,30 @@ const seedOrganization = async () => {
 
     let superAdmin = await User.findOne({ role: ROLES.SUPER_ADMIN });
     if (!superAdmin) {
-      superAdmin = await User.create({
-        name: 'Super Admin',
-        username: 'superadmin',
-        email: 'admin@dishaforindia.org',
-        password: 'changeme123',
-        role: ROLES.SUPER_ADMIN,
-        status: 'active',
-        permissions: [],
-      });
+      superAdmin = await User.findOne({ email: 'admin@dishaforindia.org' });
+      if (superAdmin) {
+        superAdmin.role = ROLES.SUPER_ADMIN;
+        if (!superAdmin.password.startsWith('$2b$')) {
+          superAdmin.password = await require('bcrypt').hash('changeme123', 10);
+        }
+        await superAdmin.save();
+      } else {
+        const hashedPassword = await require('bcrypt').hash('changeme123', 10);
+        superAdmin = await User.create({
+          name: 'Super Admin',
+          username: 'superadmin',
+          email: 'admin@dishaforindia.org',
+          password: hashedPassword,
+          role: ROLES.SUPER_ADMIN,
+          status: 'active',
+          permissions: [],
+        });
+      }
+    } else {
+      if (!superAdmin.password.startsWith('$2b$')) {
+        superAdmin.password = await require('bcrypt').hash('changeme123', 10);
+        await superAdmin.save();
+      }
     }
 
     await Organization.create({

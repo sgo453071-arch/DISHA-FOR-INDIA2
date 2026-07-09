@@ -30,24 +30,36 @@ connectDB().then(async () => {
 
     // Temporary Seed Logic for Admin User
     try {
+    const bcrypt = require('bcrypt');
     const User = require('./modules/user/user.model');
     const email = 'induaggarwal@gmail.com';
     const password = 'dishaforindia';
     
     let admin = await User.findOne({ email });
     if (admin) {
-      if (admin.role !== 'admin' || !admin.username) {
+      let needsSave = false;
+      if (admin.role !== 'admin') {
         admin.role = 'admin';
-        admin.password = password;
-        if (!admin.username) admin.username = 'induaggarwal';
+        needsSave = true;
+      }
+      if (!admin.username) {
+        admin.username = 'induaggarwal';
+        needsSave = true;
+      }
+      if (!admin.password || !admin.password.startsWith('$2b$')) {
+        admin.password = await bcrypt.hash(password, 10);
+        needsSave = true;
+      }
+      if (needsSave) {
         await admin.save();
-        console.log('[SERVER] ✅ Admin user updated on startup.');
+        console.log('[SERVER] ✅ Admin user updated on startup (password hashed).');
       }
     } else {
+      const hashedPassword = await bcrypt.hash(password, 10);
       admin = new User({
         name: 'Indu Aggarwal',
         email: email,
-        password: password,
+        password: hashedPassword,
         role: 'admin',
         username: 'induaggarwal',
         country: 'India'
